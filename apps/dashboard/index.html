@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-tsrouter-app"
+    />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Create TanStack App - dashboard</title>
+    <script>
+      (function () {
+        try {
+          const storageKey = "vite-ui-theme";
+          const theme = localStorage.getItem(storageKey) || "system";
+          const root = window.document.documentElement;
+
+          root.classList.remove("light", "dark");
+
+          if (theme === "system") {
+            const systemTheme = window.matchMedia(
+              "(prefers-color-scheme: dark)",
+            ).matches
+              ? "dark"
+              : "light";
+            root.classList.add(systemTheme);
+          } else {
+            root.classList.add(theme);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

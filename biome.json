@@ -1,0 +1,70 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"includes": [
+			"**/*.{ts,tsx,js,jsx,json}",
+			"*.json",
+			"*.css",
+			"!**/dist",
+			"!**/node_modules",
+			"!**/*.gen.ts"
+		],
+		"ignoreUnknown": true
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"formatWithErrors": true
+	},
+	"linter": {
+		"includes": ["**", "!test", "!**/*.gen.ts"],
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"style": {
+				"noNonNullAssertion": "off"
+			},
+			"complexity": {
+				"noStaticOnlyClass": "off"
+			},
+			"correctness": {
+				"noChildrenProp": "off"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		},
+		"formatter": {
+			"enabled": false
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["*.json"],
+			"formatter": {
+				"enabled": true,
+				"indentStyle": "tab"
+			}
+		}
+	]
+}

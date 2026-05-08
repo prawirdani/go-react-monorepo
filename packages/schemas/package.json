@@ -1,0 +1,24 @@
+{
+	"name": "@repo/schemas",
+	"version": "0.1.0",
+	"description": "",
+	"scripts": {
+		"format": "biome format",
+		"lint": "biome lint",
+		"check:write": "biome check --write"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/node": "^25.0.6",
+		"typescript": "^5.9.3"
+	},
+	"dependencies": {
+		"zod": "^4.3.5"
+	},
+	"exports": {
+		"./auth": "./src/auth.schema.ts",
+		"./user": "./src/user.schema.ts"
+	}
+}
