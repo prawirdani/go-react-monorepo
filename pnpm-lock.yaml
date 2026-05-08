@@ -63,6 +63,9 @@ importers:
         specifier: ^5.0.10
         version: 5.0.10(@types/react@19.2.2)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@tanstack/devtools-vite':
         specifier: ^0.3.11
         version: 0.3.12(vite@7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
@@ -124,12 +127,17 @@ importers:
         specifier: workspace:*
         version: link:../utils
     devDependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
       '@types/node':
         specifier: ^25.0.6
         version: 25.0.8
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/config: {}
 
   packages/queries:
     dependencies:
@@ -143,6 +151,9 @@ importers:
         specifier: ^5.90.17
         version: 5.90.17(react@19.2.3)
     devDependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
       '@types/node':
         specifier: ^25.0.8
         version: 25.0.8
@@ -152,13 +163,13 @@ importers:
 
   packages/schemas:
     dependencies:
-      '@repo/utils':
-        specifier: workspace:*
-        version: link:../utils
       zod:
         specifier: ^4.3.5
         version: 4.3.5
     devDependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
       '@types/node':
         specifier: ^25.0.6
         version: 25.0.6
@@ -208,6 +219,9 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
     devDependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
       '@types/node':
         specifier: ^22.15.3
         version: 22.19.3
@@ -223,6 +237,9 @@ importers:
 
   packages/utils:
     devDependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
       '@types/node':
         specifier: ^25.0.9
         version: 25.0.9
