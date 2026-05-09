@@ -1,17 +1,14 @@
-// ─── Core type ───────────────────────────────────────────────────────────────
-
 export type ErrorDescriptor<T extends string, TD = null> = {
 	readonly code: T;
 	message: string;
 	details: TD;
 };
 
-// ─── Error map (single source of truth) ──────────────────────────────────────
-
 type ErrorMap = {
 	// Client/Fetch
 	NETWORK_ERROR: null;
 	UNKNOWN_ERROR: unknown;
+
 	// General server
 	MULTIPART_FORM: null;
 	BODY_TOO_LARGE: null;
@@ -25,6 +22,11 @@ type ErrorMap = {
 	REQ_MALFORMED_JSON: null;
 	VALIDATION: Partial<Record<string, string[]>>;
 	RESOURCE_NOT_FOUND: null;
+
+	// User domain errors
+	USER_EMAIL_CONFLICT: null;
+	USER_VALIDATION: null;
+
 	// Auth
 	REQ_UNAUTHORIZED: null;
 	REQ_FORBIDDEN: null;
@@ -33,15 +35,13 @@ type ErrorMap = {
 	AUTH_INVALID_SESSION: null;
 };
 
-// ─── Derived types ────────────────────────────────────────────────────────────
-
 export type APIError = {
 	[K in keyof ErrorMap]: ErrorDescriptor<K, ErrorMap[K]>;
 }[keyof ErrorMap];
 
 export type APIErrorCodes = keyof ErrorMap;
 
-// Named aliases are now just lookups — add only what you actually import elsewhere
+// Named aliases are now just lookups, add only what you actually import elsewhere.
 export type ErrValidation<T = Record<string, string[]>> = ErrorDescriptor<
 	"VALIDATION",
 	Partial<Record<keyof T, string[]>>

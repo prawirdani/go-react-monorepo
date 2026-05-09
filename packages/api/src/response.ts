@@ -1,9 +1,8 @@
-export interface APIResponse<TData = null> {
-	data: TData;
+export interface APIResponse<T = null> {
+	data: T;
 	message: string | null;
 }
 
-// TODO:
 export type PaginationMeta = {
 	page: number;
 	size: number;
