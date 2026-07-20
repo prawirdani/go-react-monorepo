@@ -4,7 +4,7 @@ export type ErrorDescriptor<T extends string, TD = null> = {
 	details: TD;
 };
 
-type ErrorMap = {
+export type ErrorMap = {
 	// Client/Fetch
 	NETWORK_ERROR: null;
 	UNKNOWN_ERROR: unknown;
@@ -22,6 +22,15 @@ type ErrorMap = {
 	REQ_MALFORMED_JSON: null;
 	VALIDATION: Partial<Record<string, string[]>>;
 	RESOURCE_NOT_FOUND: null;
+
+	// Upload
+	UPLOAD_MAX_SIZE: { max_bytes: number; received_bytes: number };
+	UPLOAD_MIME_TYPES: {
+		claimed_mime: string;
+		actual_mime: string;
+		allowed_mimes: string[];
+	};
+	UPLOAD_INVALID: never;
 
 	// User domain errors
 	USER_EMAIL_CONFLICT: null;

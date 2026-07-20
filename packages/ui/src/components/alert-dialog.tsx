@@ -1,10 +1,6 @@
-"use client"
-
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
 import { Button } from "@repo/ui/components/button"
-
 import { cn } from "@repo/ui/lib/utils"
-import type * as React from "react"
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
@@ -30,7 +26,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-        "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate z-50",
+        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className,
       )}
       {...props}
@@ -52,7 +48,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 bg-background ring-foreground/10 gap-6 rounded-xl p-6 ring-1 duration-100 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 outline-none",
+          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid auto-rows-max w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl bg-popover p-5 sm:p-6 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className,
         )}
         {...props}
@@ -85,7 +81,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "flex flex-row justify-center gap-2 sm:justify-end",
+        "flex flex-col sm:flex-row gap-2 sm:justify-end [&_button]:min-w-24",
         className,
       )}
       {...props}
@@ -101,7 +97,7 @@ function AlertDialogMedia({
     <div
       data-slot="alert-dialog-media"
       className={cn(
-        "bg-muted mb-2 inline-flex size-16 items-center justify-center rounded-md sm:group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-8",
+        "mb-2 inline-flex size-16 items-center justify-center rounded-md bg-muted sm:group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-8",
         className,
       )}
       {...props}
@@ -133,7 +129,7 @@ function AlertDialogDescription({
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
       className={cn(
-        "text-muted-foreground *:[a]:hover:text-foreground text-sm text-pretty *:[a]:underline *:[a]:underline-offset-3",
+        "text-sm text-balance text-muted-foreground md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className,
       )}
       {...props}
@@ -158,21 +154,20 @@ function AlertDialogCancel({
   className,
   variant = "outline",
   size = "default",
+  loading = false,
   ...props
-}: AlertDialogPrimitive.Close.Props &
-  Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
+}: AlertDialogPrimitive.Close.Props & React.ComponentProps<typeof Button>) {
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
       className={cn(className)}
-      render={<Button variant={variant} size={size} />}
+      render={<Button variant={variant} size={size} loading={loading} />}
       {...props}
     />
   )
 }
 
 export {
-  AlertDialogPrimitive,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -183,6 +178,7 @@ export {
   AlertDialogMedia,
   AlertDialogOverlay,
   AlertDialogPortal,
+  AlertDialogPrimitive,
   AlertDialogTitle,
   AlertDialogTrigger,
 }

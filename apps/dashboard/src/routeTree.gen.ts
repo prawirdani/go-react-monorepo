@@ -9,19 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as appIndexRouteImport } from './routes/(app)/index'
-import { Route as appSettingsIndexRouteImport } from './routes/(app)/settings/index'
 import { Route as appExampleIndexRouteImport } from './routes/(app)/example/index'
+import { Route as appProfileIndexRouteImport } from './routes/(app)/profile/index'
+import { Route as appSettingsIndexRouteImport } from './routes/(app)/settings/index'
 
+const appRouteRoute = appRouteRouteImport.update({
+  id: '/(app)',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const appRouteRoute = appRouteRouteImport.update({
-  id: '/(app)',
   getParentRoute: () => rootRouteImport,
 } as any)
 const appIndexRoute = appIndexRouteImport.update({
@@ -29,27 +30,34 @@ const appIndexRoute = appIndexRouteImport.update({
   path: '/',
   getParentRoute: () => appRouteRoute,
 } as any)
-const appSettingsIndexRoute = appSettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => appRouteRoute,
-} as any)
 const appExampleIndexRoute = appExampleIndexRouteImport.update({
   id: '/example/',
   path: '/example/',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appProfileIndexRoute = appProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appSettingsIndexRoute = appSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => appRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/': typeof appIndexRoute
-  '/example': typeof appExampleIndexRoute
-  '/settings': typeof appSettingsIndexRoute
+  '/example/': typeof appExampleIndexRoute
+  '/profile/': typeof appProfileIndexRoute
+  '/settings/': typeof appSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof appIndexRoute
   '/example': typeof appExampleIndexRoute
+  '/profile': typeof appProfileIndexRoute
   '/settings': typeof appSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -58,19 +66,21 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/(app)/': typeof appIndexRoute
   '/(app)/example/': typeof appExampleIndexRoute
+  '/(app)/profile/': typeof appProfileIndexRoute
   '/(app)/settings/': typeof appSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/login' | '/' | '/example' | '/settings'
+  fullPaths: '/login' | '/' | '/example/' | '/profile/' | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/' | '/example' | '/settings'
+  to: '/login' | '/' | '/example' | '/profile' | '/settings'
   id:
     | '__root__'
     | '/(app)'
     | '/login'
     | '/(app)/'
     | '/(app)/example/'
+    | '/(app)/profile/'
     | '/(app)/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -81,18 +91,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/(app)': {
       id: '/(app)'
       path: ''
       fullPath: ''
       preLoaderRoute: typeof appRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/': {
@@ -102,18 +112,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(app)/settings/': {
-      id: '/(app)/settings/'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof appSettingsIndexRouteImport
-      parentRoute: typeof appRouteRoute
-    }
     '/(app)/example/': {
       id: '/(app)/example/'
       path: '/example'
-      fullPath: '/example'
+      fullPath: '/example/'
       preLoaderRoute: typeof appExampleIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/profile/': {
+      id: '/(app)/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof appProfileIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/settings/': {
+      id: '/(app)/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof appSettingsIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
   }
@@ -122,12 +139,14 @@ declare module '@tanstack/react-router' {
 interface appRouteRouteChildren {
   appIndexRoute: typeof appIndexRoute
   appExampleIndexRoute: typeof appExampleIndexRoute
+  appProfileIndexRoute: typeof appProfileIndexRoute
   appSettingsIndexRoute: typeof appSettingsIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
   appIndexRoute: appIndexRoute,
   appExampleIndexRoute: appExampleIndexRoute,
+  appProfileIndexRoute: appProfileIndexRoute,
   appSettingsIndexRoute: appSettingsIndexRoute,
 }
 

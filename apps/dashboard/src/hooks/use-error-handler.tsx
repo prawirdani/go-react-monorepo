@@ -1,8 +1,13 @@
-import { type APIError, parseAPIError } from "@repo/api/errors"
+import {
+  type APIError,
+  type APIErrorCodes,
+  type ErrorDescriptor,
+  type ErrorMap,
+  parseAPIError,
+} from "@repo/api/errors"
 import toast from "@repo/ui/components/toast"
 import { useCallback } from "react"
-import { REDIRECT_ERROR_CODES } from "@/lib/auth"
-import { useAuthStore } from "@/stores/auth-store"
+import { REDIRECT_ERROR_CODES, useAuthStore } from "@/stores/auth-store"
 
 // ---------- GLOBAL SINGLE-FLIGHT STATE ----------
 let redirectLatch: Promise<void> | null = null
@@ -10,38 +15,38 @@ let redirectLatch: Promise<void> | null = null
 const toastGate = new Map<string, number>()
 const TOAST_COOLDOWN_MS = 2000
 
-// ---------- PUBLIC HOOK ----------
+type ErrorHandlers = {
+  [K in APIErrorCodes]?: (e: ErrorDescriptor<K, ErrorMap[K]>) => void
+}
 
 export const useErrorHandler = () => {
   const setExpired = useAuthStore((s) => s.setExpired)
-
   return useCallback(
-    (error: unknown, override?: (e: APIError) => boolean) => {
+    (error: unknown, handlers?: ErrorHandlers) => {
       const e = parseAPIError(error)
 
       if (REDIRECT_ERROR_CODES.has(e.code)) {
         if (!redirectLatch) {
           redirectLatch = Promise.resolve().then(() => {
-            // NOTE:trigger AuthStateWatcher for redirection
             setExpired()
           })
         }
-
         return
       }
 
-      // override callback, stop if its handled
-      if (override && override(e) === true) return
+      const handler = handlers?.[e.code] as ((e: APIError) => void) | undefined
 
-      // toast fallback
+      if (handler) {
+        handler(e)
+        return
+      }
+
       const now = Date.now()
       const last = toastGate.get(e.code) ?? 0
-
       if (now - last < TOAST_COOLDOWN_MS) return
-
       toastGate.set(e.code, now)
-      // TODO: Readable/prettified message?
-      toast.error("Oops!", { description: e.message, duration: 6000 })
+      const description = e.message.charAt(0).toUpperCase() + e.message.slice(1)
+      toast.error("Oops!", { description, duration: 6000 })
     },
     [setExpired],
   )

@@ -12,13 +12,13 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"@repo/utils": "workspace:*",
-		"@repo/schemas": "workspace:*"
+		"@repo/schemas": "workspace:*",
+		"@repo/utils": "workspace:*"
 	},
 	"devDependencies": {
 		"@repo/config": "workspace:*",
-		"@types/node": "^25.0.6",
-		"typescript": "^5.9.3"
+		"@types/node": "^26.1.1",
+		"typescript": "^7.0.2"
 	},
 	"exports": {
 		".": "./src/index.ts",

@@ -6,7 +6,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@repo/ui/components/alert-dialog"
-import { Button } from "@repo/ui/components/button"
+import { Button, type ButtonProps } from "@repo/ui/components/button"
 import { useBlocker } from "@tanstack/react-router"
 import type { ComponentPropsWithoutRef, PropsWithChildren } from "react"
 import { useFormContext } from "./context"
@@ -86,9 +86,16 @@ function BlockerDialog({ isDirty, onConfirm }: BlockerDialog) {
   )
 }
 
-type SubmitButtonProps = {
-  text: string
-  className?: string
+// type SubmitButtonProps = {
+//   children: ReactNode
+//   className?: string
+// }
+
+type SubmitButtonProps = Omit<
+  ButtonProps,
+  "loading" | "type" | "disabled" | "form"
+> & {
+  disabled?: boolean // optional: allow extra disabling logic from caller
 }
 
 /**
@@ -96,20 +103,23 @@ type SubmitButtonProps = {
  * Use this when the button is outside the <form> tag or for strict form association.
  * @param text - The label to display
  */
-export function SubmitButton({ text, className }: SubmitButtonProps) {
+export function SubmitButton({
+  children,
+  disabled,
+  ...props
+}: SubmitButtonProps) {
   const { Subscribe, formId } = useFormContext()
-
   return (
     <Subscribe selector={(state) => [state.isSubmitting, state.canSubmit]}>
       {([isSubmitting, canSubmit]) => (
         <Button
-          className={className}
+          {...props}
           loading={isSubmitting}
           type="submit"
-          disabled={!canSubmit}
+          disabled={disabled || !canSubmit}
           form={formId}
         >
-          {text}
+          {children}
         </Button>
       )}
     </Subscribe>

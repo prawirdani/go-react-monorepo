@@ -99,6 +99,7 @@ export function TextField(props: TextFieldProps) {
       onBlur={field.handleBlur}
       onChange={(e) => field.handleChange(e.target.value)}
       aria-invalid={invalid}
+      autoComplete={props.autoComplete ?? "off"}
     />
   )
 }
@@ -218,10 +219,14 @@ export function FileField({ accept, ...props }: FileFieldProps) {
 }
 
 type SelectProps<T> = {
+  className?: string
   items: { value: T; label: string }[]
 }
 
-export function Select<T extends string | number>({ items }: SelectProps<T>) {
+export function Select<T extends string | number>({
+  items,
+  className,
+}: SelectProps<T>) {
   const field = useFieldContext<T>()
   const invalid = isFieldInvalid(field)
 
@@ -233,7 +238,12 @@ export function Select<T extends string | number>({ items }: SelectProps<T>) {
       onValueChange={(v) => field.handleChange(v as T)}
       items={items}
     >
-      <SelectTrigger id={field.name} name={field.name} aria-invalid={invalid}>
+      <SelectTrigger
+        className={className}
+        id={field.name}
+        name={field.name}
+        aria-invalid={invalid}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent side="bottom" alignItemWithTrigger={false}>

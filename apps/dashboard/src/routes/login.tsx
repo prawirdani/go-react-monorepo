@@ -18,8 +18,7 @@ import { useState } from "react"
 import { z } from "zod"
 import { useAppForm } from "@/components/form"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { authActions } from "@/lib/auth"
-import { useAuthStore } from "@/stores/auth-store"
+import { authActions, useAuthStore } from "@/stores/auth-store"
 
 const loginSearch = z.object({
   redirect: z.string().optional(),
@@ -71,20 +70,17 @@ function LoginForm({ className }: { className?: string }) {
     onSubmit: async ({ value }) => {
       try {
         await authActions.login(value)
-        router.invalidate()
-        router.navigate({ to: search.redirect || "/", replace: true })
+        await router.invalidate()
+        await router.navigate({ to: search.redirect || "/", replace: true })
       } catch (error) {
         // if (error instanceof ForbiddenAccessError) {
         //   setRootError("Akun Anda tidak memiliki akses ke Dashboard")
         //   return
         // }
-
-        handleError(error, (apiErr) => {
-          if (apiErr.code === "AUTH_CREDENTIALS") {
+        handleError(error, {
+          AUTH_CREDENTIALS: () => {
             setRootError("Email atau kata sandi Anda salah")
-            return true
-          }
-          return false
+          },
         })
       }
     },
@@ -131,7 +127,7 @@ function LoginForm({ className }: { className?: string }) {
           </div>
         )}
 
-        <form.SubmitButton className="w-full" text="Masuk" />
+        <form.SubmitButton className="w-full">Masuk</form.SubmitButton>
       </form.Root>
     </form.AppForm>
   )

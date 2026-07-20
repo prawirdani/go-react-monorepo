@@ -9,22 +9,32 @@ export const isFieldInvalid = (field: AnyFieldApi) => {
   return field.state.meta.isTouched && field.state.meta.errors.length > 0
 }
 
-// 1. Keep your BulkErrors based on buildErrorMap
 type BulkErrors = ReturnType<typeof buildErrorMap>
 
-// 2. Make SingularError generic so 'field' is checked against the form data
 type SingularError<TData> = {
   field: DeepKeys<TData> // This provides the "name" | "options[0].name" type safety
   message: string
 }
+type FieldErrorMap<TData> = Partial<Record<DeepKeys<TData>, string>>
 
-// 3. The Union type also becomes generic
-type FormError<TData> = BulkErrors | SingularError<TData>
+type FormError<TData> = BulkErrors | SingularError<TData> | FieldErrorMap<TData>
 
 function isSingularError<TData>(
   error: FormError<TData>,
 ): error is SingularError<TData> {
-  return typeof error === "object" && error !== null && "field" in error
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "field" in error &&
+    "message" in error &&
+    typeof (error as any).message === "string" &&
+    Object.keys(error).length === 2
+  )
+}
+
+function isFieldErrorMap<TData>(error: object): error is FieldErrorMap<TData> {
+  // every value is a plain string -> flat map, not the {message} shape buildErrorMap produces
+  return Object.values(error).every((v) => typeof v === "string")
 }
 
 export type FormApiWithFields<TData> = FormApi<
@@ -46,14 +56,23 @@ export const setFormErrors = <TData>(
   formApi: FormApiWithFields<TData>,
   error: FormError<TData>,
 ) => {
-  const fields = isSingularError(error)
-    ? { [error.field]: { message: error.message } }
-    : error
+  let fields: Record<string, { message: string | string[] }>
+
+  if (isSingularError(error)) {
+    fields = { [error.field]: { message: error.message } }
+  } else if (isFieldErrorMap<TData>(error)) {
+    fields = Object.fromEntries(
+      Object.entries(error).map(([field, message]) => [
+        field,
+        { message: message as string },
+      ]),
+    )
+  } else {
+    fields = error as BulkErrors
+  }
 
   formApi.setErrorMap({
-    onSubmit: {
-      fields: fields as any,
-    },
+    onSubmit: { fields: fields as any },
   })
 }
 

@@ -37,8 +37,14 @@ export function Page(props: PageProps) {
     props
 
   return (
-    <div className={cn("flex-1 flex flex-col gap-4", className)} {...rest}>
-      <div className="mb-4 lg:mb-6">
+    <div
+      className={cn(
+        "flex-1 flex flex-col gap-4 space-y-4 lg:space-y-6",
+        className,
+      )}
+      {...rest}
+    >
+      <div>
         {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
         <h1 className="scroll-m-20 font-bold tracking-tight text-xl md:text-2xl lg:text-3xl leading-8 lg:leading-10">
           {title}
@@ -60,7 +66,7 @@ type BreadcrumbItem = {
 function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   return (
     <Breadcrumb className="mb-2">
-      <BreadcrumbList className="!gap-1.5">
+      <BreadcrumbList className="gap-1.5!">
         {items.map((item, idx) => (
           <Fragment key={item.name}>
             <BreadcrumbItemComp>

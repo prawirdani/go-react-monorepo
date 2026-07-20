@@ -6,10 +6,11 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogPrimitive,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@repo/ui/components/alert-dialog"
-import { Avatar, AvatarFallback } from "@repo/ui/components/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar"
 import { Button } from "@repo/ui/components/button"
 import {
   DropdownMenu,
@@ -21,11 +22,13 @@ import {
 import { useSidebar } from "@repo/ui/components/sidebar"
 import { ThemeToggler } from "@repo/ui/components/theme-toggler"
 import { Burger, Logout, User } from "@repo/ui/icons"
-import { useNavigate } from "@tanstack/react-router"
-import { useState } from "react"
+import { Link, useNavigate } from "@tanstack/react-router"
+import { useEffect, useState } from "react"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { authActions } from "@/lib/auth"
-import { useAuthStore } from "@/stores/auth-store"
+import { imageUrl } from "@/lib/api"
+import { authActions, useAuthStore } from "@/stores/auth-store"
+
+const dialogHandler = AlertDialogPrimitive.createHandle()
 
 export function AppHeader() {
   const { toggleSidebar } = useSidebar()
@@ -47,35 +50,58 @@ export function AppHeader() {
 function AvatarSection() {
   const user = useAuthStore((s) => s.user)
 
-  // HACK: null guard and logout race condition temp fix
-  const displayUser = user ?? { name: "…", role: "…" }
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!user) {
+      navigate({
+        to: "/login",
+        replace: true,
+      })
+    }
+  }, [user, navigate])
+
+  if (!user) return null
 
   return (
-    <AlertDialog>
+    <AlertDialog handle={dialogHandler}>
       <DropdownMenu>
         <DropdownMenuTrigger>
-          <Avatar className="size-9">
-            <AvatarFallback>{displayUser.name.charAt(0)}</AvatarFallback>
+          <Avatar className="size-9" key={user.profile_picture || "fallback"}>
+            {user.profile_picture && (
+              <AvatarImage
+                src={imageUrl.profile(user.profile_picture)}
+                alt="profile picture"
+              />
+            )}
+            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="min-w-56">
           <div className="flex items-center gap-2 p-1.5">
-            <Avatar size="lg">
-              <AvatarFallback>{displayUser.name.charAt(0)}</AvatarFallback>
+            <Avatar size="lg" key={user.profile_picture || "fallback"}>
+              {user.profile_picture && (
+                <AvatarImage
+                  src={imageUrl.profile(user.profile_picture)}
+                  alt="profile picture"
+                />
+              )}
+              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="text-sm leading-4">
-              <p className="font-medium">{displayUser.name}</p>
-              {/* <p className="text-muted-foreground">{displayUser.role}</p> */}
+              <p className="font-medium">{user.name}</p>
             </div>
           </div>
           <DropdownMenuSeparator />
           <ThemeToggler className="w-full justify-between font-normal h-10" />
           <DropdownMenuSeparator />
           <div className="[&_[data-slot=dropdown-menu-item]]:py-2 [&_[data-slot=dropdown-menu-item]]:cursor-pointer">
-            <DropdownMenuItem>
-              <User />
-              Profil
-            </DropdownMenuItem>
+            <Link to="/profile">
+              <DropdownMenuItem>
+                <User />
+                Profil
+              </DropdownMenuItem>
+            </Link>
 
             <AlertDialogTrigger className="w-full">
               <DropdownMenuItem>
@@ -94,38 +120,33 @@ function AvatarSection() {
 function LogoutConfirmationDialog() {
   const [loading, setLoading] = useState(false)
 
-  const navigate = useNavigate()
   const handleError = useErrorHandler()
 
   const handleLogout = async () => {
     setLoading(true)
     try {
       await authActions.logout()
-      navigate({ to: "/login" })
     } catch (e) {
       handleError(e)
     }
     setLoading(false)
+    dialogHandler.close()
   }
 
   return (
     <AlertDialogContent className="max-sm:min-w-[90%] sm:w-fit">
       <AlertDialogHeader>
-        <AlertDialogTitle>Konfirmasi Keluar</AlertDialogTitle>
-        <AlertDialogDescription className="">
+        <AlertDialogTitle>Keluar</AlertDialogTitle>
+        <AlertDialogDescription>
           Anda akan keluar dari akun ini. Anda perlu masuk kembali untuk
           mengakses aplikasi.
         </AlertDialogDescription>
       </AlertDialogHeader>
-      <AlertDialogFooter className="max-sm:[&_button]:flex-1 [&_button]:min-w-24">
+      <AlertDialogFooter>
         <AlertDialogCancel>Batal</AlertDialogCancel>
-        <AlertDialogAction
-          render={() => (
-            <Button onClick={handleLogout} loading={loading}>
-              Ya
-            </Button>
-          )}
-        />
+        <AlertDialogAction onClick={handleLogout} loading={loading}>
+          Ya
+        </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   )

@@ -11,8 +11,21 @@ export interface TokenProvider {
 }
 
 interface FetchOptions extends RequestInit {
-	withAuth?: boolean;
-	skipRefresh?: boolean; // Prevent infinite refresh loops
+	/**
+	 * Prevents the client from attaching an Authorization header.
+	 *
+	 * By default, authenticated requests automatically include the
+	 * current access token when available.
+	 */
+	noAuth?: boolean;
+
+	/**
+	 * Skips the automatic access token refresh mechanism.
+	 *
+	 * Primarily used for refresh token requests themselves to prevent
+	 * infinite refresh/retry loops when authentication fails.
+	 */
+	skipRefresh?: boolean;
 }
 
 type APIRequestFn = {
@@ -30,17 +43,17 @@ export interface APIClientConfig {
 	baseURL: string;
 	tokenProvider?: TokenProvider;
 	refreshEndpoint: string;
-	onTokenRefreshed?: (tokens: TokenPair) => void; // Callback for token updates
+	onTokenRefreshed?: (tokens: TokenPair) => Promise<void>; // Callback for token updates
 	onTokenRefreshFailed?: () => void; // Callback for handling logout
 }
 
 export class APIClient {
+	private refreshPromise: Promise<Response> | null = null;
 	private baseURL: string;
 	private tokenProvider?: TokenProvider;
 	private refreshEndpoint: string;
-	private refreshPromise: Promise<Response> | null = null;
 	private onTokenRefreshFailed?: () => void;
-	private onTokenRefreshed?: (tokens: TokenPair) => void;
+	private onTokenRefreshed?: (tokens: TokenPair) => Promise<void>;
 
 	constructor(conf: APIClientConfig) {
 		this.baseURL = conf.baseURL.replace(/\/$/, ""); // Remove trailing slash
@@ -58,7 +71,10 @@ export class APIClient {
 
 	/** Fetch with refresh token interceptor. */
 	public async Fetch(url: string, init?: FetchOptions): Promise<Response> {
-		const options = await this.prepareOptions(init);
+		const options = await this.prepareOptions({
+			...init,
+			credentials: "include",
+		});
 
 		const response = await fetch(url, options);
 
@@ -67,7 +83,7 @@ export class APIClient {
 		const isRetried = headers.get(RETRY_HEADER) === "true";
 		if (
 			response.status === 401 &&
-			init?.withAuth &&
+			!init?.noAuth &&
 			!isRetried &&
 			!init?.skipRefresh
 		) {
@@ -102,7 +118,7 @@ export class APIClient {
 		this.onTokenRefreshFailed = fn;
 	}
 
-	public setOnTokenRefreshed(fn: (tokens: TokenPair) => void) {
+	public setOnTokenRefreshed(fn: (tokens: TokenPair) => Promise<void>) {
 		this.onTokenRefreshed = fn;
 	}
 
@@ -157,8 +173,8 @@ export class APIClient {
 			headers.set("Content-Type", "application/json");
 		}
 
-		// Inject token to Authorization Headers (mobile case)
-		if (init?.withAuth && this.tokenProvider) {
+		// Inject token to Authorization Headers (non web base)
+		if (!init?.noAuth && this.tokenProvider) {
 			const accessToken = await this.tokenProvider.getAccessToken();
 			if (accessToken) {
 				headers.set("Authorization", `Bearer ${accessToken}`);
@@ -168,7 +184,6 @@ export class APIClient {
 		return {
 			...init,
 			headers,
-			credentials: init?.withAuth ? "include" : init?.credentials,
 		};
 	}
 

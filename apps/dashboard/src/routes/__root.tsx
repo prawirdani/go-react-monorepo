@@ -6,19 +6,20 @@ import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { AuthStateWatcher } from "@/components/auth-state-watcher"
 import { InternalServerError, NotFound } from "@/components/route-errors"
-import { authActions } from "@/lib/auth"
-import { useAuthStore } from "@/stores/auth-store"
+import { userQueries } from "@/lib/api"
+import { authActions, useAuthStore } from "@/stores/auth-store"
 
 type RouterContext = {
   queryClient: QueryClient
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  beforeLoad: async () => {
+  beforeLoad: async ({ context }) => {
     const authStatus = useAuthStore.getState().status
     if (authStatus === "initial") {
       try {
         await authActions.identifyUser()
+        await context.queryClient.ensureQueryData(userQueries.currentUser)
       } catch (_) {}
     }
 
