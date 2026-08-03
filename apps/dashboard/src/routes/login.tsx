@@ -11,12 +11,13 @@ import { cn } from "@repo/ui/lib/utils"
 import {
   createFileRoute,
   getRouteApi,
+  Link,
   redirect,
   useRouter,
 } from "@tanstack/react-router"
-import { useState } from "react"
 import { z } from "zod"
-import { useAppForm } from "@/components/form"
+import { setFormErrors, setFormRootError, useAppForm } from "@/components/form"
+import { RootError } from "@/components/form/fields"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { authActions, useAuthStore } from "@/stores/auth-store"
 
@@ -53,8 +54,6 @@ function RouteComponent() {
 }
 
 function LoginForm({ className }: { className?: string }) {
-  const [rootError, setRootError] = useState<string | null>(null)
-
   const search = getRouteApi("/login").useSearch()
   const router = useRouter()
   const handleError = useErrorHandler()
@@ -67,19 +66,16 @@ function LoginForm({ className }: { className?: string }) {
     validators: {
       onSubmit: loginSchema,
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value, formApi }) => {
       try {
         await authActions.login(value)
         await router.invalidate()
         await router.navigate({ to: search.redirect || "/", replace: true })
       } catch (error) {
-        // if (error instanceof ForbiddenAccessError) {
-        //   setRootError("Akun Anda tidak memiliki akses ke Dashboard")
-        //   return
-        // }
         handleError(error, {
+          VALIDATION: (e) => setFormErrors(formApi, e.details),
           AUTH_CREDENTIALS: () => {
-            setRootError("Email atau kata sandi Anda salah")
+            setFormRootError(formApi, "Email atau kata sandi Anda salah")
           },
         })
       }
@@ -108,7 +104,15 @@ function LoginForm({ className }: { className?: string }) {
             name="password"
             children={(field) => (
               <field.Container>
-                <field.Label text="Kata Sandi" required />
+                <div className="flex justify-between items-center">
+                  <field.Label text="Kata Sandi" required />
+                  <Link
+                    to="/auth/forgot-password"
+                    className="hover:underline inline text-blue-600 cursor-pointer hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Lupa password?
+                  </Link>
+                </div>
                 <field.TextField
                   placeholder="Masukan kata sandi Anda"
                   type="password"
@@ -120,12 +124,14 @@ function LoginForm({ className }: { className?: string }) {
           />
         </FieldGroup>
 
-        {rootError && (
-          <div className="outline outline-destructive rounded-sm p-2 flex gap-2 items-center bg-destructive/2">
-            <AlertTriangle className="text-destructive" />
-            <span className="text-destructive">{rootError}</span>
-          </div>
-        )}
+        <RootError>
+          {(error) => (
+            <div className="outline outline-destructive rounded-sm p-2 flex gap-2 items-center bg-destructive/2">
+              <AlertTriangle className="text-destructive" />
+              <span className="text-destructive">{error}</span>
+            </div>
+          )}
+        </RootError>
 
         <form.SubmitButton className="w-full">Masuk</form.SubmitButton>
       </form.Root>

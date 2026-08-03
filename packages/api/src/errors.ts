@@ -1,3 +1,5 @@
+export type ValidationErrorDetails = Partial<Record<string, string[]>>; // Server side validation error, "key/field": ["errors"].
+
 export type ErrorDescriptor<T extends string, TD = null> = {
 	readonly code: T;
 	message: string;
@@ -20,7 +22,7 @@ export type ErrorMap = {
 	INTERNAL: null;
 	SERVER_TIMEOUT: null;
 	REQ_MALFORMED_JSON: null;
-	VALIDATION: Partial<Record<string, string[]>>;
+	VALIDATION: ValidationErrorDetails;
 	RESOURCE_NOT_FOUND: null;
 
 	// Upload
@@ -42,6 +44,12 @@ export type ErrorMap = {
 	AUTH_CREDENTIALS: null;
 	AUTH_EXPIRED: null;
 	AUTH_INVALID_SESSION: null;
+	AUTH_INVALID_RECOV_TOKEN: null;
+	AUTH_RECOVERY_THROTTLED: {
+		allowed: boolean;
+		/** ISO 8601 date-time when another request is allowed. */
+		retry_after: string;
+	};
 };
 
 export type APIError = {

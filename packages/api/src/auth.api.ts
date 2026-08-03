@@ -7,6 +7,7 @@ import type {
 	TokenPair,
 } from "@repo/schemas/auth";
 import type { User } from "@repo/schemas/user";
+import { parseEpoch } from "@repo/utils/date";
 import type { APIClient } from "./client";
 
 export class AuthAPI {
@@ -46,12 +47,33 @@ export class AuthAPI {
 	}
 
 	/**
-	 * Request password recovery (forgot password).
+	 * Requests a password recovery email.
+	 *
+	 * @returns An object containing `retry_after`, represented timestamp with ISO 8601 date-time when another request is allowed.
 	 */
-	async recoverPassword(payload: RecoverPasswordInput): Promise<void> {
-		await this.client.Post("/api/auth/password/recover", {
-			body: JSON.stringify(payload),
-		});
+	async recoverPassword(
+		payload: RecoverPasswordInput,
+	): Promise<{ retry_after: Date }> {
+		const res = await this.client.Fetch(
+			"http://localhost:8080/api/auth/password/recover",
+			{
+				method: "POST",
+				credentials: "include",
+				body: JSON.stringify(payload),
+			},
+		);
+
+		if (!res.ok) {
+			const errorBody = await res.json().catch((e) => e);
+			throw errorBody;
+		}
+
+		const retryAfter = Number(res.headers.get("retry-after"));
+		const date = parseEpoch(retryAfter);
+
+		return {
+			retry_after: date ?? new Date(0),
+		};
 	}
 
 	/**
@@ -61,7 +83,7 @@ export class AuthAPI {
 		token: string,
 	): Promise<PasswordRecoveryToken> {
 		const res = await this.client.Get<PasswordRecoveryToken>(
-			`/password/recover/${token}`,
+			`/api/auth/password/recover/${token}`,
 		);
 		return res.data;
 	}

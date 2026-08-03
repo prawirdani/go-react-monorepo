@@ -30,13 +30,13 @@ import { Switch, type SwitchProps } from "@repo/ui/components/switch"
 import { Textarea } from "@repo/ui/components/textarea"
 import { X } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
+import type { AnyFieldApi } from "@tanstack/react-form"
 import {
   type ComponentPropsWithoutRef,
   type PropsWithChildren,
   useMemo,
 } from "react"
-import { useFieldContext } from "./context"
-import { isFieldInvalid } from "./utils"
+import { useFieldContext, useFormContext } from "./context"
 
 type ContainerProps = PropsWithChildren<
   ComponentPropsWithoutRef<"div"> & {
@@ -343,4 +343,36 @@ export function Errors() {
   if (!invalid) return null
 
   return <FieldErrorComp errors={field.state.meta.errors} />
+}
+
+type RootErrorProps = {
+  children?: (error: string) => React.ReactNode
+}
+
+export function RootError({ children }: RootErrorProps) {
+  const form = useFormContext()
+
+  return (
+    <form.Subscribe selector={(state) => state.errorMap.onSubmit}>
+      {(error) => {
+        if (typeof error !== "string") {
+          return null
+        }
+
+        if (children) {
+          return children(error)
+        }
+
+        return (
+          <span className="text-destructive text-sm" role="alert">
+            {error}
+          </span>
+        )
+      }}
+    </form.Subscribe>
+  )
+}
+
+const isFieldInvalid = (field: AnyFieldApi) => {
+  return field.state.meta.isTouched && field.state.meta.errors.length > 0
 }

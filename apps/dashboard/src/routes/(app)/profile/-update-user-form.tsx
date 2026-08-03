@@ -4,7 +4,7 @@ import { FieldGroup } from "@repo/ui/components/field"
 import { Separator } from "@repo/ui/components/separator"
 import toast from "@repo/ui/components/toast"
 import { useRouter } from "@tanstack/react-router"
-import { buildErrorMap, useAppForm } from "@/components/form"
+import { setFormErrors, useAppForm } from "@/components/form"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { userAPI } from "@/lib/api"
 import { authActions } from "@/stores/auth-store"
@@ -43,11 +43,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
         onClose()
       } catch (error) {
         handleError(error, {
-          VALIDATION: (e) => {
-            formApi.setErrorMap({
-              onSubmit: { fields: buildErrorMap(e.details) },
-            })
-          },
+          VALIDATION: (e) => setFormErrors(formApi, e.details),
         })
       }
     },

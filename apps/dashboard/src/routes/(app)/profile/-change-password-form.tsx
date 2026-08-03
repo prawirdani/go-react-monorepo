@@ -30,6 +30,7 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
         form.reset()
       } catch (error) {
         handleError(error, {
+          VALIDATION: (e) => setFormErrors(formApi, e.details),
           AUTH_CREDENTIALS: () => {
             setFormErrors(formApi, {
               password: "Kata sandi Anda tidak cocok",

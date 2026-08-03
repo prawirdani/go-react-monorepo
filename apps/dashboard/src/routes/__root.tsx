@@ -6,7 +6,6 @@ import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { AuthStateWatcher } from "@/components/auth-state-watcher"
 import { InternalServerError, NotFound } from "@/components/route-errors"
-import { userQueries } from "@/lib/api"
 import { authActions, useAuthStore } from "@/stores/auth-store"
 
 type RouterContext = {
@@ -14,19 +13,13 @@ type RouterContext = {
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  beforeLoad: async ({ context }) => {
+  beforeLoad: async () => {
     const authStatus = useAuthStore.getState().status
     if (authStatus === "initial") {
       try {
         await authActions.identifyUser()
-        await context.queryClient.ensureQueryData(userQueries.currentUser)
       } catch (_) {}
     }
-
-    // TODO: Redirect to POS APP endpoint
-    // const user = authStore.getState().user // fresh, updated value
-    // if (user && !hasPermissionToAccess(user)) {
-    // }
   },
   component: () => <RootComponent />,
   notFoundComponent: () => <NotFound />,

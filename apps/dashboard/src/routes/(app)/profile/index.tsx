@@ -74,7 +74,7 @@ function ProfileSection() {
               <p data-slot="value">{user.phone ?? "-"}</p>
               <Separator className="col-span-2" />
               <p data-slot="key">Jenis Kelamin</p>
-              <p data-slot="value" className="font-mono">
+              <p data-slot="value">
                 {user.gender
                   ? (GenderLabels[user.gender] ?? GenderLabels.O)
                   : "-"}
