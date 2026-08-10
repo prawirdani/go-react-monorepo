@@ -24,7 +24,10 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
     },
     onSubmit: async ({ value, formApi }) => {
       try {
-        await authAPI.changePassword(value)
+        await authAPI.changePassword({
+          password: value.password,
+          new_password: value.new_password,
+        })
         toast.success("Kata sandi berhasil diperbarui!")
         onClose()
         form.reset()

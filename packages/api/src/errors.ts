@@ -64,6 +64,21 @@ export type ErrValidation<T = Record<string, string[]>> = ErrorDescriptor<
 	Partial<Record<keyof T, string[]>>
 >;
 
+type ServerErrorEnvelope = { code: string; message: string; details: unknown };
+
+function extractErrorEnvelope(body: unknown): ServerErrorEnvelope | null {
+	if (typeof body !== "object" || body === null) return null;
+	const candidate =
+		"error" in body &&
+		typeof (body as { error?: unknown }).error === "object" &&
+		(body as { error?: unknown }).error !== null
+			? (body as { error: unknown }).error
+			: body;
+	if (typeof candidate !== "object" || candidate === null) return null;
+	if (typeof (candidate as { code?: unknown }).code !== "string") return null;
+	return candidate as unknown as ServerErrorEnvelope;
+}
+
 export function parseAPIError(err: unknown): APIError {
 	if (isNetworkError(err)) {
 		return {
@@ -73,24 +88,13 @@ export function parseAPIError(err: unknown): APIError {
 			details: null,
 		};
 	}
-	if (isAPIErrorResponse(err)) return processAPIError(err.error);
+	const envelope = extractErrorEnvelope(err);
+	if (envelope) return processAPIError(envelope);
 	return {
 		code: "UNKNOWN_ERROR",
 		message: "Terjadi kesalahan. Silahkan ulangi beberapa saat lagi.",
 		details: err,
 	};
-}
-
-function isAPIErrorResponse(body: unknown): body is { error: APIError } {
-	return (
-		typeof body === "object" &&
-		body !== null &&
-		"error" in body &&
-		typeof (body as { error: unknown }).error === "object" &&
-		(body as { error: unknown }).error !== null &&
-		"code" in (body as { error: object }).error &&
-		typeof (body as { error: { code: unknown } }).error.code === "string"
-	);
 }
 
 function isNetworkError(err: unknown): err is TypeError {
@@ -105,7 +109,19 @@ const PrettyMessageDict: Partial<Record<APIErrorCodes, string>> = {
 	SERVER_TIMEOUT: "Server sedang sibuk, coba lagi beberapa saat.",
 };
 
-function processAPIError(err: APIError): APIError {
-	const message = PrettyMessageDict[err.code];
-	return message ? { ...err, message } : err;
+function processAPIError(err: ServerErrorEnvelope): APIError {
+	let details: unknown = err.details ?? null;
+	// Backend VALIDATION details = { errors: [...], details: { field: [msg] } }.
+	// The app consumes only the field-message map; unwrap it here so callers
+	// keep passing e.details straight into setFormErrors.
+	if (
+		err.code === "VALIDATION" &&
+		typeof details === "object" &&
+		details !== null &&
+		"details" in details
+	) {
+		details = (details as { details: unknown }).details;
+	}
+	const message = PrettyMessageDict[err.code as APIErrorCodes] ?? err.message;
+	return { code: err.code, message, details } as unknown as APIError;
 }

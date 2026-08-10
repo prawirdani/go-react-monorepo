@@ -1,9 +1,7 @@
 import { resetPasswordSchema } from "@repo/schemas/auth"
 import { Card, CardContent } from "@repo/ui/components/card"
 import { FieldGroup } from "@repo/ui/components/field"
-import { Skeleton } from "@repo/ui/components/skeleton"
 import { Check, ClockX } from "@repo/ui/icons"
-import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, redirect } from "@tanstack/react-router"
 import z from "zod"
 import { setFormErrors, useAppForm } from "@/components/form"
@@ -22,30 +20,36 @@ export const Route = createFileRoute("/auth/reset-password")({
     }
   },
   loaderDeps: ({ search }) => ({ token: search.token }),
-  loader: ({ deps: { token } }) => {
+  loader: async ({ deps: { token }, context }) => {
+    let invalid = false
+    try {
+      const data = await context.queryClient.ensureQueryData({
+        queryKey: ["reset-password-token", token],
+        queryFn: () => authAPI.getPasswordRecoveryToken(token),
+        retry: false,
+      })
+
+      const isExpired = data
+        ? new Date(data.expires_at).getTime() <= Date.now()
+        : false
+      const isUsed = data ? data.used_at !== null : false
+      invalid = isExpired || isUsed
+    } catch (error) {
+      invalid = true
+      console.error(error)
+    }
+
     return {
       token,
+      invalid,
     }
   },
-
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const { token } = Route.useLoaderData()
+  const { token, invalid } = Route.useLoaderData()
   const handleError = useErrorHandler()
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["reset-password-token", token],
-    queryFn: () => authAPI.getPasswordRecoveryToken(token),
-    retry: false,
-  })
-
-  const isExpired = data
-    ? new Date(data.expires_at).getTime() <= Date.now()
-    : false
-  const isUsed = data ? data.used_at !== null : false
-  const invalid = isError || isExpired || isUsed
 
   const form = useAppForm({
     defaultValues: {
@@ -58,7 +62,10 @@ function RouteComponent() {
     },
     onSubmit: async ({ value, formApi }) => {
       try {
-        await authAPI.resetPassword(value)
+        await authAPI.resetPassword({
+          token: value.token,
+          new_password: value.new_password,
+        })
       } catch (error) {
         handleError(error, {
           VALIDATION: (e) => setFormErrors(formApi, e.details),
@@ -72,9 +79,7 @@ function RouteComponent() {
       <p className="text-xl font-bold text-center">Atur Ulang Kata Sandi</p>
       <Card className="w-full md:w-[60%] xl:w-[30%] [--card-spacing:--spacing(6)]!">
         <CardContent className="flex-1 flex flex-col">
-          {isLoading ? (
-            <FormSkeleton />
-          ) : invalid ? (
+          {invalid ? (
             <InvalidContent />
           ) : (
             <form.Subscribe selector={(state) => state.isSubmitSuccessful}>
@@ -126,22 +131,6 @@ function RouteComponent() {
           )}
         </CardContent>
       </Card>
-    </div>
-  )
-}
-
-function FormSkeleton() {
-  return (
-    <div className="space-y-8 [&>div]:space-y-2">
-      <div>
-        <Skeleton className="w-1/3 h-4" />
-        <Skeleton className="w-full h-9" />
-      </div>
-      <div>
-        <Skeleton className="w-1/2 h-4" />
-        <Skeleton className="w-full h-9" />
-      </div>
-      <Skeleton className="w-full h-9" />
     </div>
   )
 }

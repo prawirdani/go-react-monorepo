@@ -114,6 +114,10 @@ export class APIClient {
 		this.baseURL = baseURL.replace(/\/$/, "");
 	}
 
+	public getBaseURL(): string {
+		return this.baseURL;
+	}
+
 	public setOnUnauthorized(fn: () => void) {
 		this.onTokenRefreshFailed = fn;
 	}

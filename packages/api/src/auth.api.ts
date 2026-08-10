@@ -55,7 +55,7 @@ export class AuthAPI {
 		payload: RecoverPasswordInput,
 	): Promise<{ retry_after: Date }> {
 		const res = await this.client.Fetch(
-			"http://localhost:8080/api/auth/password/recover",
+			`${this.client.getBaseURL()}/api/auth/password/recover`,
 			{
 				method: "POST",
 				credentials: "include",

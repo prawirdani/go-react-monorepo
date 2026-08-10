@@ -41,13 +41,20 @@ export const resetPasswordSchema = z
 	});
 
 export type TokenPair = {
-	accessToken: string;
-	refreshToken: string;
+	access_token: string;
+	refresh_token: string;
 };
 export type LoginInput = z.infer<typeof loginSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type RecoverPasswordInput = z.infer<typeof recoverPasswordSchema>;
-export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+// API payloads exclude client-side new_password_confirmation (form schema only)
+export type ChangePasswordInput = {
+	password: string;
+	new_password: string;
+};
+export type ResetPasswordInput = {
+	token: string;
+	new_password: string;
+};
 export type PasswordRecoveryToken = {
 	expires_at: string;
 	used_at: string | null;
