@@ -1,9 +1,12 @@
+import { useTranslations } from "@repo/i18n"
 import { Button } from "@repo/ui/components/button"
 import { MoodPuzzled, ServerOff } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { Link } from "@tanstack/react-router"
 
 export function NotFound({ fullPage = true }: { fullPage?: boolean }) {
+  const t = useTranslations("app")
+
   return (
     <div
       className={cn(
@@ -19,12 +22,12 @@ export function NotFound({ fullPage = true }: { fullPage?: boolean }) {
           className="size-9 text-muted-foreground"
           strokeWidth={1.5}
         />
-        <h1 className="panel-label">404 / Tidak ditemukan</h1>
+        <h1 className="panel-label">{t("errors.notFound.heading")}</h1>
         <p className="text-sm text-muted-foreground">
-          Halaman yang Anda cari tidak ada atau sudah dipindahkan.
+          {t("errors.notFound.message")}
         </p>
         <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
-          Kembali ke konsol
+          {t("errors.notFound.action")}
         </Button>
       </div>
     </div>
@@ -32,6 +35,8 @@ export function NotFound({ fullPage = true }: { fullPage?: boolean }) {
 }
 
 export function InternalServerError({ error: _ }: { error: unknown }) {
+  const t = useTranslations("app")
+
   return (
     <div className="grid min-h-svh place-items-center bg-background p-6">
       <div
@@ -39,12 +44,12 @@ export function InternalServerError({ error: _ }: { error: unknown }) {
         className="flex w-full max-w-xs flex-col items-center gap-4 text-center"
       >
         <ServerOff className="size-9 text-muted-foreground" strokeWidth={1.5} />
-        <h1 className="panel-label">500 / Kesalahan server</h1>
+        <h1 className="panel-label">{t("errors.server.heading")}</h1>
         <p className="text-sm text-muted-foreground">
-          Terjadi kesalahan saat memuat halaman. Coba lagi beberapa saat.
+          {t("errors.server.message")}
         </p>
         <Button variant="outline" onClick={() => window.location.reload()}>
-          Muat ulang
+          {t("errors.server.action")}
         </Button>
       </div>
     </div>

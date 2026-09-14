@@ -1,4 +1,5 @@
-import { GenderLabels } from "@repo/schemas/user"
+import { useTranslations } from "@repo/i18n"
+import type { Gender } from "@repo/schemas/user"
 import { Button } from "@repo/ui/components/button"
 import { Edit, Email, Password } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
@@ -15,10 +16,18 @@ import {
   PanelRows,
   StateBadge,
 } from "@/components/layout/panel"
+import type { MessageKey } from "@/components/layout/sidebar-nav"
 import { useAuthStore } from "@/stores/auth-store"
 import { ChangePasswordForm } from "./-change-password-form"
 import { ProfilePicture } from "./-profile-picture"
 import { UpdateUserForm } from "./-update-user-form"
+
+/** Gender labels live in the app catalog, keyed by the schema's Gender values. */
+const GENDER_LABEL_KEYS = {
+  M: "profile.genderOptions.m",
+  F: "profile.genderOptions.f",
+  O: "profile.genderOptions.o",
+} as const satisfies Record<Gender, MessageKey>
 
 export const Route = createFileRoute("/(app)/profile/")({
   loader: () => {
@@ -34,11 +43,10 @@ export const Route = createFileRoute("/(app)/profile/")({
 })
 
 function RouteComponent() {
+  const t = useTranslations("app")
+
   return (
-    <Page
-      title="Profil"
-      description="Identitas akun dan pengaturan keamanannya."
-    >
+    <Page title={t("profile.title")} description={t("profile.description")}>
       <PanelGrid className="lg:grid-cols-12">
         <IdentityPanel className="animate-panel-in lg:col-span-5" />
         <SecurityPanel className="lg:col-span-7" />
@@ -50,18 +58,19 @@ function RouteComponent() {
 function IdentityPanel({ className }: { className?: string }) {
   const user = Route.useLoaderData()
   const [showForm, setShowForm] = useState(false)
+  const t = useTranslations("app")
 
   return (
     <Panel className={className}>
       <PanelHeader
-        title="Identitas"
+        title={t("profile.identity.panel")}
         aside={
           <Button
             variant="outline"
             size="icon-sm"
             hidden={showForm}
             onClick={() => setShowForm(true)}
-            aria-label="Ubah identitas"
+            aria-label={t("profile.identity.editLabel")}
           >
             <Edit />
           </Button>
@@ -86,15 +95,18 @@ function IdentityPanel({ className }: { className?: string }) {
               </div>
             </div>
             <PanelRows className="border-t border-border">
-              <PanelRow label="Nama" value={user.name} mono={false} />
-              <PanelRow label="No Handphone" value={user.phone ?? "-"} />
               <PanelRow
-                label="Jenis Kelamin"
-                value={
-                  user.gender
-                    ? (GenderLabels[user.gender] ?? GenderLabels.O)
-                    : "-"
-                }
+                label={t("profile.identity.name")}
+                value={user.name}
+                mono={false}
+              />
+              <PanelRow
+                label={t("profile.identity.phone")}
+                value={user.phone ?? "-"}
+              />
+              <PanelRow
+                label={t("profile.identity.gender")}
+                value={user.gender ? t(GENDER_LABEL_KEYS[user.gender]) : "-"}
                 mono={false}
               />
             </PanelRows>
@@ -108,13 +120,14 @@ function IdentityPanel({ className }: { className?: string }) {
 function SecurityPanel({ className }: { className?: string }) {
   const user = Route.useLoaderData()
   const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const t = useTranslations("app")
 
   return (
     <Panel className={className}>
-      <PanelHeader title="Keamanan Akun" />
+      <PanelHeader title={t("profile.security.panel")} />
       <PanelBody className="flex-1">
         <p className="px-3 pt-3 pb-3 text-sm text-muted-foreground">
-          Kelola kata sandi dan alamat email untuk menjaga keamanan akun Anda.
+          {t("profile.security.description")}
         </p>
 
         <div className="divide-y divide-border border-t border-border">
@@ -122,7 +135,9 @@ function SecurityPanel({ className }: { className?: string }) {
             icon={<Email className="size-4" />}
             action={
               <Button variant="outline" size="sm" disabled={showPasswordForm}>
-                {user.email_verified_at ? "Ubah email" : "Verifikasi"}
+                {user.email_verified_at
+                  ? t("profile.security.changeEmail")
+                  : t("profile.security.verifyEmail")}
               </Button>
             }
           >
@@ -130,9 +145,13 @@ function SecurityPanel({ className }: { className?: string }) {
               {user.email}
             </span>
             {user.email_verified_at ? (
-              <StateBadge tone="success">Terverifikasi</StateBadge>
+              <StateBadge tone="success">
+                {t("profile.security.verified")}
+              </StateBadge>
             ) : (
-              <StateBadge tone="destructive">Belum Terverifikasi</StateBadge>
+              <StateBadge tone="destructive">
+                {t("profile.security.unverified")}
+              </StateBadge>
             )}
           </SecurityRow>
 
@@ -145,11 +164,13 @@ function SecurityPanel({ className }: { className?: string }) {
                 hidden={showPasswordForm}
                 onClick={() => setShowPasswordForm(true)}
               >
-                Ubah kata sandi
+                {t("profile.security.changePassword")}
               </Button>
             }
           >
-            <span className="text-sm text-foreground">Kata Sandi</span>
+            <span className="text-sm text-foreground">
+              {t("profile.security.password")}
+            </span>
           </SecurityRow>
         </div>
 

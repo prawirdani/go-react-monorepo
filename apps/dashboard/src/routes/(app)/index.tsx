@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { Button } from "@repo/ui/components/button"
 import {
   Table,
@@ -20,82 +21,115 @@ import {
   StateBadge,
   type Tone,
 } from "@/components/layout/panel"
+import type { MessageKey } from "@/components/layout/sidebar-nav"
 
 export const Route = createFileRoute("/(app)/")({
   component: Component,
 })
 
-const summary: { label: string; value: string; tone?: Tone }[] = [
-  { label: "Entri hari ini", value: "128" },
-  { label: "Menunggu tinjauan", value: "12", tone: "warning" },
-  { label: "Gagal diproses", value: "3", tone: "destructive" },
-  { label: "Sinkron terakhir", value: "09:41 WIB" },
+// Sample figures are data, not copy — only the labels are translated.
+const summary: { labelKey: MessageKey; value: string; tone?: Tone }[] = [
+  { labelKey: "dashboard.summary.entriesToday", value: "128" },
+  {
+    labelKey: "dashboard.summary.awaitingReview",
+    value: "12",
+    tone: "warning",
+  },
+  {
+    labelKey: "dashboard.summary.failedProcessing",
+    value: "3",
+    tone: "destructive",
+  },
+  { labelKey: "dashboard.summary.lastSync", value: "09:41 WIB" },
 ]
 
-const services: { name: string; state: string; tone: Tone }[] = [
-  { name: "API", state: "Normal", tone: "success" },
-  { name: "Autentikasi", state: "Normal", tone: "success" },
-  { name: "Penyimpanan", state: "Lambat", tone: "warning" },
-  { name: "Antrean tugas", state: "Terganggu", tone: "destructive" },
-  { name: "Pencadangan", state: "Terjadwal", tone: "info" },
+const services: { nameKey: MessageKey; stateKey: MessageKey; tone: Tone }[] = [
+  {
+    nameKey: "dashboard.service.api",
+    stateKey: "dashboard.serviceState.normal",
+    tone: "success",
+  },
+  {
+    nameKey: "dashboard.service.auth",
+    stateKey: "dashboard.serviceState.normal",
+    tone: "success",
+  },
+  {
+    nameKey: "dashboard.service.storage",
+    stateKey: "dashboard.serviceState.slow",
+    tone: "warning",
+  },
+  {
+    nameKey: "dashboard.service.taskQueue",
+    stateKey: "dashboard.serviceState.disrupted",
+    tone: "destructive",
+  },
+  {
+    nameKey: "dashboard.service.backup",
+    stateKey: "dashboard.serviceState.scheduled",
+    tone: "info",
+  },
 ]
 
 const activity: {
   time: string
-  actor: string
-  action: string
-  state: string
+  actorKey: MessageKey
+  actionKey: MessageKey
+  stateKey: MessageKey
   tone: Tone
 }[] = [
   {
     time: "09:41",
-    actor: "Operator",
-    action: "Memperbarui profil",
-    state: "Selesai",
+    actorKey: "dashboard.actor.operator",
+    actionKey: "dashboard.activityAction.updateProfile",
+    stateKey: "dashboard.activityState.done",
     tone: "success",
   },
   {
     time: "09:32",
-    actor: "Sistem",
-    action: "Sinkronisasi katalog",
-    state: "Berjalan",
+    actorKey: "dashboard.actor.system",
+    actionKey: "dashboard.activityAction.syncCatalog",
+    stateKey: "dashboard.activityState.running",
     tone: "info",
   },
   {
     time: "09:20",
-    actor: "Admin",
-    action: "Mengarsipkan entri",
-    state: "Ditinjau",
+    actorKey: "dashboard.actor.admin",
+    actionKey: "dashboard.activityAction.archiveEntry",
+    stateKey: "dashboard.activityState.underReview",
     tone: "warning",
   },
   {
     time: "09:04",
-    actor: "Sistem",
-    action: "Kirim email pemulihan",
-    state: "Gagal",
+    actorKey: "dashboard.actor.system",
+    actionKey: "dashboard.activityAction.sendRecoveryEmail",
+    stateKey: "dashboard.activityState.failed",
     tone: "destructive",
   },
 ]
 
 function SampleTag() {
-  return <StateBadge tone="warning">Contoh</StateBadge>
+  const t = useTranslations("app")
+  return <StateBadge tone="warning">{t("dashboard.sampleTag")}</StateBadge>
 }
 
 function Component() {
+  const t = useTranslations("app")
+
   return (
-    <Page
-      title="Konsol"
-      description="Struktur operasional yang bisa Anda ganti dengan data nyata. Setiap angka dan baris di bawah adalah contoh."
-    >
+    <Page title={t("dashboard.title")} description={t("dashboard.description")}>
       <PanelGrid className="lg:grid-cols-12">
         <Panel className="animate-panel-in lg:col-span-7">
-          <PanelHeader title="Ringkasan" aside={<SampleTag />} />
+          <PanelHeader
+            title={t("dashboard.panels.summary")}
+            aside={<SampleTag />}
+          />
           <PanelBody className="flex-1">
             <PanelRows>
               {summary.map((row) => (
                 <PanelRow
-                  key={row.label}
-                  label={row.label}
+                  key={row.labelKey}
+                  label={t(row.labelKey)}
                   value={row.value}
                   tone={row.tone}
                 />
@@ -103,23 +137,28 @@ function Component() {
             </PanelRows>
           </PanelBody>
           <PanelNote className="border-t border-border">
-            Contoh data — hubungkan ke sumber data Anda.
+            {t("dashboard.summaryNote")}
           </PanelNote>
         </Panel>
 
         <Panel className="lg:col-span-5">
-          <PanelHeader title="Status Layanan" aside={<SampleTag />} />
+          <PanelHeader
+            title={t("dashboard.panels.services")}
+            aside={<SampleTag />}
+          />
           <PanelBody className="flex-1">
             <ul className="divide-y divide-border">
               {services.map((service) => (
                 <li
-                  key={service.name}
+                  key={service.nameKey}
                   className="flex items-center justify-between gap-3 px-3 py-2"
                 >
                   <span className="min-w-0 truncate text-sm">
-                    {service.name}
+                    {t(service.nameKey)}
                   </span>
-                  <StateBadge tone={service.tone}>{service.state}</StateBadge>
+                  <StateBadge tone={service.tone}>
+                    {t(service.stateKey)}
+                  </StateBadge>
                 </li>
               ))}
             </ul>
@@ -127,40 +166,46 @@ function Component() {
         </Panel>
 
         <Panel className="lg:col-span-5">
-          <PanelHeader title="Tindakan" />
+          <PanelHeader title={t("dashboard.panels.actions")} />
           <PanelBody className="flex-1 justify-between gap-5 p-3">
             <p className="max-w-[46ch] text-sm text-muted-foreground">
-              Halaman contoh berisi tabel dengan status pemuatan. Pakai sebagai
-              titik awal untuk daftar dan filter yang Anda butuhkan.
+              {t("dashboard.actionsNote")}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Button nativeButton={false} render={<Link to="/example" />}>
-                Buka contoh data
+                {t("dashboard.openExample")}
               </Button>
               <Button
                 variant="ghost"
                 nativeButton={false}
                 render={<Link to="/settings" />}
               >
-                Pengaturan
+                {t("dashboard.openSettings")}
               </Button>
             </div>
           </PanelBody>
         </Panel>
 
         <Panel className="lg:col-span-7">
-          <PanelHeader title="Aktivitas Terbaru" aside={<SampleTag />} />
+          <PanelHeader
+            title={t("dashboard.panels.activity")}
+            aside={<SampleTag />}
+          />
           <PanelBody className="flex-1">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="w-[92px] px-3 panel-label">
-                    Waktu
+                    {t("dashboard.table.time")}
                   </TableHead>
-                  <TableHead className="px-3 panel-label">Pelaku</TableHead>
-                  <TableHead className="px-3 panel-label">Aksi</TableHead>
+                  <TableHead className="px-3 panel-label">
+                    {t("dashboard.table.actor")}
+                  </TableHead>
+                  <TableHead className="px-3 panel-label">
+                    {t("dashboard.table.action")}
+                  </TableHead>
                   <TableHead className="px-3 text-right panel-label">
-                    Status
+                    {t("dashboard.table.state")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -173,12 +218,14 @@ function Component() {
                     >
                       {entry.time}
                     </TableCell>
-                    <TableCell className="px-3">{entry.actor}</TableCell>
+                    <TableCell className="px-3">{t(entry.actorKey)}</TableCell>
                     <TableCell className="px-3 text-muted-foreground">
-                      {entry.action}
+                      {t(entry.actionKey)}
                     </TableCell>
                     <TableCell className="px-3 text-right">
-                      <StateBadge tone={entry.tone}>{entry.state}</StateBadge>
+                      <StateBadge tone={entry.tone}>
+                        {t(entry.stateKey)}
+                      </StateBadge>
                     </TableCell>
                   </TableRow>
                 ))}

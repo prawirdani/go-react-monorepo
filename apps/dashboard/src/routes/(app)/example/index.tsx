@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { Skeleton } from "@repo/ui/components/skeleton"
 import {
   Table,
@@ -23,17 +24,24 @@ export const Route = createFileRoute("/(app)/example/")({
 })
 
 function RouteComponent() {
+  const t = useTranslations("app")
+
   return (
     <Page
-      title="Contoh"
-      description="Kerangka tabel dengan status pemuatan. Ganti dengan daftar dan filter yang Anda butuhkan."
-      breadcrumbs={[{ name: "Konsol", href: "/" }, { name: "Contoh" }]}
+      title={t("example.title")}
+      description={t("example.description")}
+      breadcrumbs={[
+        { name: t("dashboard.title"), href: "/" },
+        { name: t("example.title") },
+      ]}
     >
       <PanelGrid>
         <Panel className="animate-panel-in">
           <PanelHeader
-            title="Tabel Contoh"
-            aside={<StateBadge tone="warning">Contoh</StateBadge>}
+            title={t("example.tablePanel")}
+            aside={
+              <StateBadge tone="warning">{t("dashboard.sampleTag")}</StateBadge>
+            }
           />
           <PanelBody className="flex-1">
             <Table>
@@ -45,9 +53,15 @@ function RouteComponent() {
               </colgroup>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="px-3 panel-label">Kolom</TableHead>
-                  <TableHead className="px-3 panel-label">Kolom</TableHead>
-                  <TableHead className="px-3 panel-label">Kolom</TableHead>
+                  <TableHead className="px-3 panel-label">
+                    {t("example.column")}
+                  </TableHead>
+                  <TableHead className="px-3 panel-label">
+                    {t("example.column")}
+                  </TableHead>
+                  <TableHead className="px-3 panel-label">
+                    {t("example.column")}
+                  </TableHead>
                   <TableHead className="px-3" />
                 </TableRow>
               </TableHeader>
@@ -73,7 +87,7 @@ function RouteComponent() {
             </Table>
           </PanelBody>
           <PanelNote className="border-t border-border">
-            Baris di atas adalah placeholder pemuatan, bukan data nyata.
+            {t("example.note")}
           </PanelNote>
         </Panel>
       </PanelGrid>

@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { cn } from "@repo/ui/lib/utils"
 import { useTheme } from "@repo/ui/providers/theme-provider"
 import { DEFAULT_THEME, type ThemeId, themes } from "@repo/ui/themes"
@@ -37,6 +38,7 @@ export function ThemeModeToggle({
   containMenuEvents = false,
 }: ThemeModeToggleProps) {
   const { mode, setMode } = useTheme()
+  const t = useTranslations("ui")
   const resolvedMode = resolveMode(mode)
 
   const toggle = () => setMode(resolvedMode === "dark" ? "light" : "dark")
@@ -62,7 +64,7 @@ export function ThemeModeToggle({
         <IconSun className="absolute inset-0 size-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
         <IconMoon className="absolute inset-0 size-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
       </span>
-      {resolvedMode === "dark" ? "Mode Terang" : "Mode Gelap"}
+      {resolvedMode === "dark" ? t("theme.toLight") : t("theme.toDark")}
     </Button>
   )
 }
@@ -94,6 +96,7 @@ function PaletteSwatch({ id, mode }: { id: ThemeId; mode: "dark" | "light" }) {
 /** Settings-only palette picker: mode toggle plus the visible palette list. */
 export function ThemePicker({ className }: { className?: string }) {
   const { mode, theme, setTheme } = useTheme()
+  const t = useTranslations("ui")
   const resolvedMode = resolveMode(mode)
   const selectedTheme = theme ?? DEFAULT_THEME
   const modeLabelId = React.useId()
@@ -103,8 +106,9 @@ export function ThemePicker({ className }: { className?: string }) {
     <div className={cn("flex flex-col gap-3", className)}>
       <div className="flex flex-col gap-1.5">
         <span className="panel-label" id={modeLabelId}>
-          Mode
+          {t("theme.mode")}
         </span>
+        {/* biome-ignore lint/a11y/useSemanticElements: a <fieldset>/<legend> would fight the panel's flex layout; the plain group is wired to the visible label via aria-labelledby */}
         <div role="group" aria-labelledby={modeLabelId}>
           <ThemeModeToggle className="w-full" />
         </div>
@@ -112,8 +116,9 @@ export function ThemePicker({ className }: { className?: string }) {
 
       <div className="flex flex-col gap-1.5">
         <span className="panel-label" id={themeLabelId}>
-          Tema
+          {t("theme.theme")}
         </span>
+        {/* biome-ignore lint/a11y/useSemanticElements: a <fieldset>/<legend> would fight the panel's flex layout; the plain group is wired to the visible label via aria-labelledby */}
         <div
           role="group"
           aria-labelledby={themeLabelId}

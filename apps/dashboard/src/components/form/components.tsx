@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -54,6 +55,8 @@ interface BlockerDialog {
 }
 
 function BlockerDialog({ isDirty, onConfirm }: BlockerDialog) {
+  const t = useTranslations("app")
+  const tc = useTranslations("common")
   const { proceed, reset, status } = useBlocker({
     shouldBlockFn: () => isDirty,
     withResolver: true,
@@ -69,17 +72,16 @@ function BlockerDialog({ isDirty, onConfirm }: BlockerDialog) {
     <AlertDialog open={status === "blocked"}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Perubahan Belum Tersimpan</AlertDialogTitle>
+          <AlertDialogTitle>{t("form.unsaved.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin
-            meninggalkan halaman ini?
+            {t("form.unsaved.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="max-lg:[&>button]:flex-1 lg:[&>button]:min-w-24">
           <Button variant="outline" onClick={() => reset?.()}>
-            Tutup
+            {tc("actions.close")}
           </Button>
-          <Button onClick={handleProceed}>Ya</Button>
+          <Button onClick={handleProceed}>{t("shared.yes")}</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

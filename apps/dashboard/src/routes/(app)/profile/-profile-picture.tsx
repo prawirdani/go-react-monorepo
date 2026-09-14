@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { profilePictureSchema, type User } from "@repo/schemas/user"
 import {
   AlertDialog,
@@ -37,6 +38,7 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
   const [loading, setLoading] = useState(false)
   const handleError = useErrorHandler()
   const router = useRouter()
+  const t = useTranslations("app")
 
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -47,7 +49,7 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
     const result = profilePictureSchema.safeParse(file)
 
     if (!result.success) {
-      toast.error("Foto profil tidak valid", {
+      toast.error(t("profile.picture.invalid"), {
         description: result.error.issues[0].message,
       })
       e.target.value = ""
@@ -89,7 +91,7 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
             {user.profile_picture && (
               <AvatarImage
                 src={imageUrl.profile(user?.profile_picture)}
-                alt="profile_image"
+                alt={t("shared.avatarAlt")}
                 className="object-cover"
               />
             )}
@@ -132,7 +134,7 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
             }}
           >
             <Upload />
-            Unggah
+            {t("profile.picture.upload")}
           </Button>
           {/* Destructive action, kept apart from its neighbour by empty space. */}
           <div className="mt-2 border-t border-border pt-2">
@@ -152,6 +154,8 @@ function DeleteDialog({ disabled }: DeleteDialogProps) {
   const [loading, setLoading] = useState(false)
   const handleError = useErrorHandler()
   const router = useRouter()
+  const t = useTranslations("app")
+  const tc = useTranslations("common")
 
   const handleDeletePicture = async () => {
     setLoading(true)
@@ -172,15 +176,17 @@ function DeleteDialog({ disabled }: DeleteDialogProps) {
         render={
           <Button variant="destructive" size="sm" disabled={disabled}>
             <Trash />
-            Hapus
+            {t("profile.picture.delete")}
           </Button>
         }
       />
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Hapus foto profil</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t("profile.picture.deleteTitle")}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Apakah Anda yakin ingin menghapus foto profil saat ini?
+            {t("profile.picture.deleteDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -190,10 +196,10 @@ function DeleteDialog({ disabled }: DeleteDialogProps) {
             variant="destructive"
             onClick={handleDeletePicture}
           >
-            Ya
+            {t("shared.yes")}
           </AlertDialogAction>
           <AlertDialogCancel disabled={loading} variant="outline">
-            Batal
+            {tc("actions.cancel")}
           </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>

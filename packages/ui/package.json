@@ -26,6 +26,7 @@
 		"@fontsource-variable/chivo-mono": "5.3.0",
 		"@fontsource-variable/libre-franklin": "5.3.0",
 		"@fontsource-variable/spline-sans-mono": "5.3.0",
+		"@repo/i18n": "workspace:*",
 		"@tabler/icons-react": "^3.45.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"class-variance-authority": "^0.7.1",

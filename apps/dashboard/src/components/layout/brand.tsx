@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { cn } from "@repo/ui/lib/utils"
 
 /**
@@ -11,11 +12,13 @@ export function BrandLockup({
   compact?: boolean
   className?: string
 }) {
+  const t = useTranslations("app")
+
   if (compact) {
     return (
       <span
         role="img"
-        aria-label="Dashboard"
+        aria-label={t("brand.name")}
         className={cn(
           "grid size-7 place-items-center rounded-sm border border-sidebar-border bg-background font-mono text-xs font-semibold text-primary select-none",
           className,
@@ -36,10 +39,10 @@ export function BrandLockup({
       </span>
       <span className="min-w-0 leading-none">
         <span className="panel-label block text-sidebar-foreground">
-          Dashboard
+          {t("brand.name")}
         </span>
         <span className="mt-1 block truncate font-mono text-xs text-muted-foreground">
-          template/admin
+          {t("brand.subtitle")}
         </span>
       </span>
     </div>

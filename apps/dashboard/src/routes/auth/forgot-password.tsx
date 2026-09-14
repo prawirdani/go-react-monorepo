@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { recoverPasswordSchema } from "@repo/schemas/auth"
 import { FieldGroup } from "@repo/ui/components/field"
 import { Check } from "@repo/ui/icons"
@@ -36,6 +37,7 @@ function RouteComponent() {
   const { retryAfter, setRetryAfter, isThrottled } = useRetryAfter()
 
   const handleError = useErrorHandler()
+  const t = useTranslations("app")
   const form = useAppForm({
     defaultValues: {
       email: "",
@@ -56,7 +58,7 @@ function RouteComponent() {
           },
           RESOURCE_NOT_FOUND: () =>
             setFormErrors(formApi, {
-              email: "Email yang Anda masukkan tidak terdaftar",
+              email: t("auth.forgot.emailNotFound"),
             }),
         })
       }
@@ -66,11 +68,9 @@ function RouteComponent() {
   return (
     <AuthShell>
       <AuthPanel
-        title="Lupa Kata Sandi"
+        title={t("auth.forgot.title")}
         description={
-          sent
-            ? "Tautan pemulihan sudah dikirim ke email Anda."
-            : "Masukkan alamat email yang terdaftar. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi Anda."
+          sent ? t("auth.forgot.sentDescription") : t("auth.forgot.description")
         }
       >
         {sent ? (
@@ -83,9 +83,9 @@ function RouteComponent() {
                   name="email"
                   children={(field) => (
                     <field.Container>
-                      <field.Label text="Email" required />
+                      <field.Label text={t("auth.fields.email")} required />
                       <field.TextField
-                        placeholder="Masukan alamat email Anda"
+                        placeholder={t("auth.fields.emailPlaceholder")}
                         autoComplete="on"
                       />
                       <field.Errors />
@@ -96,10 +96,10 @@ function RouteComponent() {
               <form.SubmitButton className="w-full" disabled={isThrottled}>
                 {isThrottled && retryAfter ? (
                   <>
-                    Coba lagi dalam <Countdown until={retryAfter} />
+                    {t("auth.forgot.retryIn")} <Countdown until={retryAfter} />
                   </>
                 ) : (
-                  "Kirim"
+                  t("auth.forgot.submit")
                 )}
               </form.SubmitButton>
             </form.Root>
@@ -111,17 +111,18 @@ function RouteComponent() {
 }
 
 function SentContent() {
+  const t = useTranslations("app")
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-3">
         <Check className="mt-0.5 size-5 shrink-0 text-success" />
         <p className="text-sm text-muted-foreground">
-          Kami telah mengirimkan tautan untuk mengatur ulang kata sandi ke
-          alamat email Anda. Silakan periksa kotak masuk dan folder spam.
+          {t("auth.forgot.sentMessage")}
         </p>
       </div>
       <p className="border-t border-border pt-3 text-sm text-muted-foreground">
-        Tidak menerima email?{" "}
+        {t("auth.forgot.noEmail")}{" "}
         <Link
           to="/auth/forgot-password"
           search={{
@@ -129,7 +130,7 @@ function SentContent() {
           }}
           className={linkClass}
         >
-          Coba lagi
+          {t("auth.forgot.tryAgain")}
         </Link>
       </p>
     </div>
@@ -137,6 +138,7 @@ function SentContent() {
 }
 
 function Countdown({ until }: { until: Date }) {
+  const t = useTranslations("app")
   const getRemainingSeconds = () =>
     Math.max(0, Math.ceil((until.getTime() - Date.now()) / 1000))
   const [seconds, setSeconds] = useState(getRemainingSeconds)
@@ -150,7 +152,11 @@ function Countdown({ until }: { until: Date }) {
     return () => clearInterval(timer)
   }, [until])
 
-  return <span>{seconds} detik</span>
+  return (
+    <span>
+      {seconds} {t("auth.forgot.secondsUnit")}
+    </span>
+  )
 }
 
 function useRetryAfter() {

@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { AlertTriangle } from "@repo/ui/icons"
 import {
   Component,
@@ -21,6 +22,19 @@ interface ErrorBoundaryProps {
 
 interface State {
   error: Error | null
+}
+
+/** Default fallback as a function component so it can read translations. */
+function DefaultErrorFallback() {
+  const t = useTranslations("ui")
+  return (
+    <div className="flex-1 flex flex-col gap-2 w-full items-center justify-center min-h-[300px]">
+      <AlertTriangle className="size-12 text-destructive" />
+      <p className="text-base md:text-lg text-center">
+        {t("errorBoundary.message")}
+      </p>
+    </div>
+  )
 }
 
 /**
@@ -63,14 +77,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
         return <Fallback error={error} reset={this.reset} />
       }
 
-      return (
-        <div className="flex-1 flex flex-col gap-2 w-full items-center justify-center min-h-[300px]">
-          <AlertTriangle className="size-12 text-destructive" />
-          <p className="text-base md:text-lg text-center">
-            Terjadi kesalahan coba lagi beberapa saat.
-          </p>
-        </div>
-      )
+      return <DefaultErrorFallback />
     }
 
     return this.props.children

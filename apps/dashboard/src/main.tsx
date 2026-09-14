@@ -1,5 +1,6 @@
 import "./styles.css"
 
+import { I18nProvider } from "@repo/i18n"
 import { Toaster } from "@repo/ui/components/sonner"
 import { Loader } from "@repo/ui/icons"
 import { ThemeProvider } from "@repo/ui/providers/theme-provider"
@@ -70,15 +71,17 @@ if (rootElement && !rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <ThemeProvider>
-        <App />
-        <Toaster
-          expand={true}
-          visibleToasts={10}
-          closeButton={true}
-          position="top-center"
-        />
-      </ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <App />
+          <Toaster
+            expand={true}
+            visibleToasts={10}
+            closeButton={true}
+            position="top-center"
+          />
+        </ThemeProvider>
+      </I18nProvider>
     </StrictMode>,
   )
 }

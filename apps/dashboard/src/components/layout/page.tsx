@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { cn } from "@repo/ui/lib/utils"
 import { Link } from "@tanstack/react-router"
 import { type ComponentPropsWithoutRef, Fragment } from "react"
@@ -55,8 +56,10 @@ type BreadcrumbItem = {
 }
 
 function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
+  const t = useTranslations("ui")
+
   return (
-    <nav aria-label="Breadcrumb">
+    <nav aria-label={t("breadcrumb.label")}>
       <ol className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
         {items.map((item, idx) => (
           <Fragment key={item.name}>

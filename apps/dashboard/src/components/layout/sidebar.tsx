@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import {
   Sidebar,
   SidebarContent,
@@ -15,21 +16,21 @@ import {
 
 const navItems: NavItem[] = [
   {
-    title: "Dashboard",
+    titleKey: "nav.dashboard",
     href: "/",
     icon: LayoutDashboard,
   },
   {
-    title: "Example",
+    titleKey: "nav.example",
     icon: Edit,
     children: [
-      { title: "Child 1", href: "/example" },
-      { title: "Child 2", href: "/example" },
-      { title: "Child 3", href: "/example" },
+      { titleKey: "nav.exampleChild1", href: "/example" },
+      { titleKey: "nav.exampleChild2", href: "/example" },
+      { titleKey: "nav.exampleChild3", href: "/example" },
     ],
   },
   {
-    title: "Settings",
+    titleKey: "nav.settings",
     href: "/settings",
     icon: Settings,
   },
@@ -61,13 +62,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 }
 
 function AppVersion() {
+  const t = useTranslations("app")
   // Vite only exposes VITE_-prefixed vars; the fallback keeps a missing .env
   // from rendering the literal string "undefined".
   const version = import.meta.env.VITE_VERSION || "dev"
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <p className="panel-label">Versi</p>
+      <p className="panel-label">{t("nav.versionLabel")}</p>
       <p className="font-mono text-xs text-muted-foreground">{version}</p>
     </div>
   )

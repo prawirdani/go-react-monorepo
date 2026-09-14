@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,7 @@ const dialogHandler = AlertDialogPrimitive.createHandle()
 
 export function AppHeader() {
   const { toggleSidebar } = useSidebar()
+  const t = useTranslations("app")
 
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-3">
@@ -39,7 +41,7 @@ export function AppHeader() {
         variant="ghost"
         size="icon"
         onClick={toggleSidebar}
-        aria-label="Buka atau tutup navigasi"
+        aria-label={t("header.toggleNav")}
       >
         <Burger className="size-5!" />
       </Button>
@@ -70,6 +72,7 @@ function AvatarSection() {
   const user = useAuthStore((s) => s.user)
 
   const navigate = useNavigate()
+  const t = useTranslations("app")
 
   useEffect(() => {
     if (!user) {
@@ -85,12 +88,14 @@ function AvatarSection() {
   return (
     <AlertDialog handle={dialogHandler}>
       <DropdownMenu>
-        <DropdownMenuTrigger aria-label={`Menu akun ${user.name}`}>
+        <DropdownMenuTrigger
+          aria-label={`${t("header.accountMenu")} ${user.name}`}
+        >
           <Avatar className="size-8" key={user.profile_picture || "fallback"}>
             {user.profile_picture && (
               <AvatarImage
                 src={imageUrl.profile(user.profile_picture)}
-                alt="profile picture"
+                alt={t("shared.avatarAlt")}
               />
             )}
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
@@ -102,7 +107,7 @@ function AvatarSection() {
               {user.profile_picture && (
                 <AvatarImage
                   src={imageUrl.profile(user.profile_picture)}
-                  alt="profile picture"
+                  alt={t("shared.avatarAlt")}
                 />
               )}
               <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
@@ -120,14 +125,14 @@ function AvatarSection() {
             <Link to="/profile">
               <DropdownMenuItem>
                 <User />
-                Profil
+                {t("header.profile")}
               </DropdownMenuItem>
             </Link>
 
             <AlertDialogTrigger className="w-full">
               <DropdownMenuItem>
                 <Logout />
-                Keluar
+                {t("header.logout")}
               </DropdownMenuItem>
             </AlertDialogTrigger>
           </div>
@@ -140,6 +145,8 @@ function AvatarSection() {
 
 function LogoutConfirmationDialog() {
   const [loading, setLoading] = useState(false)
+  const t = useTranslations("app")
+  const tc = useTranslations("common")
 
   const handleError = useErrorHandler()
 
@@ -157,16 +164,15 @@ function LogoutConfirmationDialog() {
   return (
     <AlertDialogContent className="max-sm:min-w-[90%] sm:w-fit">
       <AlertDialogHeader>
-        <AlertDialogTitle>Keluar</AlertDialogTitle>
+        <AlertDialogTitle>{t("header.logout")}</AlertDialogTitle>
         <AlertDialogDescription>
-          Anda akan keluar dari akun ini. Anda perlu masuk kembali untuk
-          mengakses aplikasi.
+          {t("header.logoutDescription")}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel>Batal</AlertDialogCancel>
+        <AlertDialogCancel>{tc("actions.cancel")}</AlertDialogCancel>
         <AlertDialogAction onClick={handleLogout} loading={loading}>
-          Ya
+          {t("shared.yes")}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>

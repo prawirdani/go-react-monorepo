@@ -1,42 +1,47 @@
 import { z } from "zod";
+import "./error-map";
 
 export const loginSchema = z.object({
-	email: z.email("Format email tidak valid").nonempty("Email wajib diisi"),
-	password: z.string().nonempty("Kata sandi wajib diisi"),
+	email: z
+		.email("validation.email.invalid")
+		.nonempty("validation.email.required"),
+	password: z.string().nonempty("validation.password.required"),
 });
 
 const newPasswordSchema = z
 	.string()
-	.nonempty("Kata sandi baru wajib diisi")
-	.min(8, { error: "Minimum 8 karakter" });
+	.nonempty("validation.newPassword.required")
+	.min(8, { error: "validation.newPassword.min" });
 
 export const changePasswordSchema = z
 	.object({
-		password: z.string().nonempty("Kata sandi wajib diisi"),
+		password: z.string().nonempty("validation.password.required"),
 		new_password: newPasswordSchema,
 		new_password_confirmation: z
 			.string()
-			.nonempty("Konfirmasi kata sandi wajib diisi"),
+			.nonempty("validation.confirmPassword.required"),
 	})
 	.refine((data) => data.new_password === data.new_password_confirmation, {
-		message: "Konfirmasi kata sandi tidak cocok",
+		message: "validation.password.mismatch",
 		path: ["new_password_confirmation"],
 	});
 
 export const recoverPasswordSchema = z.object({
-	email: z.email("Format email tidak valid").nonempty("Email wajib diisi"),
+	email: z
+		.email("validation.email.invalid")
+		.nonempty("validation.email.required"),
 });
 
 export const resetPasswordSchema = z
 	.object({
-		token: z.string().nonempty("Token reset password wajib diisi"),
+		token: z.string().nonempty("validation.token.required"),
 		new_password: newPasswordSchema,
 		new_password_confirmation: z
 			.string()
-			.nonempty("Konfirmasi kata sandi wajib diisi"),
+			.nonempty("validation.confirmPassword.required"),
 	})
 	.refine((data) => data.new_password === data.new_password_confirmation, {
-		message: "Konfirmasi kata sandi tidak cocok",
+		message: "validation.password.mismatch",
 		path: ["new_password_confirmation"],
 	});
 

@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { Button } from "@repo/ui/components/button"
 import {
   Combobox,
@@ -37,6 +38,18 @@ import {
   useMemo,
 } from "react"
 import { useFieldContext, useFormContext } from "./context"
+
+type Translator = ReturnType<typeof useTranslations>
+
+/**
+ * Zod emits message keys; the API layer puts raw server text into field errors.
+ * A value that resolves as a key is translated, anything else passes through.
+ * `t.has()` is the discriminator — no prefix matching.
+ */
+function resolveMessage(t: Translator, value: string): string {
+  const key = value as Parameters<Translator["has"]>[0]
+  return t.has(key) ? t(key) : value
+}
 
 type ContainerProps = PropsWithChildren<
   ComponentPropsWithoutRef<"div"> & {
@@ -338,11 +351,23 @@ export function ComboboxChips<T extends string | number>({
 
 export function Errors() {
   const field = useFieldContext()
+  const t = useTranslations()
   const invalid = isFieldInvalid(field)
 
   if (!invalid) return null
 
-  return <FieldErrorComp errors={field.state.meta.errors} />
+  const errors = field.state.meta.errors.map((error) => {
+    const message =
+      typeof error === "string"
+        ? error
+        : (error as { message?: string } | undefined)?.message
+
+    if (typeof message !== "string") return undefined
+
+    return { message: resolveMessage(t, message) }
+  })
+
+  return <FieldErrorComp errors={errors} />
 }
 
 type RootErrorProps = {

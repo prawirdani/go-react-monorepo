@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { resetPasswordSchema } from "@repo/schemas/auth"
 import { FieldGroup } from "@repo/ui/components/field"
 import { Check, ClockX } from "@repo/ui/icons"
@@ -53,6 +54,8 @@ const linkClass =
 function RouteComponent() {
   const { token, invalid } = Route.useLoaderData()
   const handleError = useErrorHandler()
+  const t = useTranslations("app")
+  const tc = useTranslations("common")
 
   const form = useAppForm({
     defaultValues: {
@@ -80,11 +83,11 @@ function RouteComponent() {
   return (
     <AuthShell>
       <AuthPanel
-        title="Atur Ulang Kata Sandi"
+        title={t("auth.reset.title")}
         description={
           invalid
-            ? "Tautan ini tidak dapat digunakan lagi."
-            : "Buat kata sandi baru untuk akun Anda."
+            ? t("auth.reset.invalidDescription")
+            : t("auth.reset.description")
         }
       >
         {invalid ? (
@@ -102,9 +105,14 @@ function RouteComponent() {
                         name="new_password"
                         children={(field) => (
                           <field.Container>
-                            <field.Label text="Kata sandi baru" required />
+                            <field.Label
+                              text={t("auth.reset.newPasswordLabel")}
+                              required
+                            />
                             <field.TextField
-                              placeholder="Masukkan kata sandi baru Anda"
+                              placeholder={t(
+                                "auth.reset.newPasswordPlaceholder",
+                              )}
                               type="password"
                             />
                             <field.Errors />
@@ -116,11 +124,11 @@ function RouteComponent() {
                         children={(field) => (
                           <field.Container>
                             <field.Label
-                              text="Konfirmasi kata sandi baru"
+                              text={t("auth.reset.confirmLabel")}
                               required
                             />
                             <field.TextField
-                              placeholder="Masukkan ulang kata sandi baru Anda"
+                              placeholder={t("auth.reset.confirmPlaceholder")}
                               type="password"
                             />
                             <field.Errors />
@@ -129,7 +137,7 @@ function RouteComponent() {
                       />
                     </FieldGroup>
                     <form.SubmitButton className="w-full">
-                      Simpan
+                      {tc("actions.save")}
                     </form.SubmitButton>
                   </form.Root>
                 </form.AppForm>
@@ -143,34 +151,37 @@ function RouteComponent() {
 }
 
 function InvalidContent() {
+  const t = useTranslations("app")
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-start gap-3">
         <ClockX className="mt-0.5 size-5 shrink-0 text-warning" />
         <p className="text-sm font-medium text-foreground">
-          Tautan telah kedaluwarsa atau tidak valid.
+          {t("auth.reset.expired")}
         </p>
       </div>
       <p className="border-t border-border pt-3 text-sm text-muted-foreground">
-        Silakan{" "}
+        {t("auth.reset.requestAgainLead")}{" "}
         <Link to="/auth/forgot-password" className={linkClass}>
-          ajukan kembali
+          {t("auth.reset.requestAgainLink")}
         </Link>{" "}
-        permintaan atur ulang kata sandi baru untuk mendapatkan tautan yang
-        dapat digunakan.
+        {t("auth.reset.requestAgainTail")}
       </p>
     </div>
   )
 }
 
 function SuccessContent() {
+  const t = useTranslations("app")
+
   return (
     <div className="flex items-start gap-3">
       <Check className="mt-0.5 size-5 shrink-0 text-success" />
       <p className="text-sm text-muted-foreground">
-        Kata sandi Anda berhasil diperbarui,{" "}
+        {t("auth.reset.success")}{" "}
         <Link to="/login" className={linkClass}>
-          login
+          {t("auth.reset.successLink")}
         </Link>
         .
       </p>

@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { cn } from "@repo/ui/lib/utils"
 import type { ReactNode } from "react"
 import { BrandLockup } from "@/components/layout/brand"
@@ -9,6 +10,7 @@ import { Panel, PanelBody, StateBadge } from "@/components/layout/panel"
  * work surface.
  */
 export function AuthShell({ children }: { children: ReactNode }) {
+  const t = useTranslations("app")
   const isProduction = import.meta.env.PROD
 
   return (
@@ -18,20 +20,24 @@ export function AuthShell({ children }: { children: ReactNode }) {
 
         <div className="flex flex-col gap-4">
           <p className="text-sm leading-relaxed text-sidebar-foreground/80">
-            Satu konsol untuk memantau operasional dan mengelola akun Anda.
+            {t("auth.rail.intro")}
           </p>
           <ul className="flex list-disc flex-col gap-2 pl-4 text-xs text-muted-foreground marker:text-muted-foreground/50">
-            <li>Ringkasan dan aktivitas terbaru</li>
-            <li>Pengaturan tampilan, profil, dan keamanan akun</li>
+            <li>{t("auth.rail.access1")}</li>
+            <li>{t("auth.rail.access2")}</li>
           </ul>
           <p className="text-xs text-muted-foreground">
-            Belum punya akses? Hubungi admin internal.
+            {t("auth.rail.contact")}
           </p>
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t border-sidebar-border pt-3">
-          <p className="panel-label">Lingkungan</p>
-          <StateBadge>{isProduction ? "Produksi" : "Pengembangan"}</StateBadge>
+          <p className="panel-label">{t("auth.rail.environment")}</p>
+          <StateBadge>
+            {isProduction
+              ? t("auth.rail.environmentProd")
+              : t("auth.rail.environmentDev")}
+          </StateBadge>
         </div>
       </aside>
       <main className="flex items-center justify-center p-4 md:p-8">

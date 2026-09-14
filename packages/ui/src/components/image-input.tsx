@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { Input } from "@repo/ui/components/input"
 import { Photo } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
@@ -38,6 +39,7 @@ export default function ImageInput({
   ref,
   disabled,
 }: ImageInputProps) {
+  const t = useTranslations("ui")
   const [imagePreview, setImagePreview] = useState<string | undefined>(preview)
 
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -100,10 +102,11 @@ export default function ImageInput({
                 aspectClassname,
               )}
               onError={(e) => {
-                e.currentTarget.src =
-                  "https://placehold.co/600x400?text=Image not loaded properly"
+                e.currentTarget.src = `https://placehold.co/600x400?text=${encodeURIComponent(
+                  t("imageInput.loadError"),
+                )}`
               }}
-              alt="image-preview"
+              alt={t("imageInput.previewAlt")}
             />
             <div
               className={cn(
@@ -116,7 +119,7 @@ export default function ImageInput({
           <div className="flex w-full flex-col justify-center">
             <Photo className="mx-auto group-hover:text-primary" size={42} />
             <span className="text-sm group-hover:text-primary">
-              Choose Image
+              {t("imageInput.choose")}
             </span>
             {errors && (
               <p className="text-sm text-destructive text-center">{errors}</p>

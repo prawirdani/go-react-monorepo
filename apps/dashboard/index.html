@@ -40,6 +40,13 @@
           if (palette) {
             root.setAttribute("data-theme", palette);
           }
+
+          // Locale must be correct before first paint. Keep in sync with
+          // LOCALES in packages/i18n/src/config.ts.
+          const locale = localStorage.getItem("vite-ui-locale");
+          if (locale === "id" || locale === "en") {
+            root.lang = locale;
+          }
         } catch (e) {}
       })();
     </script>

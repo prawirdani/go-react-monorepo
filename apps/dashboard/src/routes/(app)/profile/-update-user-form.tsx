@@ -1,9 +1,11 @@
-import { GenderLabels, type User, updateUserSchema } from "@repo/schemas/user"
+import { useTranslations } from "@repo/i18n"
+import { type Gender, type User, updateUserSchema } from "@repo/schemas/user"
 import { Button } from "@repo/ui/components/button"
 import { FieldGroup } from "@repo/ui/components/field"
 import toast from "@repo/ui/components/toast"
 import { useRouter } from "@tanstack/react-router"
 import { setFormErrors, useAppForm } from "@/components/form"
+import { type MessageKey } from "@/components/layout/sidebar-nav"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { userAPI } from "@/lib/api"
 import { authActions } from "@/stores/auth-store"
@@ -13,16 +15,22 @@ interface UpdateUserFormProps {
   onClose: () => void
 }
 
-export const GenderSelectOptions = Object.entries(GenderLabels).map(
-  ([value, label]) => ({
-    value: value,
-    label,
-  }),
-)
+/** Gender labels live in the app catalog, keyed by the schema's Gender values. */
+const GENDER_LABEL_KEYS = {
+  M: "profile.genderOptions.m",
+  F: "profile.genderOptions.f",
+  O: "profile.genderOptions.o",
+} as const satisfies Record<Gender, MessageKey>
 
 export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
   const handleError = useErrorHandler()
   const router = useRouter()
+  const t = useTranslations("app")
+  const tc = useTranslations("common")
+
+  const genderOptions = (Object.keys(GENDER_LABEL_KEYS) as Gender[]).map(
+    (value) => ({ value, label: t(GENDER_LABEL_KEYS[value]) }),
+  )
 
   const form = useAppForm({
     defaultValues: {
@@ -38,7 +46,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
         await userAPI.updateUser(value)
         await authActions.invalidate()
         await router.invalidate()
-        toast.success("Profile berhasil diperbarui")
+        toast.success(t("profile.updateUser.success"))
         onClose()
       } catch (error) {
         handleError(error, {
@@ -59,9 +67,11 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
                 orientation="horizontal"
                 className="justify-between [&>*]:w-1/2"
               >
-                <field.Label text="Nama" required />
+                <field.Label text={t("profile.identity.name")} required />
                 <div>
-                  <field.TextField placeholder="Masukkan nama Anda" />
+                  <field.TextField
+                    placeholder={t("profile.updateUser.namePlaceholder")}
+                  />
                   <field.Errors />
                 </div>
               </field.Container>
@@ -75,9 +85,11 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
                 orientation="horizontal"
                 className="justify-between [&>*]:w-1/2"
               >
-                <field.Label text="No Handphone" />
+                <field.Label text={t("profile.identity.phone")} />
                 <div>
-                  <field.TextField placeholder="Masukkan nomor handphone Anda" />
+                  <field.TextField
+                    placeholder={t("profile.updateUser.phonePlaceholder")}
+                  />
                   <field.Errors />
                 </div>
               </field.Container>
@@ -91,11 +103,11 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
                 orientation="horizontal"
                 className="justify-between [&>*]:w-1/2"
               >
-                <field.Label text="Jenis Kelamin" />
+                <field.Label text={t("profile.identity.gender")} />
                 <div>
                   <field.Select
                     className="w-full"
-                    items={GenderSelectOptions}
+                    items={genderOptions}
                   />
                   <field.Errors />
                 </div>
@@ -105,7 +117,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
         </FieldGroup>
 
         <div className="mt-6 flex justify-end gap-2 [&>button]:min-w-28">
-          <form.SubmitButton>Simpan</form.SubmitButton>
+          <form.SubmitButton>{tc("actions.save")}</form.SubmitButton>
           <form.Subscribe
             selector={(state) => [state.isSubmitting]}
             children={([isSubmitting]) => (
@@ -114,7 +126,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
                 disabled={isSubmitting}
                 onClick={onClose}
               >
-                Batal
+                {tc("actions.cancel")}
               </Button>
             )}
           />

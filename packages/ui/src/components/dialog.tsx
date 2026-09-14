@@ -1,6 +1,7 @@
 "use client"
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
+import { useTranslations } from "@repo/i18n"
 import { Button } from "@repo/ui/components/button"
 
 import { cn } from "@repo/ui/lib/utils"
@@ -49,6 +50,7 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const t = useTranslations("ui")
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -73,7 +75,7 @@ function DialogContent({
             }
           >
             <IconX />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t("dialog.close")}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>

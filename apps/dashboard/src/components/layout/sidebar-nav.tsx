@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import {
   Collapsible,
   CollapsibleContent,
@@ -8,8 +9,14 @@ import { cn } from "@repo/ui/lib/utils"
 import { Link, useLocation } from "@tanstack/react-router"
 import type { FileRoutesByFullPath } from "@/routeTree.gen"
 
+type Translator = ReturnType<typeof useTranslations<"app">>
+
+/** Any key that exists in the app catalog — derived from the typed translator. */
+export type MessageKey = Parameters<Translator["has"]>[0]
+
 export type NavItem = {
-  title: string
+  /** Catalog key, translated at render — the array is module-level. */
+  titleKey: MessageKey
   icon: TablerIcon
 } & (
   | {
@@ -19,7 +26,7 @@ export type NavItem = {
     }
   | {
       // Parent node: has children, no URL
-      children: { title: string; href: keyof FileRoutesByFullPath }[]
+      children: { titleKey: MessageKey; href: keyof FileRoutesByFullPath }[]
     }
 )
 
@@ -37,6 +44,7 @@ const navItemClass = cn(
 )
 
 export function SidebarNavigations({ items }: { items: NavItem[] }) {
+  const t = useTranslations("app")
   const location = useLocation({
     select: (loc) => loc.pathname,
   })
@@ -44,10 +52,11 @@ export function SidebarNavigations({ items }: { items: NavItem[] }) {
   return (
     <div className="flex min-w-0 flex-col px-2 py-1 group-data-[collapsible=icon]:px-1.5">
       <p className="panel-label px-2 pb-2 pt-1 group-data-[collapsible=icon]:hidden">
-        Navigasi
+        {t("nav.groupLabel")}
       </p>
       <ul className="flex min-w-0 flex-col gap-px">
         {items.map((item) => {
+          const label = t(item.titleKey)
           if (item.children) {
             const isParentActive = item.children.some(
               (child) => child.href === location,
@@ -55,7 +64,7 @@ export function SidebarNavigations({ items }: { items: NavItem[] }) {
 
             return (
               <Collapsible
-                key={item.title}
+                key={item.titleKey}
                 className="group/collapsible"
                 render={<li className="relative min-w-0" />}
               >
@@ -65,33 +74,36 @@ export function SidebarNavigations({ items }: { items: NavItem[] }) {
                     "w-full data-[active=true]:bg-primary/10 data-[active=true]:font-medium data-[active=true]:text-primary",
                   )}
                   data-active={isParentActive ? "true" : undefined}
-                  title={item.title}
-                  aria-label={item.title}
+                  title={label}
+                  aria-label={label}
                 >
                   <item.icon className="size-4 shrink-0" />
                   <span className="truncate group-data-[collapsible=icon]:hidden">
-                    {item.title}
+                    {label}
                   </span>
                   <ChevronRight className="ml-auto size-3.5 shrink-0 transition-transform duration-150 ease-console group-data-open/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
                   <ul className="ml-3.5 mt-px flex min-w-0 flex-col gap-px border-l border-sidebar-border pl-2.5">
-                    {item.children?.map((subItem) => (
-                      <li key={subItem.title} className="min-w-0">
-                        <Link
-                          to={subItem.href}
-                          className={cn(
-                            "flex h-7 min-w-0 items-center rounded-sm px-2 text-sm text-sidebar-foreground/70 outline-none transition-colors",
-                            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                            "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                            "data-[status=active]:font-medium data-[status=active]:text-primary",
-                            "aria-[current=page]:font-medium aria-[current=page]:text-primary",
-                          )}
-                        >
-                          <span className="truncate">{subItem.title}</span>
-                        </Link>
-                      </li>
-                    ))}
+                    {item.children?.map((subItem) => {
+                      const subLabel = t(subItem.titleKey)
+                      return (
+                        <li key={subItem.titleKey} className="min-w-0">
+                          <Link
+                            to={subItem.href}
+                            className={cn(
+                              "flex h-7 min-w-0 items-center rounded-sm px-2 text-sm text-sidebar-foreground/70 outline-none transition-colors",
+                              "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                              "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                              "data-[status=active]:font-medium data-[status=active]:text-primary",
+                              "aria-[current=page]:font-medium aria-[current=page]:text-primary",
+                            )}
+                          >
+                            <span className="truncate">{subLabel}</span>
+                          </Link>
+                        </li>
+                      )
+                    })}
                   </ul>
                 </CollapsibleContent>
               </Collapsible>
@@ -99,16 +111,16 @@ export function SidebarNavigations({ items }: { items: NavItem[] }) {
           }
 
           return (
-            <li key={item.title} className="min-w-0">
+            <li key={item.titleKey} className="min-w-0">
               <Link
                 to={item.href}
                 className={navItemClass}
-                title={item.title}
-                aria-label={item.title}
+                title={label}
+                aria-label={label}
               >
                 <item.icon className="size-4 shrink-0" />
                 <span className="truncate group-data-[collapsible=icon]:hidden">
-                  {item.title}
+                  {label}
                 </span>
               </Link>
             </li>

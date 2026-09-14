@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { loginSchema } from "@repo/schemas/auth"
 import { FieldGroup } from "@repo/ui/components/field"
 import { AlertTriangle } from "@repo/ui/icons"
@@ -35,11 +36,13 @@ const linkClass =
   "rounded-sm text-primary outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring"
 
 function RouteComponent() {
+  const t = useTranslations("app")
+
   return (
     <AuthShell>
       <AuthPanel
-        title="Masuk"
-        description="Gunakan akun internal Anda untuk melanjutkan ke konsol."
+        title={t("auth.login.title")}
+        description={t("auth.login.description")}
       >
         <LoginForm />
       </AuthPanel>
@@ -51,6 +54,7 @@ function LoginForm({ className }: { className?: string }) {
   const search = getRouteApi("/login").useSearch()
   const router = useRouter()
   const handleError = useErrorHandler()
+  const t = useTranslations("app")
 
   const form = useAppForm({
     defaultValues: {
@@ -69,7 +73,7 @@ function LoginForm({ className }: { className?: string }) {
         handleError(error, {
           VALIDATION: (e) => setFormErrors(formApi, e.details),
           AUTH_CREDENTIALS: () => {
-            setFormRootError(formApi, "Email atau kata sandi Anda salah")
+            setFormRootError(formApi, t("auth.login.credentialsError"))
           },
         })
       }
@@ -84,9 +88,9 @@ function LoginForm({ className }: { className?: string }) {
             name="email"
             children={(field) => (
               <field.Container>
-                <field.Label text="Email" required />
+                <field.Label text={t("auth.fields.email")} required />
                 <field.TextField
-                  placeholder="Masukan alamat email Anda"
+                  placeholder={t("auth.fields.emailPlaceholder")}
                   autoComplete="on"
                 />
                 <field.Errors />
@@ -99,13 +103,13 @@ function LoginForm({ className }: { className?: string }) {
             children={(field) => (
               <field.Container>
                 <div className="flex items-center justify-between gap-2">
-                  <field.Label text="Kata Sandi" required />
+                  <field.Label text={t("auth.fields.password")} required />
                   <Link to="/auth/forgot-password" className={linkClass}>
-                    Lupa password?
+                    {t("auth.login.forgot")}
                   </Link>
                 </div>
                 <field.TextField
-                  placeholder="Masukan kata sandi Anda"
+                  placeholder={t("auth.fields.passwordPlaceholder")}
                   type="password"
                   autoComplete="on"
                 />
@@ -127,7 +131,9 @@ function LoginForm({ className }: { className?: string }) {
           )}
         </RootError>
 
-        <form.SubmitButton className="w-full">Masuk</form.SubmitButton>
+        <form.SubmitButton className="w-full">
+          {t("auth.login.submit")}
+        </form.SubmitButton>
       </form.Root>
     </form.AppForm>
   )

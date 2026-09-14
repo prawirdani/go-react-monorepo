@@ -1,0 +1,262 @@
+// NOTE: keep every leaf free of ICU arguments and tags. `fields.tsx` calls
+// `t(key)` with a union key and a single argument; a message that requires
+// `values` would make that call a type error.
+export default {
+	brand: {
+		name: "Dashboard",
+		subtitle: "template/admin",
+	},
+	shared: {
+		avatarAlt: "Profile picture",
+		yes: "Yes",
+	},
+	nav: {
+		groupLabel: "Navigation",
+		dashboard: "Dashboard",
+		example: "Example",
+		settings: "Settings",
+		exampleChild1: "Child 1",
+		exampleChild2: "Child 2",
+		exampleChild3: "Child 3",
+		versionLabel: "Version",
+	},
+	form: {
+		unsaved: {
+			title: "Unsaved Changes",
+			description:
+				"You have unsaved changes. Are you sure you want to leave this page?",
+		},
+	},
+	header: {
+		toggleNav: "Open or close navigation",
+		accountMenu: "Account menu",
+		profile: "Profile",
+		logout: "Log out",
+		logoutDescription:
+			"You will be signed out of this account. You will need to sign in again to access the application.",
+	},
+	auth: {
+		rail: {
+			intro: "One console to monitor operations and manage your account.",
+			access1: "Summary and latest activity",
+			access2: "Appearance settings, profile, and account security",
+			contact: "No access yet? Contact your internal admin.",
+			environment: "Environment",
+			environmentDev: "Development",
+			environmentProd: "Production",
+		},
+		fields: {
+			email: "Email",
+			password: "Password",
+			emailPlaceholder: "Enter your email address",
+			passwordPlaceholder: "Enter your password",
+		},
+		login: {
+			title: "Sign in",
+			description: "Use your internal account to continue to the console.",
+			forgot: "Forgot password?",
+			submit: "Sign in",
+			credentialsError: "Your email or password is incorrect",
+		},
+		forgot: {
+			title: "Forgot Password",
+			description:
+				"Enter your registered email address. We will send a link to reset your password.",
+			sentDescription: "The recovery link has been sent to your email.",
+			submit: "Send",
+			retryIn: "Try again in",
+			secondsUnit: "seconds",
+			sentMessage:
+				"We have sent a link to reset your password to your email address. Please check your inbox and spam folder.",
+			noEmail: "Didn't receive the email?",
+			tryAgain: "Try again",
+			emailNotFound: "The email you entered is not registered",
+		},
+		reset: {
+			title: "Reset Password",
+			description: "Create a new password for your account.",
+			invalidDescription: "This link can no longer be used.",
+			expired: "The link has expired or is invalid.",
+			requestAgainLead: "Please",
+			requestAgainLink: "submit a new request",
+			requestAgainTail: "for a password reset link that still works.",
+			newPasswordLabel: "New password",
+			newPasswordPlaceholder: "Enter your new password",
+			confirmLabel: "Confirm new password",
+			confirmPlaceholder: "Enter your new password again",
+			success: "Your password was updated successfully,",
+			successLink: "sign in",
+		},
+	},
+	dashboard: {
+		title: "Console",
+		description:
+			"An operational structure you can replace with real data. Every figure and row below is a sample.",
+		sampleTag: "Sample",
+		panels: {
+			summary: "Summary",
+			services: "Service Status",
+			actions: "Actions",
+			activity: "Recent Activity",
+		},
+		summaryNote: "Sample data — connect it to your own data source.",
+		summary: {
+			entriesToday: "Entries today",
+			awaitingReview: "Awaiting review",
+			failedProcessing: "Failed to process",
+			lastSync: "Last sync",
+		},
+		service: {
+			api: "API",
+			auth: "Authentication",
+			storage: "Storage",
+			taskQueue: "Task queue",
+			backup: "Backup",
+		},
+		serviceState: {
+			normal: "Normal",
+			slow: "Slow",
+			disrupted: "Disrupted",
+			scheduled: "Scheduled",
+		},
+		actor: {
+			operator: "Operator",
+			system: "System",
+			admin: "Admin",
+		},
+		activityAction: {
+			updateProfile: "Updating profile",
+			syncCatalog: "Catalog sync",
+			archiveEntry: "Archiving entry",
+			sendRecoveryEmail: "Send recovery email",
+		},
+		activityState: {
+			done: "Done",
+			running: "Running",
+			underReview: "Under review",
+			failed: "Failed",
+		},
+		actionsNote:
+			"The example page holds a table with its loading state. Use it as a starting point for the list and filters you need.",
+		openExample: "Open sample data",
+		openSettings: "Settings",
+		table: {
+			time: "Time",
+			actor: "Actor",
+			action: "Action",
+			state: "Status",
+		},
+	},
+	profile: {
+		title: "Profile",
+		description: "Account identity and its security settings.",
+		identity: {
+			panel: "Identity",
+			editLabel: "Edit identity",
+			name: "Name",
+			phone: "Phone Number",
+			gender: "Gender",
+		},
+		genderOptions: {
+			m: "Male",
+			f: "Female",
+			o: "Other",
+		},
+		security: {
+			panel: "Account Security",
+			description:
+				"Manage the password and email address that keep your account secure.",
+			changeEmail: "Change email",
+			verifyEmail: "Verify",
+			verified: "Verified",
+			unverified: "Not verified",
+			password: "Password",
+			changePassword: "Change password",
+		},
+		changePassword: {
+			success: "Password updated successfully!",
+			mismatch: "Your password does not match",
+			currentLabel: "Current password",
+			newLabel: "New password",
+			confirmLabel: "Confirm new password",
+			currentPlaceholder: "Enter your current password",
+			newPlaceholder: "Enter a new password",
+			confirmPlaceholder: "Enter the new password again",
+		},
+		updateUser: {
+			success: "Profile updated successfully",
+			namePlaceholder: "Enter your name",
+			phonePlaceholder: "Enter your phone number",
+		},
+		picture: {
+			invalid: "Invalid profile picture",
+			upload: "Upload",
+			delete: "Delete",
+			deleteTitle: "Delete profile picture",
+			deleteDescription:
+				"Are you sure you want to delete the current profile picture?",
+		},
+	},
+	settings: {
+		title: "Settings",
+		description: "Display preferences and basic application information.",
+		appearance: {
+			panel: "Appearance",
+			label: "Theme and mode",
+			hint: "Preferences are stored in this browser and follow the system until you choose.",
+		},
+		about: {
+			panel: "About",
+			languageLabel: "Interface language",
+			languageValue: "Indonesian",
+			authLabel: "Authentication",
+			authValue: "cookie · httpOnly",
+			apiLabel: "API base",
+			apiValue: "/api",
+			defaultModeLabel: "Default mode",
+			defaultModeValue: "Dark",
+		},
+	},
+	example: {
+		title: "Sample",
+		description:
+			"A table skeleton with its loading state. Replace it with the list and filters you need.",
+		tablePanel: "Sample Table",
+		column: "Column",
+		note: "The rows above are loading placeholders, not real data.",
+	},
+	errors: {
+		title: "Something went wrong",
+		generic: "An error occurred. Please try again in a moment.",
+		sessionExpiredTitle: "Session Expired",
+		sessionExpiredMessage:
+			"Your session has ended. Please sign in again to continue.",
+		codes: {
+			validation: "Some fields are not valid. Please check the form again.",
+			credentials: "Your email or password is incorrect.",
+			expired: "Your session has ended. Please sign in again.",
+			invalidSession: "Your session is not valid. Please sign in again.",
+			invalidRecoveryToken: "The recovery link is invalid or has expired.",
+			recoveryThrottled: "Too many attempts. Try again at",
+			notFound: "The requested data was not found.",
+			emailConflict: "This email is already registered.",
+			unauthorized: "You are not signed in. Please sign in again.",
+			forbidden: "You are not allowed to do this.",
+			network:
+				"Could not reach the server. Check your connection and try again.",
+			timeout: "The server is busy. Try again in a moment.",
+			internal: "A server error occurred. Try again in a moment.",
+		},
+		notFound: {
+			heading: "404 / Not found",
+			message: "The page you are looking for does not exist or has moved.",
+			action: "Back to console",
+		},
+		server: {
+			heading: "500 / Server error",
+			message:
+				"Something went wrong while loading the page. Try again in a moment.",
+			action: "Reload",
+		},
+	},
+} as const;

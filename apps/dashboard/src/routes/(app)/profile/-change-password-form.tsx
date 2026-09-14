@@ -1,3 +1,4 @@
+import { useTranslations } from "@repo/i18n"
 import { changePasswordSchema } from "@repo/schemas/auth"
 import { Button } from "@repo/ui/components/button"
 import { FieldGroup } from "@repo/ui/components/field"
@@ -12,6 +13,8 @@ interface ChangePasswordFormProps {
 
 export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
   const handleError = useErrorHandler()
+  const t = useTranslations("app")
+  const tc = useTranslations("common")
 
   const form = useAppForm({
     defaultValues: {
@@ -28,7 +31,7 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
           password: value.password,
           new_password: value.new_password,
         })
-        toast.success("Kata sandi berhasil diperbarui!")
+        toast.success(t("profile.changePassword.success"))
         onClose()
         form.reset()
       } catch (error) {
@@ -36,7 +39,7 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
           VALIDATION: (e) => setFormErrors(formApi, e.details),
           AUTH_CREDENTIALS: () => {
             setFormErrors(formApi, {
-              password: "Kata sandi Anda tidak cocok",
+              password: t("profile.changePassword.mismatch"),
             })
           },
         })
@@ -52,9 +55,12 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
             name="password"
             children={(field) => (
               <field.Container>
-                <field.Label text="Kata sandi lama" required />
+                <field.Label
+                  text={t("profile.changePassword.currentLabel")}
+                  required
+                />
                 <field.TextField
-                  placeholder="Masukan kata sandi Anda saat ini"
+                  placeholder={t("profile.changePassword.currentPlaceholder")}
                   type="password"
                   autoComplete="on"
                 />
@@ -67,9 +73,12 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
             name="new_password"
             children={(field) => (
               <field.Container className="sm:col-start-1 sm:row-start-2">
-                <field.Label text="Kata sandi baru" required />
+                <field.Label
+                  text={t("profile.changePassword.newLabel")}
+                  required
+                />
                 <field.TextField
-                  placeholder="Masukan kata sandi baru"
+                  placeholder={t("profile.changePassword.newPlaceholder")}
                   type="password"
                   autoComplete="new-password"
                 />
@@ -82,10 +91,13 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
             name="new_password_confirmation"
             children={(field) => (
               <field.Container className="sm:col-start-2 sm:row-start-2">
-                <field.Label text="Konfirmasi kata sandi baru" required />
+                <field.Label
+                  text={t("profile.changePassword.confirmLabel")}
+                  required
+                />
 
                 <field.TextField
-                  placeholder="Masukan ulang kata sandi baru"
+                  placeholder={t("profile.changePassword.confirmPlaceholder")}
                   type="password"
                   autoComplete="new-password-confirmation"
                 />
@@ -96,9 +108,9 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
         </FieldGroup>
 
         <div className="flex justify-end gap-2 [&_button]:min-w-28">
-          <form.SubmitButton>Simpan</form.SubmitButton>
+          <form.SubmitButton>{tc("actions.save")}</form.SubmitButton>
           <Button variant="outline" onClick={onClose}>
-            Batal
+            {tc("actions.cancel")}
           </Button>
         </div>
       </form.Root>
