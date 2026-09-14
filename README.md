@@ -11,6 +11,9 @@ A production-oriented React monorepo template built with **pnpm + Turborepo**. S
 - **Forms:** TanStack Form (via a shared `useAppForm` wrapper) + zod
 - **Client state:** zustand (auth store)
 - **UI:** Tailwind CSS v4 + base-ui/shadcn-style components in `@repo/ui`
+- **Theming:** CSS custom-property tokens in `@repo/ui/globals.css` — three palettes × light/dark, switched at runtime
+- **i18n:** use-intl v4 (`@repo/i18n`) — Bahasa Indonesia + English with compile-time-checked keys
+- **Fonts:** self-hosted variable fonts via `@fontsource-variable` (one UI + one mono face per palette)
 - **Linting/formatting:** Biome (per-package configs)
 
 ## Structure
@@ -27,10 +30,19 @@ apps/
 packages/
   api/                # @repo/api      fetch wrapper + AuthAPI/UserAPI + error types
   config/             # @repo/config   shared tsconfig/biome configs
+  i18n/               # @repo/i18n     locales, typed catalogs, I18nProvider, check:messages
   queries/            # @repo/queries  TanStack Query queryOptions wrappers
   schemas/            # @repo/schemas  zod schemas + TS types (request/response)
-  ui/                 # @repo/ui       shared UI components, icons, providers
+  ui/                 # @repo/ui       design tokens, shared components, icons, providers
   utils/              # @repo/utils    helpers (date, strings, ...)
+```
+
+Alongside the workspace, three documents carry durable context — read `PRODUCT.md` and `DESIGN.md` before changing product behaviour or UI:
+
+```
+PRODUCT.md            # product truth: audience, purpose, constraints, principles
+DESIGN.md             # the visual system: tokens, named rules, per-component specs
+.impeccable/          # design-token sidecar for tooling
 ```
 
 ## Getting Started
@@ -52,11 +64,12 @@ pnpm dev                                             # dashboard on :3000
 ### Scripts
 
 ```bash
-pnpm build          # turbo run build
+pnpm build          # turbo run build (runs check:messages first)
 pnpm dev            # turbo run dev
 pnpm lint           # biome lint
 pnpm format         # biome format
 pnpm check:write    # biome check --write
+pnpm check:messages # validate catalogs: ICU syntax + locale key parity
 ```
 
 ## Authentication & Session Model
@@ -67,6 +80,60 @@ The template is built around a **cookie-based** auth flow — no tokens are stor
 - `APIClient` always sends `credentials: "include"` and transparently refreshes on `401` (single-flight, retries once).
 - A refresh failure marks the session expired and redirects to `/login`.
 - Auth state lives in `apps/dashboard/src/stores/auth-store.ts` (zustand); `/auth/me` populates the current user.
+
+## Design System
+
+The UI is one committed visual world — **Graphite Console** — not stock component-library defaults. Depth comes from 1px hairline seams and three measured ground steps instead of shadow; saturation is spent only on state; monospace is reserved for data. `DESIGN.md` is the full rulebook (north star, named rules, component specs) — read it before adding UI.
+
+**Tokens are the front door.** Every colour, radius, and font resolves through `packages/ui/src/globals.css`, so a clone re-skins the world by editing that one file.
+
+**Three palettes, each with a light and a dark rendition:**
+
+| Palette | `data-theme` | Typeface (UI · mono) | `--radius` | Primary mode |
+| --- | --- | --- | --- | --- |
+| Graphite | `graphite` | Archivo · Spline Sans Mono | `0.25rem` | dark |
+| Ledger | `ledger` | Libre Franklin · Azeret Mono | `0.5rem` | light |
+| Ember | `ember` | Chivo · Chivo Mono | `0.375rem` | dark |
+
+**Selector contract.** `<html>` carries two independent attributes: a mode class (`.dark` / `.light`) and `data-theme="<id>"`. Themed blocks are written `[data-theme="x"].dark` / `.light` — specificity `(0,2,0)`, so they beat the bare mode class. An unknown or absent id degrades to Graphite, which is why the pre-hydration script in `index.html` applies the stored id verbatim with no whitelist.
+
+**Switching.** Mode lives in the header avatar dropdown (`ThemeModeToggle`); the palette list lives in **Settings → Tampilan** (`ThemePicker`, with swatches and hints). Persisted to `vite-ui-theme` and `vite-ui-theme-palette`.
+
+**Adding a palette:** write exactly two token blocks (`[data-theme="x"].dark` and `.light`) plus one entry in `packages/ui/src/themes.ts`. Each block must re-specify **every** themeable token — a block that inherits a colour breaks nested previews. Only `--ease-console`, `--text-label-size`, and `--tracking-label` are global.
+
+Contrast is verified to WCAG AA across all six palette × mode combinations. Decorative seams are deliberately low-contrast and exempt from 1.4.11; the control boundary (`--input`) is not.
+
+## Internationalization
+
+Two locales ship: **`id` (default)** and **`en`**. Switch in **Settings → Tampilan** (`LocaleSwitcher`), persisted to `vite-ui-locale`, with `<html lang>` kept in sync — including pre-hydration, so there is no flash.
+
+**Catalogs** live in `packages/i18n/src/messages/<locale>/<namespace>.ts`, namespaced `common`, `validation`, `ui`, and `app`. `en` is the source of truth (`as const`) and each `id` catalog is typed from it, so **a missing or misspelled Indonesian key is a compile error**.
+
+```tsx
+import { useTranslations, useFormatter } from "@repo/i18n"
+
+const t = useTranslations("app")
+t("nav.dashboard")            // keys are compile-checked
+const format = useFormatter() // locale-aware Intl numbers/dates
+```
+
+For non-React code (stores, toast helpers) use `getTranslator(locale)`.
+
+**Guard:** `pnpm check:messages` validates ICU syntax for every message and asserts identical key sets across locales. Vite has no build-time ICU validation — a malformed plural silently renders the key path at runtime — so this is the only guard. It is wired into the pipeline (`build` depends on it), so a malformed plural or a one-sided key fails the build instead of shipping.
+
+**Validation messages are keys, not copy.** `packages/schemas` emits `validation.*` keys (a locale-agnostic global error map keys generic zod issues too), and the UI resolves them at the display layer:
+
+```ts
+t.has(value) ? t(value) : value   // known keys translate; raw server text passes through
+```
+
+The same discriminator keeps untranslatable backend messages from breaking: error **codes** are mapped to catalog keys for toasts, so raw server text is never shown to a user.
+
+**Adding a locale:** add `<locale>/{app,common,ui,validation}.ts` typed from `en`, register it in `packages/i18n/src/config.ts` (`LOCALES`), and add it to the pre-hydration list in `apps/dashboard/index.html`.
+
+**Known constraint — keep message leaves free of ICU arguments and tags.** Several call sites pass a dynamic `MessageKey` to `t()` with a single argument; a message that requires `values` makes every one of those calls a type error. Compose multi-part sentences in the template instead. A `// NOTE:` at the top of `en/app.ts` records this.
+
+The catalogs and types are platform-independent; `I18nProvider` is web-only (it reads `localStorage` and sets `<html lang>`), so a non-web app supplies its own provider and reuses everything else.
 
 ## Backend Compatibility
 
