@@ -100,20 +100,20 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
 
           {/* Loader overlay: visible when data-loading=true, OR always-mounted but opacity toggled */}
           <div
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-[0.5px] opacity-0 transition-all duration-200 ease-out
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-background/50 opacity-0 transition-opacity duration-200 ease-console
               group-data-[loading=true]:opacity-100"
           >
-            <div className="flex items-center justify-center rounded-full bg-black/50 p-3 text-white shadow-lg transition-transform duration-200 group-data-[loading=true]:scale-100 scale-90">
+            <div className="flex items-center justify-center rounded-full bg-foreground p-3 text-background transition-transform duration-200 ease-console group-data-[loading=true]:scale-100 scale-90">
               <Loader className="animate-spin size-7" />
             </div>
           </div>
 
           {/* Edit overlay: only on hover, and only when NOT loading */}
           <div
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-[0.5px] opacity-0 transition-all duration-200 ease-out
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-background/50 opacity-0 transition-opacity duration-200 ease-console
               group-hover:opacity-100 group-data-[loading=true]:opacity-0 group-data-[loading=true]:pointer-events-none"
           >
-            <div className="flex items-center justify-center rounded-full bg-black/50 p-3 text-white shadow-lg transition-transform duration-200 group-hover:scale-100 scale-90">
+            <div className="flex items-center justify-center rounded-full bg-foreground p-3 text-background transition-transform duration-200 ease-console group-hover:scale-100 scale-90">
               <Edit className="size-5" />
             </div>
           </div>
@@ -134,7 +134,10 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
             <Upload />
             Unggah
           </Button>
-          <DeleteDialog disabled={!user.profile_picture} />
+          {/* Destructive action, kept apart from its neighbour by empty space. */}
+          <div className="mt-2 border-t border-border pt-2">
+            <DeleteDialog disabled={!user.profile_picture} />
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

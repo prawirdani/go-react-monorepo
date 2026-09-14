@@ -1,19 +1,20 @@
 import { GenderLabels } from "@repo/schemas/user"
-import { Badge } from "@repo/ui/components/badge"
 import { Button } from "@repo/ui/components/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@repo/ui/components/card"
-import { Separator } from "@repo/ui/components/separator"
-import { Check, Edit, Email, Password, X } from "@repo/ui/icons"
+import { Edit, Email, Password } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { createFileRoute, redirect } from "@tanstack/react-router"
+import type { ReactNode } from "react"
 import { useState } from "react"
 import { Page } from "@/components/layout/page"
+import {
+  Panel,
+  PanelBody,
+  PanelGrid,
+  PanelHeader,
+  PanelRow,
+  PanelRows,
+  StateBadge,
+} from "@/components/layout/panel"
 import { useAuthStore } from "@/stores/auth-store"
 import { ChangePasswordForm } from "./-change-password-form"
 import { ProfilePicture } from "./-profile-picture"
@@ -35,151 +36,155 @@ export const Route = createFileRoute("/(app)/profile/")({
 function RouteComponent() {
   return (
     <Page
-      title="Profile"
-      className="mx-auto w-full md:w-[80%] lg:w-[60%] xl:w-1/2 transition-[width,height] duration-200 ease-linear !space-y-2"
+      title="Profil"
+      description="Identitas akun dan pengaturan keamanannya."
     >
-      <ProfileSection />
-      <SecuritySection />
+      <PanelGrid className="lg:grid-cols-12">
+        <IdentityPanel className="animate-panel-in lg:col-span-5" />
+        <SecurityPanel className="lg:col-span-7" />
+      </PanelGrid>
     </Page>
   )
 }
 
-function ProfileSection() {
+function IdentityPanel({ className }: { className?: string }) {
   const user = Route.useLoaderData()
-
   const [showForm, setShowForm] = useState(false)
 
   return (
-    <Card className="relative">
-      <CardContent>
-        <div className="flex flex-col items-center justify-center gap-6 mx-auto">
-          <div>
-            <ProfilePicture user={user} className="w-fit mx-auto" />
-            <p className="text-center text-lg font-medium leading-6 mt-3">
-              {user.name}
-            </p>
-            <p className="text-center text-xs font-medium text-muted-foreground/40">
-              {user.id}
-            </p>
-          </div>
-          {showForm ? (
-            <UpdateUserForm user={user} onClose={() => setShowForm(false)} />
-          ) : (
-            <div className="grid grid-cols-2 w-full gap-4 [&_[data-slot=value]]:justify-self-end [&_[data-slot=key]]:text-muted-foreground">
-              <Separator className="col-span-2" />
-              <p data-slot="key">Nama</p>
-              <p data-slot="value">{user.name}</p>
-              <Separator className="col-span-2" />
-              <p data-slot="key">No Handphone</p>
-              <p data-slot="value">{user.phone ?? "-"}</p>
-              <Separator className="col-span-2" />
-              <p data-slot="key">Jenis Kelamin</p>
-              <p data-slot="value">
-                {user.gender
-                  ? (GenderLabels[user.gender] ?? GenderLabels.O)
-                  : "-"}
-              </p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <Button
-        className="absolute top-(--card-spacing) right-(--card-spacing)"
-        variant="outline"
-        size="icon"
-        hidden={showForm}
-        onClick={() => setShowForm((prev) => !prev)}
-      >
-        <Edit />
-      </Button>
-    </Card>
-  )
-}
-
-function SecuritySection() {
-  const user = Route.useLoaderData()
-  const [showPasswordForm, setShowPasswordForm] = useState(false)
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Keamanan Akun</CardTitle>
-        <CardDescription>
-          Kelola kata sandi dan alamat email untuk menjaga keamanan akun Anda.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        <SecuritySectionRowContainer>
-          <Email />
-
-          <div className="flex flex-col sm:flex-row gap-1.5 items-start sm:items-center">
-            <p className="font-medium">{user.email}</p>
-            {user.email_verified_at ? (
-              <Badge
-                variant="outline"
-                className="h-6 [&>svg]:size-4! rounded-sm"
-              >
-                <Check className="text-green-500" data-icon="inline-start" />
-                Terverifikasi
-              </Badge>
-            ) : (
-              <Badge
-                variant="outline"
-                className="h-6 [&>svg]:size-4! rounded-sm"
-              >
-                <X className="text-destructive" data-icon="inline-start" />
-                Belum Terverifikasi
-              </Badge>
-            )}
-          </div>
-
-          {user.email_verified_at ? (
-            <Button variant="outline" size="sm" disabled={showPasswordForm}>
-              Ubah email
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" disabled={showPasswordForm}>
-              Verifikasi
-            </Button>
-          )}
-        </SecuritySectionRowContainer>
-
-        <Separator />
-
-        {/* Password */}
-        <SecuritySectionRowContainer>
-          <Password />
-          <p className="font-medium">Kata Sandi</p>
+    <Panel className={className}>
+      <PanelHeader
+        title="Identitas"
+        aside={
           <Button
             variant="outline"
-            size="sm"
-            hidden={showPasswordForm}
-            onClick={() => setShowPasswordForm(true)}
+            size="icon-sm"
+            hidden={showForm}
+            onClick={() => setShowForm(true)}
+            aria-label="Ubah identitas"
           >
-            Ubah kata sandi
+            <Edit />
           </Button>
-          {showPasswordForm && (
-            <div className="col-span-3">
-              <ChangePasswordForm onClose={() => setShowPasswordForm(false)} />
+        }
+      />
+      <PanelBody className="flex-1">
+        {showForm ? (
+          <div className="p-3">
+            <UpdateUserForm user={user} onClose={() => setShowForm(false)} />
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col items-center gap-4 px-3 py-6">
+              <ProfilePicture user={user} />
+              <div className="max-w-full text-center">
+                <p className="truncate text-base font-medium text-foreground">
+                  {user.name}
+                </p>
+                <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+                  {user.id}
+                </p>
+              </div>
             </div>
-          )}
-        </SecuritySectionRowContainer>
-      </CardContent>
-    </Card>
+            <PanelRows className="border-t border-border">
+              <PanelRow label="Nama" value={user.name} mono={false} />
+              <PanelRow label="No Handphone" value={user.phone ?? "-"} />
+              <PanelRow
+                label="Jenis Kelamin"
+                value={
+                  user.gender
+                    ? (GenderLabels[user.gender] ?? GenderLabels.O)
+                    : "-"
+                }
+                mono={false}
+              />
+            </PanelRows>
+          </>
+        )}
+      </PanelBody>
+    </Panel>
   )
 }
 
-function SecuritySectionRowContainer({
+function SecurityPanel({ className }: { className?: string }) {
+  const user = Route.useLoaderData()
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+
+  return (
+    <Panel className={className}>
+      <PanelHeader title="Keamanan Akun" />
+      <PanelBody className="flex-1">
+        <p className="px-3 pt-3 pb-3 text-sm text-muted-foreground">
+          Kelola kata sandi dan alamat email untuk menjaga keamanan akun Anda.
+        </p>
+
+        <div className="divide-y divide-border border-t border-border">
+          <SecurityRow
+            icon={<Email className="size-4" />}
+            action={
+              <Button variant="outline" size="sm" disabled={showPasswordForm}>
+                {user.email_verified_at ? "Ubah email" : "Verifikasi"}
+              </Button>
+            }
+          >
+            <span className="min-w-0 truncate font-mono text-sm">
+              {user.email}
+            </span>
+            {user.email_verified_at ? (
+              <StateBadge tone="success">Terverifikasi</StateBadge>
+            ) : (
+              <StateBadge tone="destructive">Belum Terverifikasi</StateBadge>
+            )}
+          </SecurityRow>
+
+          <SecurityRow
+            icon={<Password className="size-4" />}
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                hidden={showPasswordForm}
+                onClick={() => setShowPasswordForm(true)}
+              >
+                Ubah kata sandi
+              </Button>
+            }
+          >
+            <span className="text-sm text-foreground">Kata Sandi</span>
+          </SecurityRow>
+        </div>
+
+        {showPasswordForm && (
+          <div className="border-t border-border p-3">
+            <ChangePasswordForm onClose={() => setShowPasswordForm(false)} />
+          </div>
+        )}
+      </PanelBody>
+    </Panel>
+  )
+}
+
+function SecurityRow({
+  icon,
+  action,
+  children,
   className,
-  ...props
-}: React.ComponentProps<"div">) {
+}: {
+  icon: ReactNode
+  action?: ReactNode
+  children: ReactNode
+  className?: string
+}) {
   return (
     <div
-      className={cn(
-        "grid grid-cols-[auto_1fr_auto] items-center gap-4 overflow-auto",
-        className,
-      )}
-      {...props}
-    />
+      className={cn("flex flex-wrap items-center gap-3 px-3 py-3", className)}
+    >
+      <span className="grid size-7 shrink-0 place-items-center rounded-sm text-muted-foreground">
+        {icon}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        {children}
+      </div>
+      {action}
+    </div>
   )
 }

@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@repo/ui/components/card"
 import { Skeleton } from "@repo/ui/components/skeleton"
 import {
   Table,
@@ -10,6 +9,14 @@ import {
 } from "@repo/ui/components/table"
 import { createFileRoute } from "@tanstack/react-router"
 import { Page } from "@/components/layout/page"
+import {
+  Panel,
+  PanelBody,
+  PanelGrid,
+  PanelHeader,
+  PanelNote,
+  StateBadge,
+} from "@/components/layout/panel"
 
 export const Route = createFileRoute("/(app)/example/")({
   component: RouteComponent,
@@ -18,49 +25,58 @@ export const Route = createFileRoute("/(app)/example/")({
 function RouteComponent() {
   return (
     <Page
-      title="Example Page"
-      description="Lorem Ipsum Dolor Apsimet"
-      breadcrumbs={[{ name: "Dashboard", href: "/" }, { name: "Example" }]}
+      title="Contoh"
+      description="Kerangka tabel dengan status pemuatan. Ganti dengan daftar dan filter yang Anda butuhkan."
+      breadcrumbs={[{ name: "Konsol", href: "/" }, { name: "Contoh" }]}
     >
-      <Card>
-        <CardContent>
-          <Table>
-            <colgroup>
-              <col className="w-[30%]" />
-              <col className="w-[20%]" />
-              <col className="w-[40%]" />
-              <col className="w-auto" />
-            </colgroup>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Col</TableHead>
-                <TableHead>Col</TableHead>
-                <TableHead>Col</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: yes
-                <TableRow key={i} className="[&>td]:py-4">
-                  <TableCell>
-                    <Skeleton className="w-1/3 h-6" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="w-2/3 h-6" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="w-3/3 h-6" />
-                  </TableCell>
-                  <TableCell className="flex justify-end">
-                    <Skeleton className="w-24 h-8" />
-                  </TableCell>
+      <PanelGrid>
+        <Panel className="animate-panel-in">
+          <PanelHeader
+            title="Tabel Contoh"
+            aside={<StateBadge tone="warning">Contoh</StateBadge>}
+          />
+          <PanelBody className="flex-1">
+            <Table>
+              <colgroup>
+                <col className="w-[30%]" />
+                <col className="w-[20%]" />
+                <col className="w-[40%]" />
+                <col className="w-auto" />
+              </colgroup>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-3 panel-label">Kolom</TableHead>
+                  <TableHead className="px-3 panel-label">Kolom</TableHead>
+                  <TableHead className="px-3 panel-label">Kolom</TableHead>
+                  <TableHead className="px-3" />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: yes
+                  <TableRow key={i}>
+                    <TableCell className="px-3 py-4">
+                      <Skeleton className="h-5 w-1/3" />
+                    </TableCell>
+                    <TableCell className="px-3 py-4">
+                      <Skeleton className="h-5 w-2/3" />
+                    </TableCell>
+                    <TableCell className="px-3 py-4">
+                      <Skeleton className="h-5 w-3/3" />
+                    </TableCell>
+                    <TableCell className="flex justify-end px-3 py-4">
+                      <Skeleton className="h-8 w-24" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </PanelBody>
+          <PanelNote className="border-t border-border">
+            Baris di atas adalah placeholder pemuatan, bukan data nyata.
+          </PanelNote>
+        </Panel>
+      </PanelGrid>
     </Page>
   )
 }

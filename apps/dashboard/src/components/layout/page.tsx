@@ -1,11 +1,3 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem as BreadcrumbItemComp,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@repo/ui/components/breadcrumb"
 import { cn } from "@repo/ui/lib/utils"
 import { Link } from "@tanstack/react-router"
 import { type ComponentPropsWithoutRef, Fragment } from "react"
@@ -15,14 +7,14 @@ export function PageContainer({
   className,
   children,
   ...props
-}: ComponentPropsWithoutRef<"main">) {
+}: ComponentPropsWithoutRef<"div">) {
   return (
-    <main
-      className={cn("flex-1 flex flex-col min-w-0 p-4 md:p-8", className)}
+    <div
+      className={cn("flex min-w-0 flex-1 flex-col gap-4 p-3 md:p-5", className)}
       {...props}
     >
       {children}
-    </main>
+    </div>
   )
 }
 
@@ -38,21 +30,20 @@ export function Page(props: PageProps) {
 
   return (
     <div
-      className={cn(
-        "flex-1 flex flex-col gap-4 space-y-4 lg:space-y-6",
-        className,
-      )}
+      className={cn("flex min-w-0 flex-1 flex-col gap-4", className)}
       {...rest}
     >
-      <div>
+      <header className="flex flex-col gap-2 border-b border-border pb-3">
         {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
-        <h1 className="scroll-m-20 font-bold tracking-tight text-xl md:text-2xl lg:text-3xl leading-8 lg:leading-10">
+        <h1 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
           {title}
         </h1>
         {description && (
-          <span className="text-sm lg:text-base">{description}</span>
+          <p className="max-w-[70ch] text-sm text-muted-foreground">
+            {description}
+          </p>
         )}
-      </div>
+      </header>
       {children}
     </div>
   )
@@ -65,23 +56,32 @@ type BreadcrumbItem = {
 
 function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   return (
-    <Breadcrumb className="mb-2">
-      <BreadcrumbList className="gap-1.5!">
+    <nav aria-label="Breadcrumb">
+      <ol className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
         {items.map((item, idx) => (
           <Fragment key={item.name}>
-            <BreadcrumbItemComp>
+            <li className="min-w-0">
               {item.href ? (
-                <BreadcrumbLink
-                  render={<Link to={item.href}>{item.name}</Link>}
-                />
+                <Link
+                  to={item.href}
+                  className="rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {item.name}
+                </Link>
               ) : (
-                <BreadcrumbPage>{item.name}</BreadcrumbPage>
+                <span aria-current="page" className="text-foreground/80">
+                  {item.name}
+                </span>
               )}
-            </BreadcrumbItemComp>
-            {idx !== items.length - 1 && <BreadcrumbSeparator />}
+            </li>
+            {idx !== items.length - 1 && (
+              <li aria-hidden="true" className="text-muted-foreground/50">
+                /
+              </li>
+            )}
           </Fragment>
         ))}
-      </BreadcrumbList>
-    </Breadcrumb>
+      </ol>
+    </nav>
   )
 }

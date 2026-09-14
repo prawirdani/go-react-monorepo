@@ -95,7 +95,7 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
           />
         </FieldGroup>
 
-        <div className="[&_button]:min-w-28 space-x-2 self-center">
+        <div className="flex justify-end gap-2 [&_button]:min-w-28">
           <form.SubmitButton>Simpan</form.SubmitButton>
           <Button variant="outline" onClick={onClose}>
             Batal

@@ -48,4 +48,5 @@ pnpm --filter dashboard exec tsc --noEmit     # typecheck the app
 - Pre-existing `tsc` failures (not caused by feature work): `/example` vs `/example/` route-type mismatch in `src/components/layout/*`, `vite.config.ts` unknown `babel` option, unused `userAPI` in `packages/queries/src/user.query.ts`. Don't "fix" them unless asked.
 - `reset-password.tsx` loader marks the link invalid on *any* loader error (network/5xx included) — behavior worth revisiting but deliberate for now.
 - Auth store lives in `src/stores/auth-store.ts` (zustand). RBAC gatekeeper code is commented out there.
+- Adding a new `exports` subpath to a workspace package (`packages/*/package.json`) requires **restarting the dev server**. Vite caches the `exports` map, and a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath — while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. `pnpm dev` will fix it; don't chase the module itself.
 - Reset-token GET (`/api/auth/password/recover/{token}`) is a one-time token; the TanStack Query cache can serve stale valid state if the URL is revisited after use.

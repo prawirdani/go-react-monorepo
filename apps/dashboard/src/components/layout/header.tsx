@@ -20,9 +20,9 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu"
 import { useSidebar } from "@repo/ui/components/sidebar"
-import { ThemeToggler } from "@repo/ui/components/theme-toggler"
+import { ThemeModeToggle } from "@repo/ui/components/theme-picker"
 import { Burger, Logout, User } from "@repo/ui/icons"
-import { Link, useNavigate } from "@tanstack/react-router"
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { imageUrl } from "@/lib/api"
@@ -34,16 +34,35 @@ export function AppHeader() {
   const { toggleSidebar } = useSidebar()
 
   return (
-    <header className="sticky top-0 z-10 bg-background flex shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b max-md:h-12 h-16">
-      <div className="flex items-center gap-2 px-2.5 justify-between flex-1">
-        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-          <Burger className="!size-5" />
-        </Button>
-        <div className="flex gap-2 items-center">
-          <AvatarSection />
-        </div>
+    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-3">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSidebar}
+        aria-label="Buka atau tutup navigasi"
+      >
+        <Burger className="size-5!" />
+      </Button>
+      <span aria-hidden="true" className="h-5 w-px bg-border" />
+      <MonoPath />
+      <div className="ml-auto flex items-center gap-2">
+        <AvatarSection />
       </div>
     </header>
+  )
+}
+
+/** The current location, written the way a machine reports it. */
+function MonoPath() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+
+  return (
+    <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
+      <span aria-hidden="true" className="text-muted-foreground/60">
+        ~
+      </span>
+      {pathname}
+    </p>
   )
 }
 
@@ -66,8 +85,8 @@ function AvatarSection() {
   return (
     <AlertDialog handle={dialogHandler}>
       <DropdownMenu>
-        <DropdownMenuTrigger>
-          <Avatar className="size-9" key={user.profile_picture || "fallback"}>
+        <DropdownMenuTrigger aria-label={`Menu akun ${user.name}`}>
+          <Avatar className="size-8" key={user.profile_picture || "fallback"}>
             {user.profile_picture && (
               <AvatarImage
                 src={imageUrl.profile(user.profile_picture)}
@@ -77,7 +96,7 @@ function AvatarSection() {
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-56">
+        <DropdownMenuContent className="min-w-60">
           <div className="flex items-center gap-2 p-1.5">
             <Avatar size="lg" key={user.profile_picture || "fallback"}>
               {user.profile_picture && (
@@ -88,12 +107,14 @@ function AvatarSection() {
               )}
               <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="text-sm leading-4">
-              <p className="font-medium">{user.name}</p>
+            <div className="min-w-0 leading-4">
+              <p className="truncate text-sm font-medium">{user.name}</p>
+              <p className="truncate font-mono text-xs text-muted-foreground">
+                {user.email}
+              </p>
             </div>
           </div>
-          <DropdownMenuSeparator />
-          <ThemeToggler className="w-full justify-between font-normal h-10" />
+          <ThemeModeToggle className="w-full" containMenuEvents />
           <DropdownMenuSeparator />
           <div className="[&_[data-slot=dropdown-menu-item]]:py-2 [&_[data-slot=dropdown-menu-item]]:cursor-pointer">
             <Link to="/profile">

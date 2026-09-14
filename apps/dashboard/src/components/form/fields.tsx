@@ -73,7 +73,7 @@ export function Label({ text, className, required, ...props }: LabelProps) {
       {required && (
         <span
           aria-hidden="true"
-          className="text-red-500 text-[10px] font-bold leading-none select-none self-start mt-0.5"
+          className="text-destructive text-[length:var(--text-label-size)] font-bold leading-none select-none self-start mt-0.5"
         >
           *
         </span>

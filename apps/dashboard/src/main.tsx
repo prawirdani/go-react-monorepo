@@ -42,9 +42,8 @@ const router = createRouter({
   defaultPendingMinMs: 0,
   defaultPendingComponent: () => {
     return (
-      <div className="fixed inset-0 z-50 grid place-items-center">
-        <div className="absolute inset-0 bg-background/10 backdrop-blur-xs" />
-        <Loader className="relative h-14 w-14 animate-spin" />
+      <div className="fixed inset-0 z-50 grid place-items-center bg-background/70">
+        <Loader className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
   },
@@ -73,13 +72,13 @@ if (rootElement && !rootElement.innerHTML) {
     <StrictMode>
       <ThemeProvider>
         <App />
+        <Toaster
+          expand={true}
+          visibleToasts={10}
+          closeButton={true}
+          position="top-center"
+        />
       </ThemeProvider>
-      <Toaster
-        expand={true}
-        visibleToasts={10}
-        closeButton={true}
-        position="top-center"
-      />
     </StrictMode>,
   )
 }

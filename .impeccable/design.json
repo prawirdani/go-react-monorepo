@@ -1,0 +1,457 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T06:56:40.273Z",
+  "title": "Design System: Graphite Console",
+  "extensions": {
+    "colorMeta": {
+      "ground": {
+        "role": "neutral",
+        "displayName": "Ground Graphite",
+        "canonical": "oklch(0.185 0.004 260)",
+        "tonalRamp": [
+          "oklch(0.14 0.004 260)",
+          "oklch(0.25 0.004 260)",
+          "oklch(0.36 0.004 260)",
+          "oklch(0.48 0.004 260)",
+          "oklch(0.60 0.004 260)",
+          "oklch(0.72 0.004 260)",
+          "oklch(0.83 0.004 260)",
+          "oklch(0.94 0.004 260)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel Graphite",
+        "canonical": "oklch(0.215 0.004 260)",
+        "tonalRamp": [
+          "oklch(0.14 0.004 260)",
+          "oklch(0.25 0.004 260)",
+          "oklch(0.36 0.004 260)",
+          "oklch(0.48 0.004 260)",
+          "oklch(0.60 0.004 260)",
+          "oklch(0.72 0.004 260)",
+          "oklch(0.83 0.004 260)",
+          "oklch(0.94 0.004 260)"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "Raised Graphite",
+        "canonical": "oklch(0.25 0.005 260)",
+        "tonalRamp": [
+          "oklch(0.14 0.005 260)",
+          "oklch(0.25 0.005 260)",
+          "oklch(0.36 0.005 260)",
+          "oklch(0.48 0.005 260)",
+          "oklch(0.60 0.005 260)",
+          "oklch(0.72 0.005 260)",
+          "oklch(0.83 0.005 260)",
+          "oklch(0.94 0.005 260)"
+        ]
+      },
+      "rail": {
+        "role": "neutral",
+        "displayName": "Rail Graphite",
+        "canonical": "oklch(0.145 0.004 260)",
+        "tonalRamp": [
+          "oklch(0.14 0.004 260)",
+          "oklch(0.25 0.004 260)",
+          "oklch(0.36 0.004 260)",
+          "oklch(0.48 0.004 260)",
+          "oklch(0.60 0.004 260)",
+          "oklch(0.72 0.004 260)",
+          "oklch(0.83 0.004 260)",
+          "oklch(0.94 0.004 260)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Specimen Ink",
+        "canonical": "oklch(0.93 0.003 260)",
+        "tonalRamp": [
+          "oklch(0.14 0.003 260)",
+          "oklch(0.25 0.003 260)",
+          "oklch(0.36 0.003 260)",
+          "oklch(0.48 0.003 260)",
+          "oklch(0.60 0.003 260)",
+          "oklch(0.72 0.003 260)",
+          "oklch(0.83 0.003 260)",
+          "oklch(0.93 0.003 260)"
+        ]
+      },
+      "ink-dim": {
+        "role": "neutral",
+        "displayName": "Dim Ink",
+        "canonical": "oklch(0.7 0.008 260)",
+        "tonalRamp": [
+          "oklch(0.14 0.008 260)",
+          "oklch(0.25 0.008 260)",
+          "oklch(0.36 0.008 260)",
+          "oklch(0.48 0.008 260)",
+          "oklch(0.60 0.008 260)",
+          "oklch(0.70 0.008 260)",
+          "oklch(0.83 0.008 260)",
+          "oklch(0.94 0.008 260)"
+        ]
+      },
+      "keyword-blue": {
+        "role": "primary",
+        "displayName": "Keyword Blue",
+        "canonical": "oklch(0.72 0.14 248)",
+        "tonalRamp": [
+          "oklch(0.14 0.14 248)",
+          "oklch(0.25 0.14 248)",
+          "oklch(0.36 0.14 248)",
+          "oklch(0.48 0.14 248)",
+          "oklch(0.60 0.14 248)",
+          "oklch(0.72 0.14 248)",
+          "oklch(0.83 0.14 248)",
+          "oklch(0.94 0.14 248)"
+        ]
+      },
+      "string-green": {
+        "role": "secondary",
+        "displayName": "String Green",
+        "canonical": "oklch(0.76 0.15 155)",
+        "tonalRamp": [
+          "oklch(0.14 0.15 155)",
+          "oklch(0.25 0.15 155)",
+          "oklch(0.36 0.15 155)",
+          "oklch(0.48 0.15 155)",
+          "oklch(0.60 0.15 155)",
+          "oklch(0.76 0.15 155)",
+          "oklch(0.86 0.15 155)",
+          "oklch(0.94 0.15 155)"
+        ]
+      },
+      "value-amber": {
+        "role": "secondary",
+        "displayName": "Value Amber",
+        "canonical": "oklch(0.82 0.14 80)",
+        "tonalRamp": [
+          "oklch(0.14 0.14 80)",
+          "oklch(0.25 0.14 80)",
+          "oklch(0.36 0.14 80)",
+          "oklch(0.48 0.14 80)",
+          "oklch(0.60 0.14 80)",
+          "oklch(0.72 0.14 80)",
+          "oklch(0.82 0.14 80)",
+          "oklch(0.94 0.14 80)"
+        ]
+      },
+      "error-red": {
+        "role": "secondary",
+        "displayName": "Error Red",
+        "canonical": "oklch(0.7 0.19 25)",
+        "tonalRamp": [
+          "oklch(0.14 0.19 25)",
+          "oklch(0.25 0.19 25)",
+          "oklch(0.36 0.19 25)",
+          "oklch(0.48 0.19 25)",
+          "oklch(0.60 0.19 25)",
+          "oklch(0.70 0.19 25)",
+          "oklch(0.82 0.19 25)",
+          "oklch(0.94 0.19 25)"
+        ]
+      },
+      "comment-violet": {
+        "role": "secondary",
+        "displayName": "Comment Violet",
+        "canonical": "oklch(0.74 0.13 305)",
+        "tonalRamp": [
+          "oklch(0.14 0.13 305)",
+          "oklch(0.25 0.13 305)",
+          "oklch(0.36 0.13 305)",
+          "oklch(0.48 0.13 305)",
+          "oklch(0.60 0.13 305)",
+          "oklch(0.74 0.13 305)",
+          "oklch(0.85 0.13 305)",
+          "oklch(0.94 0.13 305)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Title",
+        "purpose": "Page titles only; one per screen, flush over a seam. Face swaps per palette along with --font-ui."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All UI text, form labels, table cells, prose."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Panel nameplates, table column heads, section markers. The single small-caps treatment."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Figures, timestamps, IDs, paths. Opt-in via data-mono; never for prose. Face swaps per palette (Spline Sans Mono / Azeret Mono / Chivo Mono)."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-console",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The world's single easing curve; all state transitions and the one authored moment."
+      },
+      {
+        "name": "panel-in",
+        "value": "console-panel-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "purpose": "The one authored moment: a panel expanding along one axis (scale 1 0.94 -> 1 1, opacity 0 -> 1)."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation-duration: 0.01ms !important; transition-duration: 0.01ms !important",
+        "purpose": "Global kill-switch under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1536px"
+      }
+    ],
+    "lightTheme": {
+      "note": "Same rack, daylight. Identical seams and restraint; the graphite ladder inverts to a cool engineering surface and the state inks darken so white text clears AA. Defined under .light in packages/ui/src/globals.css.",
+      "background": "oklch(0.97 0.003 260)",
+      "card": "oklch(1 0 0)",
+      "popover": "oklch(1 0 0)",
+      "sidebar": "oklch(0.955 0.004 260)",
+      "foreground": "oklch(0.22 0.01 260)",
+      "muted": "oklch(0.94 0.004 260)",
+      "muted-foreground": "oklch(0.48 0.012 260)",
+      "accent": "oklch(0.92 0.02 252)",
+      "secondary": "oklch(0.93 0.005 260)",
+      "primary": "oklch(0.5 0.16 252)",
+      "primary-foreground": "oklch(0.99 0 0)",
+      "destructive": "oklch(0.51 0.2 27)",
+      "success": "oklch(0.47 0.13 155)",
+      "warning": "oklch(0.5 0.12 75)",
+      "attention": "oklch(0.46 0.17 305)",
+      "border": "oklch(0.22 0.01 260 / 12%)",
+      "input": "oklch(0.6 0.006 260)",
+      "ring": "oklch(0.44 0.17 252)",
+      "overlay": "oklch(0.2 0.01 260)"
+    },
+    "themes": [
+      {
+        "id": "graphite",
+        "label": "Graphite",
+        "hint": "Dark instrument console, cool blue accent.",
+        "primaryMode": "dark",
+        "dataTheme": "graphite",
+        "radius": "0.25rem",
+        "fontUi": "Archivo Variable",
+        "fontData": "Spline Sans Mono Variable",
+        "accent": "oklch(0.72 0.14 248)",
+        "accentHue": 248,
+        "note": "Canonical palette. Also the :root / .light fallback, so an unknown or absent data-theme degrades to Graphite."
+      },
+      {
+        "id": "ledger",
+        "label": "Ledger",
+        "hint": "Cool paper, ink rules, soft corners.",
+        "primaryMode": "light",
+        "dataTheme": "ledger",
+        "radius": "0.5rem",
+        "fontUi": "Libre Franklin Variable",
+        "fontData": "Azeret Mono Variable",
+        "accent": "oklch(0.5 0.16 255)",
+        "accentHue": 255,
+        "note": "Light is its natural state; dark is the same ledger under a dim lamp."
+      },
+      {
+        "id": "ember",
+        "label": "Ember",
+        "hint": "Warm near-black steel, ember accent, Chivo.",
+        "primaryMode": "dark",
+        "dataTheme": "ember",
+        "radius": "0.375rem",
+        "fontUi": "Chivo Variable",
+        "fontData": "Chivo Mono Variable",
+        "accent": "oklch(0.68 0.15 58)",
+        "accentHue": 58,
+        "note": "Tightest state separation in the system: accent sits 40 degrees from warning and 40 from destructive."
+      }
+    ],
+    "themeContract": {
+      "selector": "html carries a mode class (.dark / .light) and data-theme=\"<id>\" as two independent attributes; themed blocks are [data-theme=\"x\"].dark | .light at (0,2,0), beating a bare mode class at (0,1,0).",
+      "storage": {
+        "mode": "vite-ui-theme",
+        "palette": "vite-ui-theme-palette"
+      },
+      "preHydration": "apps/dashboard/index.html applies both before first paint. The palette id is applied verbatim with no whitelist — an unknown id falls through to Graphite, so adding a palette never requires editing that file.",
+      "globals": [
+        "--ease-console",
+        "--text-label-size",
+        "--tracking-label"
+      ],
+      "selfContained": "Every palette+mode block re-specifies every other token, including --font-ui / --font-data, so a nested data-theme element resolves its own palette AND fonts."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one filled accent control per view region. Hard-edged panel action.",
+      "html": "<button class=\"ds-btn-primary\">Simpan perubahan</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; height: 2.25rem; padding: 0 0.625rem; border: 1px solid transparent; border-radius: calc(var(--radius) * 0.8); background: var(--primary); color: var(--primary-foreground); font-family: inherit; font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 100ms var(--ease-console), border-color 100ms var(--ease-console), color 100ms var(--ease-console); } .ds-btn-primary:hover { background: color-mix(in oklab, var(--primary) 85%, transparent); } .ds-btn-primary:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary structural action. Carries the opaque control boundary.",
+      "html": "<button class=\"ds-btn-outline\">Batal</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; height: 2.25rem; padding: 0 0.625rem; border: 1px solid var(--input); border-radius: calc(var(--radius) * 0.8); background: transparent; color: var(--foreground); font-family: inherit; font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 100ms var(--ease-console), border-color 100ms var(--ease-console); } .ds-btn-outline:hover { background: var(--muted); border-color: var(--border); } .ds-btn-outline:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent); }"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Quiet at rest by doctrine; gains weight only on focus. Must be isolated from its neighbours.",
+      "html": "<button class=\"ds-btn-destructive\">Hapus akun</button>",
+      "css": ".ds-btn-destructive { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; height: 2.25rem; padding: 0 0.625rem; border: 1px solid color-mix(in oklab, var(--destructive) 40%, transparent); border-radius: calc(var(--radius) * 0.8); background: transparent; color: var(--destructive); font-family: inherit; font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 100ms var(--ease-console); } .ds-btn-destructive:hover { background: color-mix(in oklab, var(--destructive) 10%, transparent); } .ds-btn-destructive:focus-visible { outline: none; border-color: var(--destructive); box-shadow: 0 0 0 2px color-mix(in oklab, var(--destructive) 30%, transparent); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Inset field with an opaque, discoverable boundary distinct from decorative seams.",
+      "html": "<input class=\"ds-input\" placeholder=\"Masukan alamat email Anda\" />",
+      "css": ".ds-input { width: 100%; height: 2.25rem; padding: 0 0.625rem; border: 1px solid var(--input); border-radius: calc(var(--radius) * 0.8); background: color-mix(in oklab, var(--muted) 40%, transparent); color: var(--foreground); font-family: inherit; font-size: 0.875rem; outline: none; transition: border-color 100ms var(--ease-console), box-shadow 100ms var(--ease-console); } .ds-input::placeholder { color: var(--muted-foreground); } .ds-input:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent); } .ds-input[aria-invalid=\"true\"] { border-color: var(--destructive); box-shadow: 0 0 0 2px color-mix(in oklab, var(--destructive) 25%, transparent); }"
+    },
+    {
+      "name": "Panel with Header",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "The world's structural unit. No border on the panel itself; the seam belongs to the grid container.",
+      "html": "<section class=\"ds-panel\"><header class=\"ds-panel-header\"><h2 class=\"ds-panel-label\">Ringkasan</h2><span class=\"ds-panel-aside\">12 entri</span></header><div class=\"ds-panel-body\"></div></section>",
+      "css": ".ds-panel { display: flex; flex-direction: column; min-width: 0; background: var(--card); color: var(--card-foreground); border-radius: calc(var(--radius) * 0.8); overflow: hidden; } .ds-panel-header { display: flex; height: 2.25rem; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid var(--border); padding: 0 0.75rem; } .ds-panel-label { margin: 0; font-size: var(--text-label-size); font-weight: 600; letter-spacing: var(--tracking-label); text-transform: uppercase; line-height: 1.2; color: var(--muted-foreground); } .ds-panel-aside { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted-foreground); } .ds-panel-body { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; padding: 0.75rem; } .ds-panel-grid { display: grid; gap: 1px; border: 1px solid var(--border); border-radius: calc(var(--radius) * 0.8); background: var(--border); overflow: hidden; }"
+    },
+    {
+      "name": "Panel Row",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "Label/value rows flush against the panel seams. Value is mono only when it is a figure, ID, or measurement.",
+      "html": "<dl class=\"ds-rows\"><div class=\"ds-row\"><dt class=\"ds-row-label\">Sesi terakhir</dt><dd class=\"ds-row-value ds-row-data\">09:41</dd></div><div class=\"ds-row\"><dt class=\"ds-row-label\">Operator</dt><dd class=\"ds-row-value\">Budi</dd></div></dl>",
+      "css": ".ds-rows { margin: 0; } .ds-rows > * + * { border-top: 1px solid var(--border); } .ds-row { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 0.75rem; padding: 0.5rem 0.75rem; } .ds-row-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; color: var(--muted-foreground); } .ds-row-value { font-size: 0.875rem; color: var(--foreground); } .ds-row-data { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "State Badge",
+      "kind": "chip",
+      "refersTo": "state-badge",
+      "description": "The only place saturation is spent. Hue lives in the dot so the text stays legible; never a solid colour block.",
+      "html": "<span class=\"ds-badge ds-badge-success\"><span class=\"ds-badge-dot\" aria-hidden=\"true\"></span>Tersedia</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; height: 1.25rem; padding: 0.125rem 0.375rem; border: 1px solid color-mix(in oklab, var(--success) 40%, transparent); border-radius: calc(var(--radius) * 0.6); background: transparent; color: var(--success); font-family: var(--font-mono); font-size: var(--text-label-size); line-height: 1rem; white-space: nowrap; } .ds-badge-dot { width: 0.375rem; height: 0.375rem; background: var(--success); } .ds-badge-default { border-color: var(--border); color: var(--muted-foreground); } .ds-badge-default .ds-badge-dot { background: var(--muted-foreground); } .ds-badge-info { border-color: color-mix(in oklab, var(--info) 40%, transparent); color: var(--info); } .ds-badge-info .ds-badge-dot { background: var(--info); } .ds-badge-warning { border-color: color-mix(in oklab, var(--warning) 40%, transparent); color: var(--warning); } .ds-badge-warning .ds-badge-dot { background: var(--warning); } .ds-badge-destructive { border-color: color-mix(in oklab, var(--destructive) 40%, transparent); color: var(--destructive); } .ds-badge-destructive .ds-badge-dot { background: var(--destructive); }"
+    },
+    {
+      "name": "Nav Row",
+      "kind": "nav",
+      "refersTo": "state-badge",
+      "description": "Square, full-bleed rail row. Active state is a 10% accent wash with accent text; nested items hang from a 1px hairline connector.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-row\" href=\"#\"><span class=\"ds-nav-label\">Dashboard</span></a><a class=\"ds-nav-row ds-nav-active\" href=\"#\" aria-current=\"page\"><span class=\"ds-nav-label\">Pengaturan</span></a><span class=\"ds-nav-nested\"><a class=\"ds-nav-row ds-nav-sub\" href=\"#\"><span class=\"ds-nav-label\">Anak 1</span></a></span></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 1px; background: var(--sidebar); padding: 0.25rem; border-radius: calc(var(--radius) * 0.8); } .ds-nav-row { display: flex; align-items: center; height: 2rem; padding: 0 0.625rem; border-radius: calc(var(--radius) * 0.6); color: var(--sidebar-foreground); font-size: 0.875rem; text-decoration: none; cursor: pointer; transition: background-color 100ms var(--ease-console), color 100ms var(--ease-console); } .ds-nav-row:hover { background: var(--sidebar-accent); color: var(--sidebar-accent-foreground); } .ds-nav-row:focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent); } .ds-nav-active { background: color-mix(in oklab, var(--primary) 10%, transparent); color: var(--primary); } .ds-nav-nested { display: flex; flex-direction: column; margin-left: 0.625rem; padding-left: 0.625rem; border-left: 1px solid var(--border); } .ds-nav-sub { height: 1.75rem; font-size: 0.8125rem; color: var(--muted-foreground); }"
+    },
+    {
+      "name": "Theme Picker",
+      "kind": "custom",
+      "refersTo": "state-badge",
+      "description": "Settings-only palette surface: a mode toggle plus a visible list of palettes, each row showing a swatch, label, and hint, with the selected row checked. The avatar dropdown no longer carries the palette list — it exposes only ThemeModeToggle, the ghost button that flips light/dark. The real swatch re-themes itself by carrying data-theme plus the current mode class, which is why every palette block in globals.css is self-contained; the snippet approximates that layering with host tokens, because a self-contained snippet cannot load those blocks.",
+      "html": "<div class=\"ds-picker\"><span class=\"ds-picker-label\">Mode</span><button class=\"ds-picker-mode\" type=\"button\">Mode Terang</button><span class=\"ds-picker-label\">Tema</span><div class=\"ds-picker-list\"><button class=\"ds-picker-row ds-picker-row-on\" type=\"button\" aria-pressed=\"true\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Graphite</span><span class=\"ds-picker-hint\">Dark instrument console, cool blue accent.</span></span><svg class=\"ds-picker-check\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M3.5 8.5l3 3 6-7\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><button class=\"ds-picker-row\" type=\"button\" aria-pressed=\"false\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Ledger</span><span class=\"ds-picker-hint\">Cool paper, ink rules, soft corners.</span></span></button><button class=\"ds-picker-row\" type=\"button\" aria-pressed=\"false\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Ember</span><span class=\"ds-picker-hint\">Warm near-black steel, ember accent, Chivo.</span></span></button></div></div>",
+      "css": ".ds-picker{display:flex;flex-direction:column;gap:0.75rem;font-family:var(--font-ui);color:var(--foreground)} .ds-picker-label{font-size:var(--text-label-size);font-weight:600;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--muted-foreground);line-height:1.2} .ds-picker-mode{display:flex;align-items:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:calc(var(--radius) * 0.8);background:transparent;color:var(--foreground);font:inherit;font-size:0.875rem;cursor:pointer;text-align:left} .ds-picker-mode:hover{background:var(--muted)} .ds-picker-mode:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent)} .ds-picker-list{display:flex;flex-direction:column;gap:0.25rem} .ds-picker-row{display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.375rem 0.5rem;border:1px solid var(--border);border-radius:calc(var(--radius) * 0.8);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer} .ds-picker-row:hover{background:var(--muted)} .ds-picker-row:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent)} .ds-picker-row-on{border-color:var(--primary);background:color-mix(in oklab, var(--primary) 5%, transparent)} .ds-picker-sw{flex:0 0 auto;width:1.5rem;height:1.5rem;border:1px solid var(--border);border-radius:calc(var(--radius) * 0.6);background:linear-gradient(var(--card) 0 50%,var(--primary) 50% 75%,var(--muted-foreground) 75% 100%)} .ds-picker-text{display:flex;min-width:0;flex:1;flex-direction:column} .ds-picker-name{font-size:0.875rem;font-weight:500} .ds-picker-hint{font-size:0.75rem;color:var(--muted-foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .ds-picker-check{width:1rem;height:1rem;flex:0 0 auto;color:var(--primary)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Instrument Rack",
+    "overview": "An internal tool is equipment, not a brochure. The interface is built as a rack of bays: flat graphite modules bolted to a shared seam grid, each with a small-caps nameplate, each showing measured values. Nothing floats, nothing glows, nothing is decorated. What a border does here is structural — a 1px seam is the edge of a bay, and a lighter graphite step is one more unit of elevation.\n\nThe system is dark-first because that is the working condition it was chosen for: a console that sits open all day beside an editor, read for state at a glance rather than savoured. Its light mode is the same rack under daylight — a cool engineering surface, never cream — with the same seams and the same restraint.\n\nThe rack ships in three palettes. Graphite is the canonical one described throughout this document. Ledger re-clothes it as cool paper with ink rules and soft corners; Ember warms it to near-black steel with an ember accent. What changes between them is palette, typeface, and corner radius — and nothing else. The seams, the elevation order, the state vocabulary, and the mono-for-data rule are the world's constants. See Themes.\n\nColour is the system's most disciplined decision. Saturation is reserved exclusively for state, and it is drawn from the colours a developer already reads fluently in syntax: keyword blue, string green, value amber, error red, comment violet. A user learns the vocabulary once, in code, and it carries into the interface. The primary accent appears on a single control per view; everything else earns its colour by meaning something.",
+    "keyCharacteristics": [
+      "Depth from 1px hairline seams and three measured ground steps — never from shadow",
+      "Saturation spent only on state, using syntax-derived semantics",
+      "Hard, instrument-panel geometry; corner radius is a per-palette decision (0.25 / 0.5 / 0.375rem)",
+      "Monospace reserved for figures, IDs, and measurement — never as a technical costume",
+      "Panel headers as tracked small caps; body in a compact grotesk",
+      "Three palettes — Graphite, Ledger, Ember — each shipping light and dark; only palette, typeface, and radius vary"
+    ],
+    "rules": [
+      {
+        "name": "The State-Only Rule",
+        "body": "Saturation exists to mean something. A colour that does not encode state does not appear. If a screen needs emphasis and has no state to report, the answer is weight, scale, or a seam — not hue.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Accent Rule",
+        "body": "The primary accent fills at most one control per view region. Its scarcity is what makes the primary action unambiguous.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono-Means-Data Rule",
+        "body": "Monospace is applied to figures, identifiers, timestamps, and measured values — and to nothing else. Prose in a monospace face is a costume, and this system does not wear it. In the table primitive this is enforced structurally: cells are sans by default and opt in with data-mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Label Rule",
+        "body": "There is exactly one small-caps label treatment. It lives in .panel-label and consumes --text-label-size / --tracking-label; primitives consume the same tokens. Two label treatments is a bug.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Shadow Rule",
+        "body": "If an element looks like it needs a shadow to separate from its background, the ground step is wrong. Fix the step, not the shadow. Zero-offset halos and offset drop shadows are both decoration here.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Step Rule",
+        "body": "A surface takes one step of elevation, never two. Nested elevation is how card-inside-card layouts happen; panels contain seams and content, not lifted panels.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Self-Contained Palette Rule",
+        "body": "Every palette+mode block re-specifies every themeable token. A block that silently inherits a colour from another palette is a bug: it breaks nested previews and any future data-theme scoping. --ease-console, --text-label-size, and --tracking-label are deliberately global and inherited.",
+        "section": "themes"
+      },
+      {
+        "name": "The Two-Axis Rule",
+        "body": "Mode and palette are independent. No palette is \"the dark one\" or \"the light one\" — every palette ships both, so a new palette defines two blocks, never one.",
+        "section": "themes"
+      }
+    ],
+    "dos": [
+      "Do separate surfaces with a 1px seam and the next graphite step; build seams into the grid container with gap-px, not onto each panel.",
+      "Do spend colour only on state, drawing from the syntax vocabulary (blue keyword, green string, amber value, red error, violet comment).",
+      "Do use .panel-label for every nameplate and column head; it is the one small-caps treatment.",
+      "Do opt figures, IDs, and timestamps into mono with data-mono, and add tabular-nums where columns must align.",
+      "Do keep the control boundary (--input) opaque and distinct from the decorative seam (--border) — one must be found, the other must not compete.",
+      "Do isolate destructive actions and leave them quiet until focused.",
+      "Do resolve every colour, radius, and font through the token blocks in packages/ui/src/globals.css; a clone must be able to re-skin the world by editing that one file. The header carries only ThemeModeToggle — palette selection lives on Settings.",
+      "Do add a palette by writing exactly two token blocks ([data-theme=\"x\"].dark and .light) plus one entry in packages/ui/src/themes.ts — nothing else. A new exports subpath needs a dev-server restart before the app can resolve it."
+    ],
+    "donts": [
+      "Don't add a shadow, gradient, or decorative blur. There is no shadow vocabulary; fix the ground step instead.",
+      "Don't invent a radius outside the palette's --radius scale, and don't round a container into a pill — the cap is --radius x 1.4 by construction.",
+      "Don't let a palette change the seam grammar, the elevation order, the state vocabulary, or the mono-for-data rule. A palette varies colour, typeface, and radius only.",
+      "Don't use monospace for prose, labels, or decorative \"technical\" flavour.",
+      "Don't tint a large surface with a state colour; state lives in dots, borders, and text, not in panels.",
+      "Don't nest lifted surfaces — one step of elevation per surface, and no card inside a card.",
+      "Don't add a second small-caps label treatment or a second state-chip implementation; extend the existing one.",
+      "Don't reintroduce a same-size card grid as a page structure — panels are asymmetric and priority-ordered."
+    ]
+  }
+}

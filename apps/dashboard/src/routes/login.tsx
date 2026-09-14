@@ -1,10 +1,4 @@
 import { loginSchema } from "@repo/schemas/auth"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@repo/ui/components/card"
 import { FieldGroup } from "@repo/ui/components/field"
 import { AlertTriangle } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
@@ -18,6 +12,7 @@ import {
 import { z } from "zod"
 import { setFormErrors, setFormRootError, useAppForm } from "@/components/form"
 import { RootError } from "@/components/form/fields"
+import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { authActions, useAuthStore } from "@/stores/auth-store"
 
@@ -36,20 +31,19 @@ export const Route = createFileRoute("/login")({
   component: RouteComponent,
 })
 
+const linkClass =
+  "rounded-sm text-primary outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+
 function RouteComponent() {
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <Card className="min-h-[350px]">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Masuk</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col">
-            <LoginForm />
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <AuthShell>
+      <AuthPanel
+        title="Masuk"
+        description="Gunakan akun internal Anda untuk melanjutkan ke konsol."
+      >
+        <LoginForm />
+      </AuthPanel>
+    </AuthShell>
   )
 }
 
@@ -84,8 +78,8 @@ function LoginForm({ className }: { className?: string }) {
 
   return (
     <form.AppForm>
-      <form.Root className={cn("flex-1 flex flex-col gap-8", className)}>
-        <FieldGroup className="flex-1">
+      <form.Root className={cn("flex flex-col gap-6", className)}>
+        <FieldGroup className="gap-5">
           <form.AppField
             name="email"
             children={(field) => (
@@ -104,12 +98,9 @@ function LoginForm({ className }: { className?: string }) {
             name="password"
             children={(field) => (
               <field.Container>
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between gap-2">
                   <field.Label text="Kata Sandi" required />
-                  <Link
-                    to="/auth/forgot-password"
-                    className="hover:underline inline text-blue-600 cursor-pointer hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
+                  <Link to="/auth/forgot-password" className={linkClass}>
                     Lupa password?
                   </Link>
                 </div>
@@ -126,9 +117,12 @@ function LoginForm({ className }: { className?: string }) {
 
         <RootError>
           {(error) => (
-            <div className="outline outline-destructive rounded-sm p-2 flex gap-2 items-center bg-destructive/2">
-              <AlertTriangle className="text-destructive" />
-              <span className="text-destructive">{error}</span>
+            <div
+              role="alert"
+              className="flex items-center gap-2 rounded-sm border border-destructive/40 bg-destructive/10 p-2.5"
+            >
+              <AlertTriangle className="size-4 shrink-0 text-destructive" />
+              <span className="text-sm text-destructive">{error}</span>
             </div>
           )}
         </RootError>

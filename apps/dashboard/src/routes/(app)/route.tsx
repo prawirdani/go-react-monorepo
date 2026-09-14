@@ -32,10 +32,12 @@ export const Route = createFileRoute("/(app)")({
 
 function RouteComponent() {
   const { openSidebar } = Route.useLoaderData()
+  // The instrument frame: rail + header persist across navigation; the routed
+  // screen only swaps the panels inside the work ground.
   return (
     <SidebarProvider defaultOpen={openSidebar}>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="bg-background">
         <AppHeader />
         <PageContainer>
           <Outlet />

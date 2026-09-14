@@ -8,6 +8,7 @@
 		"./components/*": "./src/components/*.tsx",
 		"./hooks/*": "./src/hooks/*.ts",
 		"./icons": "./src/icons.ts",
+		"./themes": "./src/themes.ts",
 		"./providers/*": "./src/providers/*.tsx"
 	},
 	"scripts": {
@@ -19,12 +20,16 @@
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.6.0",
-		"@fontsource-variable/geist": "^5.3.0",
+		"@fontsource-variable/archivo": "5.3.0",
+		"@fontsource-variable/azeret-mono": "5.3.0",
+		"@fontsource-variable/chivo": "5.3.0",
+		"@fontsource-variable/chivo-mono": "5.3.0",
+		"@fontsource-variable/libre-franklin": "5.3.0",
+		"@fontsource-variable/spline-sans-mono": "5.3.0",
 		"@tabler/icons-react": "^3.45.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
-		"next-themes": "^0.4.6",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
 		"shadcn": "^4.13.1",

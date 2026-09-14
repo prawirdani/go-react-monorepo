@@ -1,7 +1,6 @@
 import { GenderLabels, type User, updateUserSchema } from "@repo/schemas/user"
 import { Button } from "@repo/ui/components/button"
 import { FieldGroup } from "@repo/ui/components/field"
-import { Separator } from "@repo/ui/components/separator"
 import toast from "@repo/ui/components/toast"
 import { useRouter } from "@tanstack/react-router"
 import { setFormErrors, useAppForm } from "@/components/form"
@@ -52,8 +51,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
   return (
     <form.AppForm>
       <form.Root className="w-full flex flex-col">
-        <FieldGroup className="mb-8 gap-2.5">
-          <Separator />
+        <FieldGroup className="gap-4">
           <form.AppField
             name="name"
             children={(field) => (
@@ -70,8 +68,6 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
             )}
           />
 
-          <Separator />
-
           <form.AppField
             name="phone"
             children={(field) => (
@@ -87,8 +83,6 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
               </field.Container>
             )}
           />
-
-          <Separator />
 
           <form.AppField
             name="gender"
@@ -110,7 +104,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
           />
         </FieldGroup>
 
-        <div className="[&>button]:min-w-28 flex gap-2 justify-center">
+        <div className="mt-6 flex justify-end gap-2 [&>button]:min-w-28">
           <form.SubmitButton>Simpan</form.SubmitButton>
           <form.Subscribe
             selector={(state) => [state.isSubmitting]}

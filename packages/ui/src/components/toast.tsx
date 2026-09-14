@@ -10,16 +10,15 @@ import { cn } from "../lib/utils"
 import { Button } from "./button"
 
 const toastVariants = cva(
-  "md:min-w-[380px] flex gap-4 p-4 items-center shadow-lg min-h-16 bg-card border border-1 rounded-lg relative [&_svg]:size-8 [&_svg]:shrink-0 font-geist",
+  "md:min-w-[380px] flex gap-4 p-4 items-center min-h-16 bg-card border rounded-md relative [&_svg]:size-8 [&_svg]:shrink-0 font-sans",
   {
     variants: {
       variant: {
-        default: "",
-        success:
-          "[&_svg]:text-green-500 bg-green-100 dark:bg-card border-green-500",
+        default: "border-border text-card-foreground",
+        success: "border-success/50 text-card-foreground [&_svg]:text-success",
         error:
-          "border-destructive bg-red-100 dark:bg-card [&_svg]:text-destructive",
-        info: "border-amber-500 [&_svg]:text-amber-500",
+          "border-destructive/50 text-card-foreground [&_svg]:text-destructive",
+        info: "border-info/50 text-card-foreground [&_svg]:text-info",
       },
     },
     defaultVariants: {

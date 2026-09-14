@@ -1,11 +1,11 @@
 import { recoverPasswordSchema } from "@repo/schemas/auth"
-import { Card, CardContent } from "@repo/ui/components/card"
 import { FieldGroup } from "@repo/ui/components/field"
-import { Check, PasswordLock } from "@repo/ui/icons"
+import { Check } from "@repo/ui/icons"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import z from "zod"
 import { setFormErrors, useAppForm } from "@/components/form"
+import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { authAPI } from "@/lib/api"
 
@@ -19,6 +19,9 @@ export const Route = createFileRoute("/auth/forgot-password")({
 })
 
 const RETRY_KEY = "recovery-retry-after"
+
+const linkClass =
+  "rounded-sm text-primary outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring"
 
 function RouteComponent() {
   const { sent } = Route.useSearch()
@@ -61,76 +64,74 @@ function RouteComponent() {
   })
 
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center p-6 md:p-10 gap-8">
-      <div className="w-full md:w-[60%] xl:w-[30%]">
-        <div className="text-center">
-          {sent ? (
-            <>
-              <Check className="mx-auto size-12 text-green-500" />
-              <p className="text-xl font-bold">Lupa Kata Sandi</p>
-              <p>
-                Kami telah mengirimkan tautan untuk mengatur ulang kata sandi ke
-                alamat email Anda. Silakan periksa kotak masuk dan folder spam.
-              </p>
-              <p className="mt-4 text-sm">
-                Tidak menerima email?{" "}
-                <Link
-                  to="/auth/forgot-password"
-                  search={{
-                    sent: false,
-                  }}
-                  className="hover:underline inline text-blue-600 cursor-pointer hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Coba lagi
-                </Link>
-              </p>
-            </>
-          ) : (
-            <>
-              <PasswordLock className="mx-auto size-12" />
-              <p className="text-xl font-bold">Lupa Kata Sandi</p>
-              <p>
-                Masukkan alamat email yang terdaftar. Kami akan mengirimkan
-                tautan untuk mengatur ulang kata sandi Anda.
-              </p>
-            </>
-          )}
-        </div>
-        {!sent && (
-          <Card className="[--card-spacing:--spacing(6)]! mt-6">
-            <CardContent className="flex-1 flex flex-col">
-              <form.AppForm>
-                <form.Root className="flex-1 flex flex-col gap-8">
-                  <FieldGroup className="flex-1">
-                    <form.AppField
-                      name="email"
-                      children={(field) => (
-                        <field.Container>
-                          <field.Label text="Email" required />
-                          <field.TextField
-                            placeholder="Masukan alamat email Anda"
-                            autoComplete="on"
-                          />
-                          <field.Errors />
-                        </field.Container>
-                      )}
-                    />
-                  </FieldGroup>
-                  <form.SubmitButton className="w-full" disabled={isThrottled}>
-                    {isThrottled && retryAfter ? (
-                      <>
-                        Coba lagi dalam <Countdown until={retryAfter} />
-                      </>
-                    ) : (
-                      "Kirim"
-                    )}
-                  </form.SubmitButton>
-                </form.Root>
-              </form.AppForm>
-            </CardContent>
-          </Card>
+    <AuthShell>
+      <AuthPanel
+        title="Lupa Kata Sandi"
+        description={
+          sent
+            ? "Tautan pemulihan sudah dikirim ke email Anda."
+            : "Masukkan alamat email yang terdaftar. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi Anda."
+        }
+      >
+        {sent ? (
+          <SentContent />
+        ) : (
+          <form.AppForm>
+            <form.Root className="flex flex-col gap-6">
+              <FieldGroup className="gap-5">
+                <form.AppField
+                  name="email"
+                  children={(field) => (
+                    <field.Container>
+                      <field.Label text="Email" required />
+                      <field.TextField
+                        placeholder="Masukan alamat email Anda"
+                        autoComplete="on"
+                      />
+                      <field.Errors />
+                    </field.Container>
+                  )}
+                />
+              </FieldGroup>
+              <form.SubmitButton className="w-full" disabled={isThrottled}>
+                {isThrottled && retryAfter ? (
+                  <>
+                    Coba lagi dalam <Countdown until={retryAfter} />
+                  </>
+                ) : (
+                  "Kirim"
+                )}
+              </form.SubmitButton>
+            </form.Root>
+          </form.AppForm>
         )}
+      </AuthPanel>
+    </AuthShell>
+  )
+}
+
+function SentContent() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start gap-3">
+        <Check className="mt-0.5 size-5 shrink-0 text-success" />
+        <p className="text-sm text-muted-foreground">
+          Kami telah mengirimkan tautan untuk mengatur ulang kata sandi ke
+          alamat email Anda. Silakan periksa kotak masuk dan folder spam.
+        </p>
       </div>
+      <p className="border-t border-border pt-3 text-sm text-muted-foreground">
+        Tidak menerima email?{" "}
+        <Link
+          to="/auth/forgot-password"
+          search={{
+            sent: false,
+          }}
+          className={linkClass}
+        >
+          Coba lagi
+        </Link>
+      </p>
     </div>
   )
 }

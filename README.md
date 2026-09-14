@@ -47,6 +47,7 @@ pnpm dev                                             # dashboard on :3000
 | ----------------- | ---------------------------------------------------------- |
 | `VITE_API_URL`    | Backend base URL (e.g. `http://localhost:8080`)            |
 | `VITE_IMAGE_URL`  | Asset server base URL for uploaded files (`/profiles/...`) |
+| `VITE_VERSION`    | App version shown in the sidebar footer (e.g. `v0.1.0`)    |
 
 ### Scripts
 
@@ -98,3 +99,9 @@ The two repos are kept in sync; when the backend changes, the API layer in `pack
 
 - **Auth header:** `Authorization: Bearer <access_token>`, or the `access_token` cookie (cookie tried first).
 - **Error codes used by the app:** `VALIDATION`, `AUTH_CREDENTIALS`, `AUTH_EXPIRED`, `AUTH_INVALID_SESSION`, `AUTH_INVALID_RECOV_TOKEN`, `AUTH_RECOVERY_THROTTLED` (details: `{ allowed, retry_after }`), `RESOURCE_NOT_FOUND`, `REQ_UNAUTHORIZED`, `USER_EMAIL_CONFLICT`, plus the general HTTP codes (`REQ_RATE_LIMIT`, `BODY_TOO_LARGE`, ...).
+
+## Gotchas
+
+- **Adding an `exports` subpath to a workspace package requires a dev-server restart.** Vite caches the `exports` map, so a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath — while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. Restart `pnpm dev`; don't chase the module itself.
+- **Set `VITE_VERSION` in the build environment.** `apps/dashboard/.env` is gitignored and `example.env` is only a template, so a production build needs the value supplied by the environment — otherwise the sidebar footer falls back to `dev`.
+- **Pre-existing `tsc` failures** (not caused by feature work): the `/example` vs `/example/` route-type mismatch under `src/components/layout/*`, an unknown `babel` option in `vite.config.ts`, and an unused `userAPI` in `packages/queries/src/user.query.ts`. Don't "fix" them unless asked.

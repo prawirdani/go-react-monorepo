@@ -26,7 +26,7 @@ interface State {
 /**
   * Example fallback comp:
   * const MyFallbackUI = ({ error, reset }: ErrorFallbackProps) => (
-    <div className="p-4 bg-red-50 text-red-800 border border-red-200 rounded">
+    <div className="p-4 rounded-md border border-destructive/50 bg-destructive/10 text-destructive">
       <p>Failed to load data: {error.message}</p>
       <button
         type="button"

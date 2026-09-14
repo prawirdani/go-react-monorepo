@@ -79,7 +79,7 @@ export default function ImageInput({
           // Hover effects only when enabled
           !disabled && "hover:bg-accent hover:border-primary",
           // Disabled styles
-          disabled && "opacity-50 bg-gray-100",
+          disabled && "opacity-50 bg-muted",
           aspectClassname,
         )}
       >
@@ -107,7 +107,7 @@ export default function ImageInput({
             />
             <div
               className={cn(
-                "absolute inset-0 bg-black bg-opacity-20 transition-opacity duration-200",
+                "absolute inset-0 bg-overlay/20 transition-opacity duration-200 ease-console",
                 disabled ? "opacity-100" : "opacity-0 group-hover:opacity-100",
               )}
             />
