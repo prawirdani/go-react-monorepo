@@ -2,7 +2,6 @@ import { useTranslations } from "@repo/i18n"
 import { Button } from "@repo/ui/components/button"
 import { Edit, Email, Password } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
-import { capitalizeFirst } from "@repo/utils/strings"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 import { useState } from "react"
@@ -16,6 +15,7 @@ import {
   PanelRows,
   StateBadge,
 } from "@/components/layout/panel"
+import { RoleBadge } from "@/components/layout/role-badge"
 import { GENDER_LABEL_KEYS } from "@/lib/i18n"
 import { useAuthStore } from "@/stores/auth-store"
 import { ChangePasswordForm } from "./-change-password-form"
@@ -95,17 +95,17 @@ function IdentityPanel({ className }: { className?: string }) {
                 mono={false}
               />
               <PanelRow
+                label={t("profile.identity.role")}
+                value={<RoleBadge role={user.role} variant="value" />}
+                mono={false}
+              />
+              <PanelRow
                 label={t("profile.identity.phone")}
                 value={user.phone ?? "-"}
               />
               <PanelRow
                 label={t("profile.identity.gender")}
                 value={user.gender ? tc(GENDER_LABEL_KEYS[user.gender]) : "-"}
-                mono={false}
-              />
-              <PanelRow
-                label={t("profile.identity.gender")}
-                value={capitalizeFirst(user.role)}
                 mono={false}
               />
             </PanelRows>

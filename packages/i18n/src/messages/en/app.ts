@@ -20,6 +20,10 @@ export default {
 		exampleChild3: "Child 3",
 		versionLabel: "Version",
 	},
+	roleOptions: {
+		admin: "Admin",
+		user: "User",
+	},
 	form: {
 		unsaved: {
 			title: "Unsaved Changes",
@@ -156,6 +160,7 @@ export default {
 			name: "Name",
 			phone: "Phone Number",
 			gender: "Gender",
+			role: "Role",
 		},
 		security: {
 			panel: "Account Security",

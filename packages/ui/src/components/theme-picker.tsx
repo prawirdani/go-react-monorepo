@@ -47,7 +47,6 @@ export function ThemeModeToggle({
     <Button
       type="button"
       variant="ghost"
-      size="sm"
       className={cn("w-full justify-start", className)}
       onKeyDown={containMenuEvents ? containMenuKeys : undefined}
       onPointerDown={containMenuEvents ? containMenuPointer : undefined}

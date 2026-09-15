@@ -20,6 +20,10 @@ const app: DeepStringify<typeof en> = {
 		exampleChild3: "Anak 3",
 		versionLabel: "Versi",
 	},
+	roleOptions: {
+		admin: "Admin",
+		user: "Pengguna",
+	},
 	form: {
 		unsaved: {
 			title: "Perubahan Belum Tersimpan",
@@ -157,6 +161,7 @@ const app: DeepStringify<typeof en> = {
 			name: "Nama",
 			phone: "No Handphone",
 			gender: "Jenis Kelamin",
+			role: "Peran",
 		},
 		security: {
 			panel: "Keamanan Akun",

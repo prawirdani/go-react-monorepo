@@ -25,6 +25,7 @@ import { ThemeModeToggle } from "@repo/ui/components/theme-picker"
 import { Burger, Logout, User } from "@repo/ui/icons"
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+import { RoleBadge } from "@/components/layout/role-badge"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { imageUrl } from "@/lib/api"
 import { authActions, useAuthStore } from "@/stores/auth-store"
@@ -113,13 +114,21 @@ function AvatarSection() {
               <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 leading-4">
-              <p className="truncate text-sm font-medium">{user.name}</p>
-              <p className="truncate font-mono text-xs text-muted-foreground">
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="min-w-0 truncate text-sm font-medium">
+                  {user.name}
+                </p>
+                <RoleBadge role={user.role} />
+              </div>
+              <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                 {user.email}
               </p>
             </div>
           </div>
+          <DropdownMenuSeparator />
+
           <ThemeModeToggle className="w-full" containMenuEvents />
+
           <DropdownMenuSeparator />
           <div className="[&_[data-slot=dropdown-menu-item]]:py-2 [&_[data-slot=dropdown-menu-item]]:cursor-pointer">
             <Link to="/profile">
