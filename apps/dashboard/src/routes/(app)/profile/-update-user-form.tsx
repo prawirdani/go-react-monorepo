@@ -1,13 +1,13 @@
 import { useTranslations } from "@repo/i18n"
-import { type Gender, type User, updateUserSchema } from "@repo/schemas/user"
+import { type User, updateUserSchema } from "@repo/schemas/user"
 import { Button } from "@repo/ui/components/button"
 import { FieldGroup } from "@repo/ui/components/field"
 import toast from "@repo/ui/components/toast"
 import { useRouter } from "@tanstack/react-router"
 import { setFormErrors, useAppForm } from "@/components/form"
-import { type MessageKey } from "@/components/layout/sidebar-nav"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { userAPI } from "@/lib/api"
+import { GenderOptions } from "@/lib/i18n"
 import { authActions } from "@/stores/auth-store"
 
 interface UpdateUserFormProps {
@@ -15,22 +15,13 @@ interface UpdateUserFormProps {
   onClose: () => void
 }
 
-/** Gender labels live in the app catalog, keyed by the schema's Gender values. */
-const GENDER_LABEL_KEYS = {
-  M: "profile.genderOptions.m",
-  F: "profile.genderOptions.f",
-  O: "profile.genderOptions.o",
-} as const satisfies Record<Gender, MessageKey>
-
 export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
   const handleError = useErrorHandler()
   const router = useRouter()
   const t = useTranslations("app")
   const tc = useTranslations("common")
 
-  const genderOptions = (Object.keys(GENDER_LABEL_KEYS) as Gender[]).map(
-    (value) => ({ value, label: t(GENDER_LABEL_KEYS[value]) }),
-  )
+  const genderOptions = GenderOptions(tc)
 
   const form = useAppForm({
     defaultValues: {
@@ -105,10 +96,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
               >
                 <field.Label text={t("profile.identity.gender")} />
                 <div>
-                  <field.Select
-                    className="w-full"
-                    items={genderOptions}
-                  />
+                  <field.Select className="w-full" items={genderOptions} />
                   <field.Errors />
                 </div>
               </field.Container>

@@ -15,7 +15,12 @@ export {
 	type Locale,
 	TIME_ZONE,
 } from "./config";
-export { catalogFor, messages } from "./messages";
+export {
+	catalogFor,
+	type MessageKeys,
+	messages,
+	type Translator,
+} from "./messages";
 export { I18nProvider, useSetLocale } from "./provider";
 
 /**

@@ -2,8 +2,10 @@ import { z } from "zod";
 import "./error-map";
 
 const GENDERS = ["M", "F", "O"] as const;
+const ROLES = ["admin", "user"] as const;
 
 export type Gender = (typeof GENDERS)[number];
+export type Role = (typeof ROLES)[number];
 
 // Gender display labels live in the i18n catalog (app.profile.genderOptions):
 // packages/schemas carries data shapes, not user-facing copy.
@@ -11,6 +13,7 @@ export type Gender = (typeof GENDERS)[number];
 export type User = {
 	id: string;
 	name: string;
+	role: Role;
 	email: string;
 	email_verified_at: string | null;
 	gender: Gender | null;

@@ -33,7 +33,7 @@ export const Route = createFileRoute("/login")({
 })
 
 const linkClass =
-  "rounded-sm text-primary outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+  "rounded-sm text-primary text-sm outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring"
 
 function RouteComponent() {
   const t = useTranslations("app")

@@ -157,11 +157,6 @@ export default {
 			phone: "Phone Number",
 			gender: "Gender",
 		},
-		genderOptions: {
-			m: "Male",
-			f: "Female",
-			o: "Other",
-		},
 		security: {
 			panel: "Account Security",
 			description:
@@ -199,22 +194,11 @@ export default {
 	},
 	settings: {
 		title: "Settings",
-		description: "Display preferences and basic application information.",
+		description: "Choose how the console looks.",
 		appearance: {
 			panel: "Appearance",
 			label: "Theme and mode",
 			hint: "Preferences are stored in this browser and follow the system until you choose.",
-		},
-		about: {
-			panel: "About",
-			languageLabel: "Interface language",
-			languageValue: "Indonesian",
-			authLabel: "Authentication",
-			authValue: "cookie · httpOnly",
-			apiLabel: "API base",
-			apiValue: "/api",
-			defaultModeLabel: "Default mode",
-			defaultModeValue: "Dark",
 		},
 	},
 	example: {

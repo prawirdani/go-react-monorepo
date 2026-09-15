@@ -158,11 +158,6 @@ const app: DeepStringify<typeof en> = {
 			phone: "No Handphone",
 			gender: "Jenis Kelamin",
 		},
-		genderOptions: {
-			m: "Laki-laki",
-			f: "Perempuan",
-			o: "Lainnya",
-		},
 		security: {
 			panel: "Keamanan Akun",
 			description:
@@ -200,22 +195,11 @@ const app: DeepStringify<typeof en> = {
 	},
 	settings: {
 		title: "Pengaturan",
-		description: "Preferensi tampilan dan informasi dasar aplikasi.",
+		description: "Pilih tampilan konsol.",
 		appearance: {
 			panel: "Tampilan",
 			label: "Tema dan mode",
 			hint: "Preferensi disimpan di peramban ini dan mengikuti sistem bila belum dipilih.",
-		},
-		about: {
-			panel: "Tentang",
-			languageLabel: "Bahasa antarmuka",
-			languageValue: "Indonesia",
-			authLabel: "Autentikasi",
-			authValue: "cookie · httpOnly",
-			apiLabel: "Basis API",
-			apiValue: "/api",
-			defaultModeLabel: "Mode default",
-			defaultModeValue: "Gelap",
 		},
 	},
 	example: {

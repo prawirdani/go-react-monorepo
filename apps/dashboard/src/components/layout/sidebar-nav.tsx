@@ -1,4 +1,4 @@
-import { useTranslations } from "@repo/i18n"
+import { type MessageKeys, useTranslations } from "@repo/i18n"
 import {
   Collapsible,
   CollapsibleContent,
@@ -7,26 +7,24 @@ import {
 import { ChevronRight, type TablerIcon } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { Link, useLocation } from "@tanstack/react-router"
-import type { FileRoutesByFullPath } from "@/routeTree.gen"
-
-type Translator = ReturnType<typeof useTranslations<"app">>
-
-/** Any key that exists in the app catalog — derived from the typed translator. */
-export type MessageKey = Parameters<Translator["has"]>[0]
+import type { FileRouteTypes } from "@/routeTree.gen"
 
 export type NavItem = {
   /** Catalog key, translated at render — the array is module-level. */
-  titleKey: MessageKey
+  titleKey: MessageKeys<"app">
   icon: TablerIcon
 } & (
   | {
       // Leaf node: has URL, no children
-      href: keyof FileRoutesByFullPath
+      href: FileRouteTypes["to"]
       children?: never
     }
   | {
       // Parent node: has children, no URL
-      children: { titleKey: MessageKey; href: keyof FileRoutesByFullPath }[]
+      children: {
+        titleKey: MessageKeys<"app">
+        href: FileRouteTypes["to"]
+      }[]
     }
 )
 

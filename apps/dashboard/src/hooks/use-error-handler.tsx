@@ -5,7 +5,7 @@ import {
   type ErrorMap,
   parseAPIError,
 } from "@repo/api/errors"
-import { useFormatter, useTranslations } from "@repo/i18n"
+import { type MessageKeys, useFormatter, useTranslations } from "@repo/i18n"
 import toast from "@repo/ui/components/toast"
 import { useCallback } from "react"
 import { REDIRECT_ERROR_CODES, useAuthStore } from "@/stores/auth-store"
@@ -20,15 +20,12 @@ type ErrorHandlers = {
   [K in APIErrorCodes]?: (e: ErrorDescriptor<K, ErrorMap[K]>) => void
 }
 
-type Translator = ReturnType<typeof useTranslations<"app">>
-type MessageKey = Parameters<Translator["has"]>[0]
-
 /**
  * Server text cannot be translated client-side, so user-facing toasts are
  * keyed off the error code instead. An unmapped code falls back to a generic
  * localized message rather than leaking the backend string.
  */
-const CODE_MESSAGES: Partial<Record<APIErrorCodes, MessageKey>> = {
+const CODE_MESSAGES: Partial<Record<APIErrorCodes, MessageKeys<"app">>> = {
   VALIDATION: "errors.codes.validation",
   AUTH_CREDENTIALS: "errors.codes.credentials",
   AUTH_EXPIRED: "errors.codes.expired",

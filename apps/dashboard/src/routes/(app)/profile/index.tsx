@@ -1,8 +1,8 @@
 import { useTranslations } from "@repo/i18n"
-import type { Gender } from "@repo/schemas/user"
 import { Button } from "@repo/ui/components/button"
 import { Edit, Email, Password } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
+import { capitalizeFirst } from "@repo/utils/strings"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 import { useState } from "react"
@@ -16,18 +16,11 @@ import {
   PanelRows,
   StateBadge,
 } from "@/components/layout/panel"
-import type { MessageKey } from "@/components/layout/sidebar-nav"
+import { GENDER_LABEL_KEYS } from "@/lib/i18n"
 import { useAuthStore } from "@/stores/auth-store"
 import { ChangePasswordForm } from "./-change-password-form"
 import { ProfilePicture } from "./-profile-picture"
 import { UpdateUserForm } from "./-update-user-form"
-
-/** Gender labels live in the app catalog, keyed by the schema's Gender values. */
-const GENDER_LABEL_KEYS = {
-  M: "profile.genderOptions.m",
-  F: "profile.genderOptions.f",
-  O: "profile.genderOptions.o",
-} as const satisfies Record<Gender, MessageKey>
 
 export const Route = createFileRoute("/(app)/profile/")({
   loader: () => {
@@ -59,6 +52,7 @@ function IdentityPanel({ className }: { className?: string }) {
   const user = Route.useLoaderData()
   const [showForm, setShowForm] = useState(false)
   const t = useTranslations("app")
+  const tc = useTranslations("common")
 
   return (
     <Panel className={className}>
@@ -66,7 +60,7 @@ function IdentityPanel({ className }: { className?: string }) {
         title={t("profile.identity.panel")}
         aside={
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon-sm"
             hidden={showForm}
             onClick={() => setShowForm(true)}
@@ -106,7 +100,12 @@ function IdentityPanel({ className }: { className?: string }) {
               />
               <PanelRow
                 label={t("profile.identity.gender")}
-                value={user.gender ? t(GENDER_LABEL_KEYS[user.gender]) : "-"}
+                value={user.gender ? tc(GENDER_LABEL_KEYS[user.gender]) : "-"}
+                mono={false}
+              />
+              <PanelRow
+                label={t("profile.identity.gender")}
+                value={capitalizeFirst(user.role)}
                 mono={false}
               />
             </PanelRows>

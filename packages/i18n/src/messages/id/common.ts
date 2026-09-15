@@ -7,8 +7,10 @@ const common: DeepStringify<typeof en> = {
 		close: "Tutup",
 		save: "Simpan",
 	},
-	state: {
-		loading: "Memuat…",
+	genderOptions: {
+		m: "Laki-Laki",
+		f: "Perempuan",
+		o: "Lainnya",
 	},
 };
 

@@ -45,7 +45,7 @@ pnpm --filter dashboard exec tsc --noEmit     # typecheck the app
 ## Gotchas
 
 - **Dashboard uses 2-space indent; packages use tabs.** Biome configs differ per package — run biome from the package dir (`./node_modules/.bin/biome` if the root wrapper fails).
-- Pre-existing `tsc` failures (not caused by feature work): `/example` vs `/example/` route-type mismatch in `src/components/layout/*`, `vite.config.ts` unknown `babel` option, unused `userAPI` in `packages/queries/src/user.query.ts`. Don't "fix" them unless asked.
+- Pre-existing `tsc` failures (not caused by feature work) — 4 of them: a `/example` vs `/example/` route-type mismatch each in `src/components/layout/page.tsx` and `src/hooks/use-navigate-back.tsx`, an unknown `babel` option in `vite.config.ts`, and an unused `userAPI` in `packages/queries/src/user.query.ts`. The same `FileRouteTypes["to"]` migration that fixed `sidebar-nav.tsx`/`sidebar.tsx` would fix the first two, but they're untouched by request. Don't "fix" them unless asked.
 - `reset-password.tsx` loader marks the link invalid on *any* loader error (network/5xx included) — behavior worth revisiting but deliberate for now.
 - Auth store lives in `src/stores/auth-store.ts` (zustand). RBAC gatekeeper code is commented out there.
 - Adding a new `exports` subpath to a workspace package (`packages/*/package.json`) requires **restarting the dev server**. Vite caches the `exports` map, and a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath — while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. `pnpm dev` will fix it; don't chase the module itself.

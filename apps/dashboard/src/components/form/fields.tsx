@@ -1,4 +1,4 @@
-import { useTranslations } from "@repo/i18n"
+import { type Translator, useTranslations } from "@repo/i18n"
 import { Button } from "@repo/ui/components/button"
 import {
   Combobox,
@@ -38,8 +38,6 @@ import {
   useMemo,
 } from "react"
 import { useFieldContext, useFormContext } from "./context"
-
-type Translator = ReturnType<typeof useTranslations>
 
 /**
  * Zod emits message keys; the API layer puts raw server text into field errors.

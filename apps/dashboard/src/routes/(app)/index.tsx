@@ -1,4 +1,4 @@
-import { useTranslations } from "@repo/i18n"
+import { type MessageKeys, useTranslations } from "@repo/i18n"
 import { Button } from "@repo/ui/components/button"
 import {
   Table,
@@ -21,29 +21,33 @@ import {
   StateBadge,
   type Tone,
 } from "@/components/layout/panel"
-import type { MessageKey } from "@/components/layout/sidebar-nav"
 
 export const Route = createFileRoute("/(app)/")({
   component: Component,
 })
 
 // Sample figures are data, not copy — only the labels are translated.
-const summary: { labelKey: MessageKey; value: string; tone?: Tone }[] = [
-  { labelKey: "dashboard.summary.entriesToday", value: "128" },
-  {
-    labelKey: "dashboard.summary.awaitingReview",
-    value: "12",
-    tone: "warning",
-  },
-  {
-    labelKey: "dashboard.summary.failedProcessing",
-    value: "3",
-    tone: "destructive",
-  },
-  { labelKey: "dashboard.summary.lastSync", value: "09:41 WIB" },
-]
+const summary: { labelKey: MessageKeys<"app">; value: string; tone?: Tone }[] =
+  [
+    { labelKey: "dashboard.summary.entriesToday", value: "128" },
+    {
+      labelKey: "dashboard.summary.awaitingReview",
+      value: "12",
+      tone: "warning",
+    },
+    {
+      labelKey: "dashboard.summary.failedProcessing",
+      value: "3",
+      tone: "destructive",
+    },
+    { labelKey: "dashboard.summary.lastSync", value: "09:41 WIB" },
+  ]
 
-const services: { nameKey: MessageKey; stateKey: MessageKey; tone: Tone }[] = [
+const services: {
+  nameKey: MessageKeys<"app">
+  stateKey: MessageKeys<"app">
+  tone: Tone
+}[] = [
   {
     nameKey: "dashboard.service.api",
     stateKey: "dashboard.serviceState.normal",
@@ -73,9 +77,9 @@ const services: { nameKey: MessageKey; stateKey: MessageKey; tone: Tone }[] = [
 
 const activity: {
   time: string
-  actorKey: MessageKey
-  actionKey: MessageKey
-  stateKey: MessageKey
+  actorKey: MessageKeys<"app">
+  actionKey: MessageKeys<"app">
+  stateKey: MessageKeys<"app">
   tone: Tone
 }[] = [
   {

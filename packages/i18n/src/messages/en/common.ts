@@ -4,7 +4,9 @@ export default {
 		close: "Close",
 		save: "Save",
 	},
-	state: {
-		loading: "Loading…",
+	genderOptions: {
+		m: "Male",
+		f: "Female",
+		o: "Other",
 	},
 } as const;

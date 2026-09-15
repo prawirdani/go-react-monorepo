@@ -25,6 +25,7 @@ apps/
       components/     # shared UI + form components
       hooks/          # useErrorHandler etc.
       lib/api.ts      # APIClient + typed API instances + imageUrl
+      lib/i18n.ts     # typed catalog accessors (MessageKeys / Translator)
       routes/         # TanStack Router file routes (login, (app), auth/...)
       stores/         # zustand auth store
 packages/
@@ -119,6 +120,17 @@ const format = useFormatter() // locale-aware Intl numbers/dates
 
 For non-React code (stores, toast helpers) use `getTranslator(locale)`.
 
+When a key is only known at runtime, use the exported accessors rather than re-deriving them from the hook's return type:
+
+```ts
+import type { MessageKeys, Translator } from "@repo/i18n"
+
+const CODE_MESSAGES: Partial<Record<ErrorCode, MessageKeys<"app">>> = { … } // leaf-key union for a namespace
+const buildOptions = (tc: Translator<"common">) => …                        // a namespace-bound translator
+```
+
+`MessageKeys<N>` is the union of leaf keys in namespace `N` (objects never qualify), and `Translator<N>` is the translator bound to `N`.
+
 **Guard:** `pnpm check:messages` validates ICU syntax for every message and asserts identical key sets across locales. Vite has no build-time ICU validation — a malformed plural silently renders the key path at runtime — so this is the only guard. It is wired into the pipeline (`build` depends on it), so a malformed plural or a one-sided key fails the build instead of shipping.
 
 **Validation messages are keys, not copy.** `packages/schemas` emits `validation.*` keys (a locale-agnostic global error map keys generic zod issues too), and the UI resolves them at the display layer:
@@ -131,7 +143,7 @@ The same discriminator keeps untranslatable backend messages from breaking: erro
 
 **Adding a locale:** add `<locale>/{app,common,ui,validation}.ts` typed from `en`, register it in `packages/i18n/src/config.ts` (`LOCALES`), and add it to the pre-hydration list in `apps/dashboard/index.html`.
 
-**Known constraint — keep message leaves free of ICU arguments and tags.** Several call sites pass a dynamic `MessageKey` to `t()` with a single argument; a message that requires `values` makes every one of those calls a type error. Compose multi-part sentences in the template instead. A `// NOTE:` at the top of `en/app.ts` records this.
+**Known constraint — keep message leaves free of ICU arguments and tags.** Several call sites type a runtime key as `MessageKeys<"app">` and pass it to `t()` with a single argument; a message that requires `values` makes every one of those calls a type error. Compose multi-part sentences in the template instead. A `// NOTE:` at the top of `en/app.ts` records this.
 
 The catalogs and types are platform-independent; `I18nProvider` is web-only (it reads `localStorage` and sets `<html lang>`), so a non-web app supplies its own provider and reuses everything else.
 
@@ -171,4 +183,4 @@ The two repos are kept in sync; when the backend changes, the API layer in `pack
 
 - **Adding an `exports` subpath to a workspace package requires a dev-server restart.** Vite caches the `exports` map, so a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath — while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. Restart `pnpm dev`; don't chase the module itself.
 - **Set `VITE_VERSION` in the build environment.** `apps/dashboard/.env` is gitignored and `example.env` is only a template, so a production build needs the value supplied by the environment — otherwise the sidebar footer falls back to `dev`.
-- **Pre-existing `tsc` failures** (not caused by feature work): the `/example` vs `/example/` route-type mismatch under `src/components/layout/*`, an unknown `babel` option in `vite.config.ts`, and an unused `userAPI` in `packages/queries/src/user.query.ts`. Don't "fix" them unless asked.
+- **Pre-existing `tsc` failures** (not caused by feature work) — 4 remaining: a `/example` vs `/example/` route-type mismatch in `src/components/layout/page.tsx` and `src/hooks/use-navigate-back.tsx`, an unknown `babel` option in `vite.config.ts`, and an unused `userAPI` in `packages/queries/src/user.query.ts`. Don't "fix" them unless asked.
