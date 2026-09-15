@@ -1,4 +1,4 @@
-export function isDeepEqual(obj1: any, obj2: any): boolean {
+export function isDeepEqual(obj1: unknown, obj2: unknown): boolean {
 	if (obj1 === obj2) return true;
 
 	if (
@@ -13,15 +13,18 @@ export function isDeepEqual(obj1: any, obj2: any): boolean {
 	// Handle Arrays
 	if (Array.isArray(obj1) !== Array.isArray(obj2)) return false;
 
-	const keys1 = Object.keys(obj1);
-	const keys2 = Object.keys(obj2);
+	// Both sides are non-null objects by this point.
+	const left = obj1 as Record<string, unknown>;
+	const right = obj2 as Record<string, unknown>;
+	const keys1 = Object.keys(left);
+	const keys2 = Object.keys(right);
 
 	// Check number of properties
 	if (keys1.length !== keys2.length) return false;
 
 	// Recursive check for every key
 	for (const key of keys1) {
-		if (!keys2.includes(key) || !isDeepEqual(obj1[key], obj2[key])) {
+		if (!keys2.includes(key) || !isDeepEqual(left[key], right[key])) {
 			return false;
 		}
 	}
@@ -32,7 +35,8 @@ export function isDeepEqual(obj1: any, obj2: any): boolean {
 /**
  * Debounces a function - delays execution until after wait time has passed since last call
  */
-export function debounce<T extends (...args: any[]) => any>(
+// biome-ignore lint/suspicious/noExplicitAny: a forwarding wrapper needs `any[]` here; `unknown[]` is not assignable from parameterised callbacks (contravariance)
+export function debounce<T extends (...args: any[]) => unknown>(
 	func: T,
 	wait: number = 300,
 ) {

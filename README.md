@@ -71,6 +71,7 @@ pnpm lint           # biome lint
 pnpm format         # biome format
 pnpm check:write    # biome check --write
 pnpm check:messages # validate catalogs: ICU syntax + locale key parity
+pnpm audit:messages # report catalog smells: unused / duplicate / untranslated keys
 ```
 
 ## Authentication & Session Model
@@ -133,6 +134,8 @@ const buildOptions = (tc: Translator<"common">) => …                        //
 
 **Guard:** `pnpm check:messages` validates ICU syntax for every message and asserts identical key sets across locales. Vite has no build-time ICU validation — a malformed plural silently renders the key path at runtime — so this is the only guard. It is wired into the pipeline (`build` depends on it), so a malformed plural or a one-sided key fails the build instead of shipping.
 
+**Hygiene:** `pnpm audit:messages` reports what shouldn't fail a build — keys nothing references, text duplicated across keys, and strings identical in every locale. It scans `packages/schemas` too, because validation keys are emitted from there; an app-only scan would report every `validation.*` key as dead. Run it when adding or removing screens.
+
 **Validation messages are keys, not copy.** `packages/schemas` emits `validation.*` keys (a locale-agnostic global error map keys generic zod issues too), and the UI resolves them at the display layer:
 
 ```ts
@@ -183,4 +186,4 @@ The two repos are kept in sync; when the backend changes, the API layer in `pack
 
 - **Adding an `exports` subpath to a workspace package requires a dev-server restart.** Vite caches the `exports` map, so a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath — while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. Restart `pnpm dev`; don't chase the module itself.
 - **Set `VITE_VERSION` in the build environment.** `apps/dashboard/.env` is gitignored and `example.env` is only a template, so a production build needs the value supplied by the environment — otherwise the sidebar footer falls back to `dev`.
-- **Pre-existing `tsc` failures** (not caused by feature work) — 4 remaining: a `/example` vs `/example/` route-type mismatch in `src/components/layout/page.tsx` and `src/hooks/use-navigate-back.tsx`, an unknown `babel` option in `vite.config.ts`, and an unused `userAPI` in `packages/queries/src/user.query.ts`. Don't "fix" them unless asked.
+- **Pre-existing `tsc` failure** (not caused by feature work) — 1: `vite.config.ts` rejects an unknown `babel` option.

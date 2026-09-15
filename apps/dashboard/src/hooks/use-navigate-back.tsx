@@ -1,7 +1,7 @@
 import { useCanGoBack, useRouter } from "@tanstack/react-router"
-import type { FileRoutesByFullPath } from "@/routeTree.gen"
+import type { FileRouteTypes } from "@/routeTree.gen"
 
-export function useNavigateBack(fallback: keyof FileRoutesByFullPath) {
+export function useNavigateBack(fallback: FileRouteTypes["to"]) {
   const router = useRouter()
   const canGoBack = useCanGoBack()
 

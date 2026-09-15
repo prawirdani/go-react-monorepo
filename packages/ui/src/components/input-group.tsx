@@ -9,6 +9,7 @@ import type * as React from "react"
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a <fieldset> would bring UA border/padding/margin; this is a flex layout wrapper, not a labelled control group
     <div
       data-slot="input-group"
       role="group"
@@ -48,6 +49,8 @@ function InputGroupAddon({
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the click only forwards focus to the sibling control, which is itself keyboard reachable, so no key handler is needed on this decoration
+    // biome-ignore lint/a11y/useSemanticElements: a <fieldset> would bring UA border/padding/margin; this addon is a styled flex container
     <div
       role="group"
       data-slot="input-group-addon"

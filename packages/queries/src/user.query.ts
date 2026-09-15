@@ -1,7 +1,7 @@
-import type { AuthAPI, UserAPI } from "@repo/api";
+import type { AuthAPI } from "@repo/api";
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 
-export function userQueries(userAPI: UserAPI, authAPI: AuthAPI) {
+export function userQueries(authAPI: AuthAPI) {
 	return {
 		currentUser: queryOptions({
 			queryKey: ["current-user"],

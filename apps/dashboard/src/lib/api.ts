@@ -21,4 +21,4 @@ const apiClient = new APIClient({
 export const authAPI = new AuthAPI(apiClient)
 export const userAPI = new UserAPI(apiClient)
 
-export const userQueries = userQ(userAPI, authAPI)
+export const userQueries = userQ(authAPI)

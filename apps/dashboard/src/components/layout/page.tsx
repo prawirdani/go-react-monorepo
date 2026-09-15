@@ -2,7 +2,7 @@ import { useTranslations } from "@repo/i18n"
 import { cn } from "@repo/ui/lib/utils"
 import { Link } from "@tanstack/react-router"
 import { type ComponentPropsWithoutRef, Fragment } from "react"
-import type { FileRoutesByFullPath } from "@/routeTree.gen"
+import type { FileRouteTypes } from "@/routeTree.gen"
 
 export function PageContainer({
   className,
@@ -52,7 +52,7 @@ export function Page(props: PageProps) {
 
 type BreadcrumbItem = {
   name: string
-  href?: keyof FileRoutesByFullPath
+  href?: FileRouteTypes["to"]
 }
 
 function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {

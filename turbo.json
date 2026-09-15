@@ -10,6 +10,9 @@
 		"check:messages": {
 			"outputs": []
 		},
+		"audit:messages": {
+			"outputs": []
+		},
 		"format": {
 			"dependsOn": ["^format"]
 		},

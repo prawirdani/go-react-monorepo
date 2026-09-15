@@ -7,7 +7,8 @@
 		"format": "biome format",
 		"lint": "biome lint",
 		"check:write": "biome check --write",
-		"check:messages": "node scripts/check-messages.mjs"
+		"check:messages": "node scripts/check-messages.mjs",
+		"audit:messages": "node scripts/audit-messages.mjs"
 	},
 	"keywords": [],
 	"author": "",
