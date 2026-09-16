@@ -31,6 +31,7 @@ const CODE_MESSAGES: Partial<Record<APIErrorCodes, MessageKeys<"app">>> = {
   AUTH_EXPIRED: "errors.codes.expired",
   AUTH_INVALID_SESSION: "errors.codes.invalidSession",
   AUTH_INVALID_RECOV_TOKEN: "errors.codes.invalidRecoveryToken",
+  AUTH_INVALID_REGISTRATION_TOKEN: "errors.codes.invalidRecoveryToken",
   RESOURCE_NOT_FOUND: "errors.codes.notFound",
   USER_EMAIL_CONFLICT: "errors.codes.emailConflict",
   REQ_UNAUTHORIZED: "errors.codes.unauthorized",

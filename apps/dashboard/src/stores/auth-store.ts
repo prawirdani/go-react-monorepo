@@ -14,7 +14,7 @@ export const REDIRECT_ERROR_CODES = new Set<APIErrorCodes>([
  * Thrown when a user authenticates successfully but lacks the required roles
  * for this specific application (e.g., non-admin attempting to access the Dashboard).
  * DESIGN RATIONALE:
- * Since the backend '/login' is a shared entry point without role-gatekeeping,
+ * Since the backend '/auth/login' is a shared entry point without role-gatekeeping,
  * we perform a "Gatekeeper" check in the client after identity is confirmed.
  * If access is denied, we intentionally call '/logout' to destroy the server session
  * (httpOnly cookies) and wipe local state.

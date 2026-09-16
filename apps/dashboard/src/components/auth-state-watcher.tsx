@@ -15,7 +15,7 @@ export function AuthStateWatcher() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: translator identity is locale-stable
   useEffect(() => {
     if (status === "expired" && !hasHandled.current) {
-      router.navigate({ to: "/login", replace: true })
+      router.navigate({ to: "/auth/login", replace: true })
       toast.error(t("errors.sessionExpiredTitle"), {
         description: t("errors.sessionExpiredMessage"),
         duration: 8000, // 8s

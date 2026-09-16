@@ -61,6 +61,8 @@ export default {
 			forgot: "Forgot password?",
 			submit: "Sign in",
 			credentialsError: "Your email or password is incorrect",
+			noAccount: "Don't have an account yet?",
+			registerLink: "Create account",
 		},
 		forgot: {
 			title: "Forgot Password",
@@ -90,6 +92,31 @@ export default {
 			confirmPlaceholder: "Enter your new password again",
 			success: "Your password was updated successfully,",
 			successLink: "sign in",
+		},
+		register: {
+			title: "Create account",
+			description:
+				"Register an internal account. We will email you a link to finish setting it up.",
+			nameLabel: "Name",
+			namePlaceholder: "Enter your name",
+			submit: "Create account",
+			emailConflict: "An account already uses this email address",
+			sentMessage:
+				"We sent a confirmation link to your email address. Open it to choose your password and finish setting up your account.",
+			sentBack: "Already set a password?",
+		},
+		registerComplete: {
+			title: "Complete Registration",
+			description: "Choose a password to activate your account.",
+			invalidDescription: "This link can no longer be used.",
+			invalidExpired: "This link has expired or is no longer valid.",
+			invalidLead: "Return to the",
+			invalidLink: "sign-in page",
+			invalidTail: "to start over.",
+			confirmLabel: "Confirm password",
+			confirmPlaceholder: "Enter your password again",
+			submit: "Activate account",
+			success: "Your account is ready.",
 		},
 	},
 	dashboard: {
@@ -226,6 +253,8 @@ export default {
 			expired: "Your session has ended. Please sign in again.",
 			invalidSession: "Your session is not valid. Please sign in again.",
 			invalidRecoveryToken: "The recovery link is invalid or has expired.",
+			invalidRegistrationToken:
+				"The registration completion link is invalid or has expired.",
 			recoveryThrottled: "Too many attempts. Try again at",
 			notFound: "The requested data was not found.",
 			emailConflict: "This email is already registered.",

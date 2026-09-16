@@ -27,7 +27,7 @@ export const Route = createFileRoute("/(app)/profile/")({
     const user = useAuthStore.getState().user
     if (!user) {
       throw redirect({
-        to: "/login",
+        to: "/auth/login",
       })
     }
     return user

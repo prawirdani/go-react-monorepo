@@ -1,8 +1,10 @@
 import type {
 	ChangePasswordInput,
+	CompleteRegistrationInput,
 	LoginInput,
-	PasswordRecoveryToken,
+	OpaqueTokenMeta,
 	RecoverPasswordInput,
+	RegisterInput,
 	ResetPasswordInput,
 	TokenPair,
 } from "@repo/schemas/auth";
@@ -15,6 +17,37 @@ export class AuthAPI {
 
 	constructor(client: APIClient) {
 		this.client = client;
+	}
+
+	/**
+	 * Public self-registration only exists while the backend runs in internal
+	 * mode, where the caller has no session to send — so the public form passes
+	 * `{ noAuth: true }`. Defaults to sending the session (the admin case).
+	 */
+	async register(
+		payload: RegisterInput,
+		options?: { noAuth?: boolean },
+	): Promise<void> {
+		await this.client.Post("/api/auth/register", {
+			body: JSON.stringify(payload),
+			noAuth: options?.noAuth ?? false,
+		});
+	}
+
+	async completeRegistration(
+		payload: CompleteRegistrationInput,
+	): Promise<void> {
+		await this.client.Post("/api/auth/register/complete", {
+			body: JSON.stringify(payload),
+			noAuth: true,
+		});
+	}
+
+	async getRegistrationToken(rawToken: string): Promise<OpaqueTokenMeta> {
+		const res = await this.client.Get<OpaqueTokenMeta>(
+			`/api/auth/register/${rawToken}`,
+		);
+		return res.data;
 	}
 
 	async login(credentials: LoginInput): Promise<TokenPair> {
@@ -79,10 +112,8 @@ export class AuthAPI {
 	/**
 	 * Get password recovery token.
 	 */
-	async getPasswordRecoveryToken(
-		token: string,
-	): Promise<PasswordRecoveryToken> {
-		const res = await this.client.Get<PasswordRecoveryToken>(
+	async getPasswordRecoveryToken(token: string): Promise<OpaqueTokenMeta> {
+		const res = await this.client.Get<OpaqueTokenMeta>(
 			`/api/auth/password/recover/${token}`,
 		);
 		return res.data;
@@ -95,5 +126,13 @@ export class AuthAPI {
 		await this.client.Put("/api/auth/password/reset", {
 			body: JSON.stringify(payload),
 		});
+	}
+
+	/**
+	 * Retrieves permission list on current active user.
+	 */
+	async getPermissions(): Promise<string[]> {
+		const res = await this.client.Get<string[]>("/api/auth/permissions");
+		return res.data;
 	}
 }

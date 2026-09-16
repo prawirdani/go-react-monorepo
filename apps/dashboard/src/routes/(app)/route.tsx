@@ -15,7 +15,7 @@ export const Route = createFileRoute("/(app)")({
     const auth = useAuthStore.getState()
     if (auth.status !== "authenticated") {
       throw redirect({
-        to: "/login",
+        to: "/auth/login",
         search: {
           redirect: location.href,
         },

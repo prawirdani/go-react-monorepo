@@ -78,7 +78,7 @@ function AvatarSection() {
   useEffect(() => {
     if (!user) {
       navigate({
-        to: "/login",
+        to: "/auth/login",
         replace: true,
       })
     }

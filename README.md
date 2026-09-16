@@ -80,8 +80,26 @@ The template is built around a **cookie-based** auth flow — no tokens are stor
 
 - Login/refresh set `httpOnly` cookies (`access_token`, `refresh_token`).
 - `APIClient` always sends `credentials: "include"` and transparently refreshes on `401` (single-flight, retries once).
-- A refresh failure marks the session expired and redirects to `/login`.
+- A refresh failure marks the session expired and redirects to `/auth/login`.
 - Auth state lives in `apps/dashboard/src/stores/auth-store.ts` (zustand); `/auth/me` populates the current user.
+
+### Registration
+
+Signup is a two-step, email-driven flow gated by a **deployment flag** rather than build-time config:
+
+1. `POST /api/auth/register` with `{ name, email }` → the backend emails a link.
+2. That link opens `/auth/register/complete?token=…`, where the user chooses a password.
+
+The gate comes from the health probe (`GET /api/healthz` → `{ internal_mode, status }`):
+
+| `internal_mode` | Deployment | UI |
+| --- | --- | --- |
+| `false` | Public — self-registration is open | Register link and both forms render |
+| `true` | Internal — signup is admin-only | The surface is hidden and both routes redirect to `/auth/login` |
+
+**Mind the polarity: `false` means public.** The gate is also **presentation only** — the backend must reject `POST /api/auth/register` when `internal_mode` is `true`, since the client can only hide the affordance. It fails closed: a pending or failed health probe hides the surface. See `apps/dashboard/src/lib/health.ts`.
+
+The completion route validates its token exactly the way `reset-password` does — `expires_at` and `used_at`, with any loader error (network or 5xx included) counting as invalid.
 
 ## Design System
 

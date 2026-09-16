@@ -61,6 +61,8 @@ const app: DeepStringify<typeof en> = {
 			forgot: "Lupa password?",
 			submit: "Masuk",
 			credentialsError: "Email atau kata sandi Anda salah",
+			noAccount: "Belum punya akun?",
+			registerLink: "Buat akun",
 		},
 		forgot: {
 			title: "Lupa Kata Sandi",
@@ -91,6 +93,31 @@ const app: DeepStringify<typeof en> = {
 			confirmPlaceholder: "Masukkan ulang kata sandi baru Anda",
 			success: "Kata sandi Anda berhasil diperbarui,",
 			successLink: "login",
+		},
+		register: {
+			title: "Buat Akun",
+			description:
+				"Daftarkan akun internal. Kami akan mengirim tautan ke email Anda untuk menyelesaikan pendaftaran.",
+			nameLabel: "Nama",
+			namePlaceholder: "Masukkan nama Anda",
+			submit: "Buat akun",
+			emailConflict: "Email ini sudah dipakai akun lain",
+			sentMessage:
+				"Kami sudah mengirim tautan konfirmasi ke alamat email Anda. Buka tautan itu untuk membuat kata sandi dan menyelesaikan pendaftaran.",
+			sentBack: "Sudah punya kata sandi?",
+		},
+		registerComplete: {
+			title: "Selesaikan Pendaftaran",
+			description: "Buat kata sandi untuk mengaktifkan akun Anda.",
+			invalidDescription: "Tautan ini tidak dapat digunakan lagi.",
+			invalidExpired: "Tautan ini sudah kedaluwarsa atau tidak lagi valid.",
+			invalidLead: "Silakan kembali ke",
+			invalidLink: "halaman masuk",
+			invalidTail: "untuk memulai ulang.",
+			confirmLabel: "Konfirmasi kata sandi",
+			confirmPlaceholder: "Masukan ulang kata sandi Anda",
+			submit: "Aktifkan akun",
+			success: "Akun Anda sudah siap.",
 		},
 	},
 	dashboard: {
@@ -228,6 +255,8 @@ const app: DeepStringify<typeof en> = {
 			invalidSession: "Sesi Anda tidak valid. Silakan login kembali.",
 			invalidRecoveryToken:
 				"Tautan pemulihan tidak valid atau sudah kedaluwarsa.",
+			invalidRegistrationToken:
+				"Tautan registrasi tidak valid atau sudah kedaluwarsa.",
 			recoveryThrottled: "Terlalu banyak percobaan. Coba lagi pada",
 			notFound: "Data yang diminta tidak ditemukan.",
 			emailConflict: "Email ini sudah terdaftar.",

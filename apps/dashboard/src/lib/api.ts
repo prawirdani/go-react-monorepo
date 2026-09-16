@@ -18,6 +18,8 @@ const apiClient = new APIClient({
   },
 })
 
+export { apiClient }
+
 export const authAPI = new AuthAPI(apiClient)
 export const userAPI = new UserAPI(apiClient)
 

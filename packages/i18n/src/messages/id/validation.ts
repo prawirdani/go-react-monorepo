@@ -29,8 +29,11 @@ const validation: DeepStringify<typeof en> = {
 		type: "Jenis foto yang diizikan adalah: JPEG, PNG dan WebP",
 	},
 	required: "Wajib diisi",
-	token: {
+	reset_password_token: {
 		required: "Token reset password wajib diisi",
+	},
+	registration_token: {
+		required: "Token registrasi wajib diisi",
 	},
 	tooBig: "Nilai terlalu panjang",
 	tooSmall: "Nilai terlalu pendek",

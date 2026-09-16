@@ -1,5 +1,5 @@
 import { useTranslations } from "@repo/i18n"
-import { resetPasswordSchema } from "@repo/schemas/auth"
+import { completeRegistrationSchema } from "@repo/schemas/auth"
 import { FieldGroup } from "@repo/ui/components/field"
 import { Check, ClockX } from "@repo/ui/icons"
 import { createFileRoute, Link, redirect } from "@tanstack/react-router"
@@ -8,15 +8,30 @@ import { setFormErrors, useAppForm } from "@/components/form"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { authAPI } from "@/lib/api"
+import { healthQuery } from "@/lib/health"
 
 const search = z.object({
   token: z.string(),
 })
 
-export const Route = createFileRoute("/auth/reset-password")({
+export const Route = createFileRoute("/auth/register/complete")({
   validateSearch: search,
-  beforeLoad: async ({ search }) => {
+  beforeLoad: async ({ context, search }) => {
     if (!search.token) {
+      throw redirect({ to: "/auth/login", replace: true })
+    }
+
+    // Same gate as /auth/register: the completion form is unreachable unless the
+    // backend is running as a public deployment (`internal_mode: false`).
+    let publicRegistration = false
+    try {
+      const health = await context.queryClient.ensureQueryData(healthQuery)
+      publicRegistration = health.internal_mode === false
+    } catch {
+      publicRegistration = false
+    }
+
+    if (!publicRegistration) {
       throw redirect({ to: "/auth/login", replace: true })
     }
   },
@@ -25,8 +40,8 @@ export const Route = createFileRoute("/auth/reset-password")({
     let invalid = false
     try {
       const data = await context.queryClient.ensureQueryData({
-        queryKey: ["reset-password-token", token],
-        queryFn: () => authAPI.getPasswordRecoveryToken(token),
+        queryKey: ["registration-token", token],
+        queryFn: () => authAPI.getRegistrationToken(token),
         retry: false,
       })
 
@@ -55,20 +70,19 @@ function RouteComponent() {
   const { token, invalid } = Route.useLoaderData()
   const handleError = useErrorHandler()
   const t = useTranslations("app")
-  const tc = useTranslations("common")
 
   const form = useAppForm({
     defaultValues: {
       token,
-      new_password: "",
-      new_password_confirmation: "",
+      password: "",
+      password_confirmation: "",
     },
     validators: {
-      onSubmit: resetPasswordSchema,
+      onSubmit: completeRegistrationSchema,
     },
     onSubmit: async ({ value, formApi }) => {
       try {
-        await authAPI.resetPassword(value)
+        await authAPI.completeRegistration(value)
       } catch (error) {
         handleError(error, {
           VALIDATION: (e) => setFormErrors(formApi, e.details),
@@ -80,11 +94,11 @@ function RouteComponent() {
   return (
     <AuthShell>
       <AuthPanel
-        title={t("auth.reset.title")}
+        title={t("auth.registerComplete.title")}
         description={
           invalid
-            ? t("auth.reset.invalidDescription")
-            : t("auth.reset.description")
+            ? t("auth.registerComplete.invalidDescription")
+            : t("auth.registerComplete.description")
         }
       >
         {invalid ? (
@@ -99,34 +113,36 @@ function RouteComponent() {
                   <form.Root className="flex flex-col gap-6">
                     <FieldGroup className="gap-5">
                       <form.AppField
-                        name="new_password"
+                        name="password"
                         children={(field) => (
                           <field.Container>
                             <field.Label
-                              text={t("auth.reset.newPasswordLabel")}
+                              text={t("auth.fields.password")}
                               required
                             />
                             <field.TextField
-                              placeholder={t(
-                                "auth.reset.newPasswordPlaceholder",
-                              )}
+                              placeholder={t("auth.fields.passwordPlaceholder")}
                               type="password"
+                              autoComplete="new-password"
                             />
                             <field.Errors />
                           </field.Container>
                         )}
                       />
                       <form.AppField
-                        name="new_password_confirmation"
+                        name="password_confirmation"
                         children={(field) => (
                           <field.Container>
                             <field.Label
-                              text={t("auth.reset.confirmLabel")}
+                              text={t("auth.registerComplete.confirmLabel")}
                               required
                             />
                             <field.TextField
-                              placeholder={t("auth.reset.confirmPlaceholder")}
+                              placeholder={t(
+                                "auth.registerComplete.confirmPlaceholder",
+                              )}
                               type="password"
+                              autoComplete="new-password"
                             />
                             <field.Errors />
                           </field.Container>
@@ -134,7 +150,7 @@ function RouteComponent() {
                       />
                     </FieldGroup>
                     <form.SubmitButton className="w-full">
-                      {tc("actions.save")}
+                      {t("auth.registerComplete.submit")}
                     </form.SubmitButton>
                   </form.Root>
                 </form.AppForm>
@@ -155,15 +171,15 @@ function InvalidContent() {
       <div className="flex items-start gap-3">
         <ClockX className="mt-0.5 size-5 shrink-0 text-warning" />
         <p className="text-sm font-medium text-foreground">
-          {t("auth.reset.expired")}
+          {t("auth.registerComplete.invalidExpired")}
         </p>
       </div>
       <p className="border-t border-border pt-3 text-sm text-muted-foreground">
-        {t("auth.reset.requestAgainLead")}{" "}
-        <Link to="/auth/forgot-password" className={linkClass}>
-          {t("auth.reset.requestAgainLink")}
+        {t("auth.registerComplete.invalidLead")}{" "}
+        <Link to="/auth/login" className={linkClass}>
+          {t("auth.registerComplete.invalidLink")}
         </Link>{" "}
-        {t("auth.reset.requestAgainTail")}
+        {t("auth.registerComplete.invalidTail")}
       </p>
     </div>
   )
@@ -176,9 +192,9 @@ function SuccessContent() {
     <div className="flex items-start gap-3">
       <Check className="mt-0.5 size-5 shrink-0 text-success" />
       <p className="text-sm text-muted-foreground">
-        {t("auth.reset.success")}{" "}
+        {t("auth.registerComplete.success")}{" "}
         <Link to="/auth/login" className={linkClass}>
-          {t("auth.reset.successLink")}
+          {t("auth.login.title")}
         </Link>
         .
       </p>

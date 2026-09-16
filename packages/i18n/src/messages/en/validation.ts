@@ -26,8 +26,11 @@ export default {
 		type: "Allowed image types are JPEG, PNG and WebP",
 	},
 	required: "This field is required",
-	token: {
+	reset_password_token: {
 		required: "Password reset token is required",
+	},
+	registration_token: {
+		required: "Registration token is required",
 	},
 	tooBig: "Value is too long",
 	tooSmall: "Value is too short",

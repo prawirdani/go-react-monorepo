@@ -45,6 +45,7 @@ export type ErrorMap = {
 	AUTH_EXPIRED: null;
 	AUTH_INVALID_SESSION: null;
 	AUTH_INVALID_RECOV_TOKEN: null;
+	AUTH_INVALID_REGISTRATION_TOKEN: null;
 	AUTH_RECOVERY_THROTTLED: {
 		allowed: boolean;
 		/** ISO 8601 date-time when another request is allowed. */

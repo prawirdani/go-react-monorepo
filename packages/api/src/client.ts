@@ -48,7 +48,7 @@ export interface APIClientConfig {
 }
 
 export class APIClient {
-	private refreshPromise: Promise<Response> | null = null;
+	private refreshPromise: Promise<Response> | null = null; // refresh access token inflight promise
 	private baseURL: string;
 	private tokenProvider?: TokenProvider;
 	private refreshEndpoint: string;
@@ -102,6 +102,11 @@ export class APIClient {
 			this.onTokenRefreshFailed?.();
 		}
 
+		if (!response.ok) {
+			const errorBody = await response.json().catch((e) => e);
+			throw errorBody;
+		}
+
 		return response;
 	}
 
@@ -124,6 +129,18 @@ export class APIClient {
 
 	public setOnTokenRefreshed(fn: (tokens: TokenPair) => Promise<void>) {
 		this.onTokenRefreshed = fn;
+	}
+
+	public async healthz() {
+		// Fetch does not prefix baseURL (only makeVerb does), so build it here —
+		// otherwise this hits the app's origin and gets the SPA's HTML fallback.
+		const res = await this.Fetch(`${this.getBaseURL()}/api/healthz`);
+		const resBody = (await res.json()) as {
+			internal_mode: boolean;
+			status: string;
+		};
+
+		return resBody;
 	}
 
 	/** Handle token refresh with concurrent request protection */
@@ -198,10 +215,10 @@ export class APIClient {
 				...options,
 			});
 
-			if (!res.ok) {
-				const errorBody = await res.json().catch((e) => e);
-				throw errorBody;
-			}
+			// if (!res.ok) {
+			// 	const errorBody = await res.json().catch((e) => e);
+			// 	throw errorBody;
+			// }
 
 			return await res.json();
 		};

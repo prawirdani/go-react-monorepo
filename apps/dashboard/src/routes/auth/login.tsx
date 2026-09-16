@@ -15,13 +15,14 @@ import { setFormErrors, setFormRootError, useAppForm } from "@/components/form"
 import { RootError } from "@/components/form/fields"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { usePublicRegistration } from "@/lib/health"
 import { authActions, useAuthStore } from "@/stores/auth-store"
 
 const loginSearch = z.object({
   redirect: z.string().optional(),
 })
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/auth/login")({
   validateSearch: loginSearch,
   beforeLoad: async ({ search }) => {
     const auth = useAuthStore.getState()
@@ -37,6 +38,9 @@ const linkClass =
 
 function RouteComponent() {
   const t = useTranslations("app")
+  // Fail closed: the link renders only on a confirmed `internal_mode: false`,
+  // which is the public deployment that accepts self-registration.
+  const publicRegistration = usePublicRegistration()
 
   return (
     <AuthShell>
@@ -45,13 +49,21 @@ function RouteComponent() {
         description={t("auth.login.description")}
       >
         <LoginForm />
+        {publicRegistration && (
+          <p className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">
+            {t("auth.login.noAccount")}{" "}
+            <Link to="/auth/register" className={linkClass}>
+              {t("auth.login.registerLink")}
+            </Link>
+          </p>
+        )}
       </AuthPanel>
     </AuthShell>
   )
 }
 
 function LoginForm({ className }: { className?: string }) {
-  const search = getRouteApi("/login").useSearch()
+  const search = getRouteApi("/auth/login").useSearch()
   const router = useRouter()
   const handleError = useErrorHandler()
   const t = useTranslations("app")

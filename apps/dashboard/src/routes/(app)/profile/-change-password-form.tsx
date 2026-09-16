@@ -27,10 +27,7 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
     },
     onSubmit: async ({ value, formApi }) => {
       try {
-        await authAPI.changePassword({
-          password: value.password,
-          new_password: value.new_password,
-        })
+        await authAPI.changePassword(value)
         toast.success(t("profile.changePassword.success"))
         onClose()
         form.reset()
