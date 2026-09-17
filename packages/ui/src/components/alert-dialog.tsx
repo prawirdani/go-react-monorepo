@@ -26,7 +26,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-overlay/50 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-overlay/50 duration-100 data-starting-style:animate-in data-starting-style:fade-in-0 data-ending-style:animate-out data-ending-style:fade-out-0",
         className,
       )}
       {...props}
@@ -48,7 +48,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid auto-rows-max w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-lg border border-border bg-popover p-5 text-popover-foreground outline-none sm:p-6 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg data-open:animate-panel-in data-closed:animate-out data-closed:fade-out-0",
+          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid auto-rows-max w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-lg border border-border bg-popover p-5 text-popover-foreground outline-none sm:p-6 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg duration-100 data-starting-style:animate-panel-in data-ending-style:animate-out data-ending-style:fade-out-0",
           className,
         )}
         {...props}
