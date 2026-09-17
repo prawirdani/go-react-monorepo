@@ -20,6 +20,8 @@
 	},
 	"exports": {
 		"./auth": "./src/auth.schema.ts",
-		"./user": "./src/user.schema.ts"
+		"./user": "./src/user.schema.ts",
+		"./audit": "./src/audit.schema.ts",
+		"./permission": "./src/permission.ts"
 	}
 }

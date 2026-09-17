@@ -8,6 +8,7 @@ import type {
 	ResetPasswordInput,
 	TokenPair,
 } from "@repo/schemas/auth";
+import type { Permission } from "@repo/schemas/permission";
 import type { User } from "@repo/schemas/user";
 import { parseEpoch } from "@repo/utils/date";
 import type { APIClient } from "./client";
@@ -131,8 +132,8 @@ export class AuthAPI {
 	/**
 	 * Retrieves permission list on current active user.
 	 */
-	async getPermissions(): Promise<string[]> {
-		const res = await this.client.Get<string[]>("/api/auth/permissions");
+	async getPermissions(): Promise<Permission[]> {
+		const res = await this.client.Get<Permission[]>("/api/auth/permissions");
 		return res.data;
 	}
 }

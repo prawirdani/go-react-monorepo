@@ -1,5 +1,7 @@
-import { type MessageKeys, useTranslations } from "@repo/i18n"
+import { type MessageKeys, useFormatter, useTranslations } from "@repo/i18n"
+import type { AuditEntry } from "@repo/schemas/audit"
 import { Button } from "@repo/ui/components/button"
+import { Skeleton } from "@repo/ui/components/skeleton"
 import {
   Table,
   TableBody,
@@ -8,7 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from "@repo/ui/components/table"
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { Fragment } from "react"
 import { Page } from "@/components/layout/page"
 import {
   Panel,
@@ -21,6 +25,8 @@ import {
   StateBadge,
   type Tone,
 } from "@/components/layout/panel"
+import { auditQueries } from "@/lib/api"
+import { useCan } from "@/stores/auth-store"
 
 export const Route = createFileRoute("/(app)/")({
   component: Component,
@@ -75,43 +81,6 @@ const services: {
   },
 ]
 
-const activity: {
-  time: string
-  actorKey: MessageKeys<"app">
-  actionKey: MessageKeys<"app">
-  stateKey: MessageKeys<"app">
-  tone: Tone
-}[] = [
-  {
-    time: "09:41",
-    actorKey: "dashboard.actor.operator",
-    actionKey: "dashboard.activityAction.updateProfile",
-    stateKey: "dashboard.activityState.done",
-    tone: "success",
-  },
-  {
-    time: "09:32",
-    actorKey: "dashboard.actor.system",
-    actionKey: "dashboard.activityAction.syncCatalog",
-    stateKey: "dashboard.activityState.running",
-    tone: "info",
-  },
-  {
-    time: "09:20",
-    actorKey: "dashboard.actor.admin",
-    actionKey: "dashboard.activityAction.archiveEntry",
-    stateKey: "dashboard.activityState.underReview",
-    tone: "warning",
-  },
-  {
-    time: "09:04",
-    actorKey: "dashboard.actor.system",
-    actionKey: "dashboard.activityAction.sendRecoveryEmail",
-    stateKey: "dashboard.activityState.failed",
-    tone: "destructive",
-  },
-]
-
 function SampleTag() {
   const t = useTranslations("app")
   return <StateBadge tone="warning">{t("dashboard.sampleTag")}</StateBadge>
@@ -119,6 +88,7 @@ function SampleTag() {
 
 function Component() {
   const t = useTranslations("app")
+  const canReadAudit = useCan("audit.read")
 
   return (
     <Page title={t("dashboard.title")} description={t("dashboard.description")}>
@@ -169,75 +139,223 @@ function Component() {
           </PanelBody>
         </Panel>
 
-        <Panel className="lg:col-span-5">
-          <PanelHeader title={t("dashboard.panels.actions")} />
-          <PanelBody className="flex-1 justify-between gap-5 p-3">
-            <p className="max-w-[46ch] text-sm text-muted-foreground">
-              {t("dashboard.actionsNote")}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button nativeButton={false} render={<Link to="/example" />}>
-                {t("dashboard.openExample")}
-              </Button>
-              <Button
-                variant="ghost"
-                nativeButton={false}
-                render={<Link to="/settings" />}
-              >
-                {t("dashboard.openSettings")}
-              </Button>
-            </div>
-          </PanelBody>
-        </Panel>
+        {/* <Panel className="lg:col-span-5"> */}
+        {/*   <PanelHeader title={t("dashboard.panels.actions")} /> */}
+        {/*   <PanelBody className="flex-1 justify-between gap-5 p-3"> */}
+        {/*     <p className="max-w-[46ch] text-sm text-muted-foreground"> */}
+        {/*       {t("dashboard.actionsNote")} */}
+        {/*     </p> */}
+        {/*     <div className="flex flex-wrap items-center gap-2"> */}
+        {/*       <Button nativeButton={false} render={<Link to="/example" />}> */}
+        {/*         {t("dashboard.openExample")} */}
+        {/*       </Button> */}
+        {/*       <Button */}
+        {/*         variant="ghost" */}
+        {/*         nativeButton={false} */}
+        {/*         render={<Link to="/settings" />} */}
+        {/*       > */}
+        {/*         {t("dashboard.openSettings")} */}
+        {/*       </Button> */}
+        {/*     </div> */}
+        {/*   </PanelBody> */}
+        {/* </Panel> */}
 
-        <Panel className="lg:col-span-7">
-          <PanelHeader
-            title={t("dashboard.panels.activity")}
-            aside={<SampleTag />}
-          />
-          <PanelBody className="flex-1">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[92px] px-3 panel-label">
-                    {t("dashboard.table.time")}
-                  </TableHead>
-                  <TableHead className="px-3 panel-label">
-                    {t("dashboard.table.actor")}
-                  </TableHead>
-                  <TableHead className="px-3 panel-label">
-                    {t("dashboard.table.action")}
-                  </TableHead>
-                  <TableHead className="px-3 text-right panel-label">
-                    {t("dashboard.table.state")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {activity.map((entry) => (
-                  <TableRow key={entry.time}>
-                    <TableCell
-                      data-mono
-                      className="px-3 text-xs text-muted-foreground"
-                    >
-                      {entry.time}
-                    </TableCell>
-                    <TableCell className="px-3">{t(entry.actorKey)}</TableCell>
-                    <TableCell className="px-3 text-muted-foreground">
-                      {t(entry.actionKey)}
-                    </TableCell>
-                    <TableCell className="px-3 text-right">
-                      <StateBadge tone={entry.tone}>
-                        {t(entry.stateKey)}
-                      </StateBadge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </PanelBody>
-        </Panel>
+        {/* Admin-only: omitted entirely without `audit.read`, so the grid
+            reflows to the three panels a non-admin may see. */}
+        {/* {canReadAudit && ( */}
+        {/*   <AuditPanel enableQuery={canReadAudit} className="lg:col-span-7" /> */}
+        {/* )} */}
       </PanelGrid>
     </Page>
+  )
+}
+
+function AuditPanel({
+  className,
+  enableQuery,
+}: {
+  className?: string
+  enableQuery: boolean
+}) {
+  const t = useTranslations("app")
+  const { data, isPending, isError } = useQuery({
+    ...auditQueries.list,
+    enabled: enableQuery,
+  })
+
+  const entries = data ?? []
+
+  return (
+    <Panel className={className}>
+      <PanelHeader title={t("dashboard.panels.audit")} />
+      <PanelBody className="flex-1">
+        {isPending ? (
+          <AuditLoading />
+        ) : isError ? (
+          <p role="alert" className="px-3 py-4 text-sm text-destructive">
+            {t("dashboard.audit.error")}
+          </p>
+        ) : entries.length === 0 ? (
+          <p className="px-3 py-4 text-sm text-muted-foreground">
+            {t("dashboard.audit.empty")}
+          </p>
+        ) : (
+          <AuditTable entries={entries} />
+        )}
+      </PanelBody>
+    </Panel>
+  )
+}
+
+/** Same loading shape as the example route's table. */
+function AuditLoading() {
+  const t = useTranslations("app")
+
+  return (
+    <>
+      <p role="status" className="sr-only">
+        {t("dashboard.audit.loading")}
+      </p>
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-[190px] px-3 panel-label">
+              {t("dashboard.table.time")}
+            </TableHead>
+            <TableHead className="px-3 panel-label">
+              {t("dashboard.table.actor")}
+            </TableHead>
+            <TableHead className="px-3 panel-label">
+              {t("dashboard.table.action")}
+            </TableHead>
+            <TableHead className="px-3 panel-label">
+              {t("dashboard.table.entity")}
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows
+            <TableRow key={i}>
+              <TableCell className="px-3 py-4">
+                <Skeleton className="h-4 w-2/3" />
+              </TableCell>
+              <TableCell className="px-3 py-4">
+                <Skeleton className="h-4 w-1/2" />
+              </TableCell>
+              <TableCell className="px-3 py-4">
+                <Skeleton className="h-4 w-3/4" />
+              </TableCell>
+              <TableCell className="px-3 py-4">
+                <Skeleton className="h-4 w-2/3" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
+  )
+}
+
+function AuditTable({ entries }: { entries: AuditEntry[] }) {
+  const t = useTranslations("app")
+  const format = useFormatter()
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="w-[190px] px-3 panel-label">
+            {t("dashboard.table.time")}
+          </TableHead>
+          <TableHead className="px-3 panel-label">
+            {t("dashboard.table.actor")}
+          </TableHead>
+          <TableHead className="px-3 panel-label">
+            {t("dashboard.table.action")}
+          </TableHead>
+          <TableHead className="px-3 panel-label">
+            {t("dashboard.table.entity")}
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {entries.map((entry) => {
+          const hasPayload =
+            entry.prev !== null || entry.next !== null || entry.meta !== null
+
+          return (
+            <Fragment key={entry.id}>
+              <TableRow>
+                <TableCell
+                  data-mono
+                  className="px-3 text-xs text-muted-foreground"
+                >
+                  {format.dateTime(new Date(entry.created_at), {
+                    dateStyle: "short",
+                    timeStyle: "medium",
+                  })}
+                </TableCell>
+                <TableCell
+                  data-mono={entry.actor_id ? true : undefined}
+                  className="px-3 text-xs"
+                >
+                  {entry.actor_id ?? (
+                    <span className="text-muted-foreground">
+                      {t("dashboard.audit.noActor")}
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="px-3">{entry.action}</TableCell>
+                <TableCell className="px-3">
+                  <span>{entry.entity}</span>
+                  <span className="ml-2 font-mono text-xs text-muted-foreground">
+                    {entry.entity_id}
+                  </span>
+                </TableCell>
+              </TableRow>
+              {hasPayload && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={4} className="px-3 pb-3">
+                    <details className="group/payload">
+                      <summary className="panel-label inline-flex cursor-pointer rounded-sm outline-none select-none focus-visible:ring-2 focus-visible:ring-ring">
+                        {t("dashboard.audit.payload")}
+                      </summary>
+                      <div className="mt-2 grid gap-px overflow-hidden rounded-sm border border-border bg-border md:grid-cols-3">
+                        <PayloadBlock label="prev" value={entry.prev} />
+                        <PayloadBlock label="next" value={entry.next} />
+                        <PayloadBlock label="meta" value={entry.meta} />
+                      </div>
+                    </details>
+                  </TableCell>
+                </TableRow>
+              )}
+            </Fragment>
+          )
+        })}
+      </TableBody>
+    </Table>
+  )
+}
+
+/** Raw JSON, as JSON: three seam-divided mono blocks. */
+function PayloadBlock({
+  label,
+  value,
+}: {
+  label: string
+  value: AuditEntry["prev"]
+}) {
+  return (
+    <div className="min-w-0 bg-card">
+      <p className="panel-label border-b border-border px-2 py-1">{label}</p>
+      {value === null ? (
+        <p className="px-2 py-1.5 font-mono text-xs text-muted-foreground">—</p>
+      ) : (
+        <pre className="max-h-56 overflow-auto px-2 py-1.5 font-mono text-xs leading-relaxed">
+          {JSON.stringify(value, null, 2)}
+        </pre>
+      )}
+    </div>
   )
 }

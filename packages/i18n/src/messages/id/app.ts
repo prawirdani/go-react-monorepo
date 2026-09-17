@@ -123,13 +123,13 @@ const app: DeepStringify<typeof en> = {
 	dashboard: {
 		title: "Konsol",
 		description:
-			"Struktur operasional yang bisa Anda ganti dengan data nyata. Setiap angka dan baris di bawah adalah contoh.",
+			"Struktur operasional yang bisa Anda ganti dengan data nyata. Angka ringkasan adalah contoh; log audit diambil dari data nyata.",
 		sampleTag: "Contoh",
 		panels: {
 			summary: "Ringkasan",
 			services: "Status Layanan",
 			actions: "Tindakan",
-			activity: "Aktivitas Terbaru",
+			audit: "Log Audit",
 		},
 		summaryNote: "Contoh data — hubungkan ke sumber data Anda.",
 		summary: {
@@ -151,22 +151,12 @@ const app: DeepStringify<typeof en> = {
 			disrupted: "Terganggu",
 			scheduled: "Terjadwal",
 		},
-		actor: {
-			operator: "Operator",
-			system: "Sistem",
-			admin: "Admin",
-		},
-		activityAction: {
-			updateProfile: "Memperbarui profil",
-			syncCatalog: "Sinkronisasi katalog",
-			archiveEntry: "Mengarsipkan entri",
-			sendRecoveryEmail: "Kirim email pemulihan",
-		},
-		activityState: {
-			done: "Selesai",
-			running: "Berjalan",
-			underReview: "Ditinjau",
-			failed: "Gagal",
+		audit: {
+			loading: "Memuat entri audit…",
+			empty: "Belum ada entri audit.",
+			error: "Gagal memuat log audit.",
+			noActor: "Tanpa pelaku",
+			payload: "Muatan",
 		},
 		actionsNote:
 			"Halaman contoh berisi tabel dengan status pemuatan. Pakai sebagai titik awal untuk daftar dan filter yang Anda butuhkan.",
@@ -176,7 +166,7 @@ const app: DeepStringify<typeof en> = {
 			time: "Waktu",
 			actor: "Pelaku",
 			action: "Aksi",
-			state: "Status",
+			entity: "Entitas",
 		},
 	},
 	profile: {

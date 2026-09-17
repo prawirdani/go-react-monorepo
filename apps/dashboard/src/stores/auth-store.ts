@@ -1,5 +1,6 @@
 import type { APIErrorCodes } from "@repo/api/errors"
 import type { LoginInput } from "@repo/schemas/auth"
+import type { Permission } from "@repo/schemas/permission"
 import type { User } from "@repo/schemas/user"
 import { create } from "zustand"
 import { authAPI } from "@/lib/api"
@@ -41,9 +42,12 @@ type AuthStateStatus =
 type AuthState = {
   user: User | null
   status: AuthStateStatus
+  // Session permissions from /auth/permissions. Set for O(1) membership.
+  // Presentation gate only — the backend is the real enforcer.
+  permissions: Set<Permission>
 
   setAuthenticating: () => void
-  setAuthenticated: (user: User) => void
+  setAuthenticated: (user: User, permissions: Permission[]) => void
   setUnauthenticated: () => void
   setExpired: () => void
 }
@@ -51,12 +55,29 @@ type AuthState = {
 export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   status: "initial",
+  permissions: new Set(),
 
   setAuthenticating: () => set({ status: "authenticating" }),
-  setAuthenticated: (user) => set({ status: "authenticated", user }),
-  setUnauthenticated: () => set({ status: "unauthenticated", user: null }), // TODO: Maybe preserve the user data to prevent the Header race condition on logout
-  setExpired: () => set({ status: "expired", user: null }),
+  setAuthenticated: (user, permissions) =>
+    set({ status: "authenticated", user, permissions: new Set(permissions) }),
+  setUnauthenticated: () =>
+    set({ status: "unauthenticated", user: null, permissions: new Set() }), // TODO: Maybe preserve the user data to prevent the Header race condition on logout
+  setExpired: () =>
+    set({ status: "expired", user: null, permissions: new Set() }),
 }))
+
+/**
+ * Permission check. Fails closed: unknown/absent perm → false.
+ * The client gate is UX only; the backend still enforces with 403.
+ */
+export function can(permission: Permission): boolean {
+  return useAuthStore.getState().permissions.has(permission)
+}
+
+/** Reactive `can` for render-time gating. */
+export function useCan(permission: Permission): boolean {
+  return useAuthStore((s) => s.permissions.has(permission))
+}
 
 export const authActions = {
   identifyUser: async () => {
@@ -65,8 +86,11 @@ export const authActions = {
 
     setAuthenticating()
     try {
-      const user = await authAPI.identify()
-      setAuthenticated(user)
+      const [user, permissions] = await Promise.all([
+        authAPI.identify(),
+        authAPI.getPermissions(),
+      ])
+      setAuthenticated(user, permissions)
     } catch (e) {
       setUnauthenticated()
       throw e
@@ -76,8 +100,11 @@ export const authActions = {
   invalidate: async () => {
     const { setAuthenticated, setUnauthenticated } = useAuthStore.getState()
     try {
-      const user = await authAPI.identify()
-      setAuthenticated(user)
+      const [user, permissions] = await Promise.all([
+        authAPI.identify(),
+        authAPI.getPermissions(),
+      ])
+      setAuthenticated(user, permissions)
     } catch (e) {
       setUnauthenticated()
       throw e

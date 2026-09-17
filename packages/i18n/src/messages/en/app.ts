@@ -122,13 +122,13 @@ export default {
 	dashboard: {
 		title: "Console",
 		description:
-			"An operational structure you can replace with real data. Every figure and row below is a sample.",
+			"An operational structure you can replace with real data. Summary figures are samples; the audit log is live.",
 		sampleTag: "Sample",
 		panels: {
 			summary: "Summary",
 			services: "Service Status",
 			actions: "Actions",
-			activity: "Recent Activity",
+			audit: "Audit Log",
 		},
 		summaryNote: "Sample data — connect it to your own data source.",
 		summary: {
@@ -150,22 +150,12 @@ export default {
 			disrupted: "Disrupted",
 			scheduled: "Scheduled",
 		},
-		actor: {
-			operator: "Operator",
-			system: "System",
-			admin: "Admin",
-		},
-		activityAction: {
-			updateProfile: "Updating profile",
-			syncCatalog: "Catalog sync",
-			archiveEntry: "Archiving entry",
-			sendRecoveryEmail: "Send recovery email",
-		},
-		activityState: {
-			done: "Done",
-			running: "Running",
-			underReview: "Under review",
-			failed: "Failed",
+		audit: {
+			loading: "Loading audit entries…",
+			empty: "No audit entries yet.",
+			error: "Could not load the audit log.",
+			noActor: "No actor",
+			payload: "Payload",
 		},
 		actionsNote:
 			"The example page holds a table with its loading state. Use it as a starting point for the list and filters you need.",
@@ -175,7 +165,7 @@ export default {
 			time: "Time",
 			actor: "Actor",
 			action: "Action",
-			state: "Status",
+			entity: "Entity",
 		},
 	},
 	profile: {
