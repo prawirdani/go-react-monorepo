@@ -106,9 +106,43 @@ export function TextField(props: TextFieldProps) {
       {...props}
       id={field.name}
       name={field.name}
-      value={field.state.value}
+      value={field.state.value ?? ""}
       onBlur={field.handleBlur}
       onChange={(e) => field.handleChange(e.target.value)}
+      aria-invalid={invalid}
+      autoComplete={props.autoComplete ?? "off"}
+    />
+  )
+}
+
+type NumberFieldProps = Omit<
+  ComponentPropsWithoutRef<"input">,
+  | "id"
+  | "name"
+  | "value"
+  | "onBlur"
+  | "onChange"
+  | "aria-invalid"
+  | "type"
+  | "inputMode"
+>
+
+export function NumberField(props: NumberFieldProps) {
+  const field = useFieldContext<number | null>()
+  const invalid = isFieldInvalid(field)
+  return (
+    <Input
+      {...props}
+      type="number"
+      inputMode="numeric"
+      id={field.name}
+      name={field.name}
+      value={field.state.value ?? ""}
+      onBlur={field.handleBlur}
+      onChange={(e) => {
+        const { value, valueAsNumber } = e.target
+        field.handleChange(value === "" ? null : valueAsNumber)
+      }}
       aria-invalid={invalid}
       autoComplete={props.autoComplete ?? "off"}
     />
@@ -190,7 +224,7 @@ export function TextAreaField(props: TextAreaFieldProps) {
       {...props}
       id={field.name}
       name={field.name}
-      value={field.state.value}
+      value={field.state.value ?? ""}
       onBlur={field.handleBlur}
       onChange={(e) => field.handleChange(e.target.value)}
       aria-invalid={invalid}

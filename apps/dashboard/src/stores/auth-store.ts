@@ -3,7 +3,7 @@ import type { LoginInput } from "@repo/schemas/auth"
 import type { Permission } from "@repo/schemas/permission"
 import type { User } from "@repo/schemas/user"
 import { create } from "zustand"
-import { authAPI } from "@/lib/api"
+import { authAPI } from "@/lib/data-access/api"
 
 export const REDIRECT_ERROR_CODES = new Set<APIErrorCodes>([
   "REQ_UNAUTHORIZED",

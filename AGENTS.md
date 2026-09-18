@@ -18,7 +18,7 @@ pnpm --filter dashboard exec tsc --noEmit     # typecheck the app
 - `apps/dashboard` — Vite + React 19 app. Routes are TanStack Router file routes (`src/routes/**`), generated tree in `src/routeTree.gen.ts` (rebuilt by the router plugin on dev).
 - `packages/api` — `APIClient` (fetch wrapper + 401 refresh interceptor), `AuthAPI`/`UserAPI`, error types (`errors.ts`).
 - `packages/schemas` — zod schemas and TS types for API request/response shapes.
-- `packages/queries` — `queryOptions` factories for TanStack Query.
+- `packages/queries` — `queryOptions`/`mutationOptions` factories for TanStack Query, plus the `mutation.meta` augmentation (`tanstack-query.d.ts`).
 - `packages/ui` — shared UI components (base-ui/shadcn style), icons, toast.
 - `packages/utils`, `packages/config` — helpers and shared tsconfig/biome configs.
 
@@ -33,6 +33,13 @@ pnpm --filter dashboard exec tsc --noEmit     # typecheck the app
 ### Schemas (`packages/schemas`)
 - Distinguish **form schemas** (client validation only, e.g. include `new_password_confirmation` for match-checking) from **API payload types** (must match backend DTOs exactly, e.g. reset/change send `{ token, new_password }` / `{ password, new_password }` — no confirmation field). Backend ignores unknown JSON fields, but payload types must still mirror the backend.
 - JSON field names are **snake_case** (backend Go json tags): `access_token`, `new_password`, `email_verified_at`, `profile_picture`.
+
+### Data access (dashboard)
+- Wire data through `src/lib/data-access/`: `api.ts` (API singletons + `imageUrl`), `queries.ts`, `mutations.ts`. Components import factories from there — never construct an API or reach for a raw instance.
+- Factories live in `@repo/queries` and take API instances as args (`userQueries(authAPI, userAPI)`, `userMutations(userAPI)`) so the package stays app-agnostic.
+- **Auto-invalidation**: a mutation's `meta.invalidatesQuery` is an array of query keys; the `MutationCache` in `main.tsx` invalidates them on **success**. Target the data that actually changed — and account for shared render dependencies. Every user mutation invalidates both `["current-user"]` (header identity) and `["users"]`, because the admin list rows render avatar/name/phone/gender, so a profile edit is visible there too.
+- The augmentation that types `mutation.meta` lives in `packages/queries/tanstack-query.d.ts` and is referenced from `packages/queries/src/index.ts`, so consumers inherit it via the package entry — don't re-add it to an app `tsconfig.include`.
+- **Auth is the deliberate exception**: `authAPI` is called raw from `routes/auth/**` and `stores/auth-store.ts`. Session lifecycle (login/logout/identify/refresh) is imperative and not cache-driven — don't wrap it in query factories.
 
 ### Forms (dashboard)
 - Use the shared `useAppForm` wrapper (`src/components/form`). Server errors: `handleError(error, { VALIDATION: (e) => setFormErrors(formApi, e.details), ... })`.

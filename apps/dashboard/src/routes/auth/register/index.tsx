@@ -7,7 +7,7 @@ import { setFormErrors, setFormRootError, useAppForm } from "@/components/form"
 import { RootError } from "@/components/form/fields"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { authAPI } from "@/lib/api"
+import { authAPI } from "@/lib/data-access/api"
 import { healthQuery } from "@/lib/health"
 import { useAuthStore } from "@/stores/auth-store"
 

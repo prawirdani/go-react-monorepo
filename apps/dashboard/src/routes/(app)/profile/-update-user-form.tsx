@@ -3,10 +3,11 @@ import { type User, updateUserSchema } from "@repo/schemas/user"
 import { Button } from "@repo/ui/components/button"
 import { FieldGroup } from "@repo/ui/components/field"
 import toast from "@repo/ui/components/toast"
+import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "@tanstack/react-router"
 import { setFormErrors, useAppForm } from "@/components/form"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { userAPI } from "@/lib/api"
+import { updateUser } from "@/lib/data-access/mutations"
 import { GenderOptions } from "@/lib/i18n"
 import { authActions } from "@/stores/auth-store"
 
@@ -23,6 +24,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
 
   const genderOptions = GenderOptions(tc)
 
+  const { mutateAsync } = useMutation(updateUser)
   const form = useAppForm({
     defaultValues: {
       name: user.name,
@@ -34,7 +36,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
     },
     onSubmit: async ({ value, formApi }) => {
       try {
-        await userAPI.updateUser(value)
+        await mutateAsync({ userId: user.id, payload: value })
         await authActions.invalidate()
         await router.invalidate()
         toast.success(t("profile.updateUser.success"))
@@ -79,6 +81,7 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
                 <field.Label text={t("profile.identity.phone")} />
                 <div>
                   <field.TextField
+                    type="number"
                     placeholder={t("profile.updateUser.phonePlaceholder")}
                   />
                   <field.Errors />

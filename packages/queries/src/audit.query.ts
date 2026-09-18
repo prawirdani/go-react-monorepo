@@ -3,7 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 export function auditQueries(auditAPI: AuditAPI) {
 	return {
-		list: queryOptions({
+		auditEntries: queryOptions({
 			queryKey: ["audit", "list"],
 			queryFn: () => auditAPI.listAuditEntry(),
 			staleTime: 60 * 1000, // 1 minute

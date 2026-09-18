@@ -8,7 +8,7 @@ import z from "zod"
 import { setFormErrors, useAppForm } from "@/components/form"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { authAPI } from "@/lib/api"
+import { authAPI } from "@/lib/data-access/api"
 
 const recoverPasswordSearchSchema = z.object({
   sent: z.boolean().optional().default(false),

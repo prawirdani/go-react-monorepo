@@ -37,14 +37,14 @@ export class UserAPI {
 		);
 	}
 
-	async updateUser(payload: UpdateUserInput): Promise<void> {
-		await this.client.Put("/api/users", {
+	async updateUser(userId: string, payload: UpdateUserInput): Promise<void> {
+		await this.client.Put(`/api/users/${userId}`, {
 			body: JSON.stringify(payload),
 		});
 	}
 
-	async deleteUser(userID: string): Promise<void> {
-		await this.client.Delete(`/api/users/${userID}`);
+	async deleteUser(userId: string): Promise<void> {
+		await this.client.Delete(`/api/users/${userId}`);
 	}
 
 	async changeProfilePicture(pict: File): Promise<void> {

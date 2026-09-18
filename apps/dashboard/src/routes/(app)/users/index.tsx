@@ -31,13 +31,12 @@ import {
 import toast from "@repo/ui/components/toast"
 import { Trash } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   createFileRoute,
   redirect,
   stripSearchParams,
 } from "@tanstack/react-router"
-import { useState } from "react"
 import { FilterDropdown } from "@/components/data-table/filter-dropdown"
 import { SortableHead } from "@/components/data-table/sortable-head"
 import { TablePager } from "@/components/data-table/table-pager"
@@ -55,7 +54,9 @@ import { useFiltering } from "@/hooks/search-query/use-filtering"
 import { usePagination } from "@/hooks/search-query/use-pagination"
 import { useSorting } from "@/hooks/search-query/use-sorting"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { imageUrl, userAPI, userQueries } from "@/lib/api"
+import { imageUrl } from "@/lib/data-access/api"
+import { deleteUser } from "@/lib/data-access/mutations"
+import { listUser } from "@/lib/data-access/queries"
 import { GENDER_LABEL_KEYS, ROLE_LABEL_KEYS } from "@/lib/i18n"
 import { can, useAuthStore, useCan } from "@/stores/auth-store"
 
@@ -75,7 +76,7 @@ export const Route = createFileRoute("/(app)/users/")({
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
     // Warms the cache for the render below, which owns its own loading state.
-    await context.queryClient.ensureQueryData(userQueries.list(deps))
+    await context.queryClient.ensureQueryData(listUser(deps))
   },
   component: RouteComponent,
 })
@@ -103,7 +104,7 @@ function RouteComponent() {
   const { toggleFilter, clearFilters } = useFiltering(search, nav)
 
   const { data, isPending, isError, isPlaceholderData } = useQuery(
-    userQueries.list(search),
+    listUser(search),
   )
 
   const users = data?.data ?? []
@@ -381,21 +382,14 @@ function DeleteUserDialog({
   const t = useTranslations("app")
   const tc = useTranslations("common")
   const handleError = useErrorHandler()
-  const queryClient = useQueryClient()
-  const [loading, setLoading] = useState(false)
 
-  const handleDelete = async () => {
-    setLoading(true)
-    try {
-      await userAPI.deleteUser(user.id)
-      toast.success(t("users.delete.success"))
-      await queryClient.invalidateQueries({ queryKey: ["users"] })
-    } catch (error) {
-      handleError(error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { mutateAsync, isPending } = useMutation(deleteUser)
+
+  const handleDelete = async () =>
+    mutateAsync(user.id, {
+      onSuccess: () => toast.success(t("users.delete.success")),
+      onError: (e) => handleError(e),
+    })
 
   return (
     <AlertDialog>
@@ -423,12 +417,12 @@ function DeleteUserDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading} variant="outline">
+          <AlertDialogCancel disabled={isPending} variant="outline">
             {tc("actions.cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
-            disabled={loading}
-            loading={loading}
+            disabled={isPending}
+            loading={isPending}
             variant="destructive"
             onClick={handleDelete}
           >

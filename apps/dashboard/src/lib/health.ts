@@ -1,5 +1,5 @@
 import { queryOptions, useQuery } from "@tanstack/react-query"
-import { apiClient } from "@/lib/api"
+import { apiClient } from "./data-access/api"
 
 /**
  * One cached health probe shared by every reader (routes and the login link),

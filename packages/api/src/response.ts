@@ -45,10 +45,10 @@ export type QueryableResponse<TData, TMeta = QueryMetaOnly> = ResponseBody<
 
 // example:
 // All three
-// type UserListResponse = QueryableResponse<User, Meta<UserFilter, UserSortKey, true>>;
+// type UserListResponse = QueryableResponse<User, QueryMeta<UserFilter, UserSortKey, true>>;
 //
 // // Only pagination (the default)
 // type LogListResponse = QueryableResponse<LogEntry>;
 //
 // // Only filter + sort, no pagination
-// type ExportResponse = QueryableResponse<User, Meta<UserFilter, UserSortKey>>;
+// type ExportResponse = QueryableResponse<User, QueryMeta<UserFilter, UserSortKey>>;

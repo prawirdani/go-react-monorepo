@@ -5,7 +5,7 @@ import { FieldGroup } from "@repo/ui/components/field"
 import toast from "@repo/ui/components/toast"
 import { setFormErrors, useAppForm } from "@/components/form"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { authAPI } from "@/lib/api"
+import { authAPI } from "@/lib/data-access/api"
 
 interface ChangePasswordFormProps {
   onClose: () => void

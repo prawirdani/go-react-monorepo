@@ -18,14 +18,16 @@ import { routeTree } from "./routeTree.gen"
 
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
-    // Global auto invalidation
-    onSettled: (_data, _err, _var, _ctx, mutation) => {
+    // Global auto invalidation. Success only: a failed mutation changed
+    // nothing, so refetching its targets is wasted work.
+    onSuccess: async (_data, _variables, _onMutateResult, mutation) => {
       const invalidates = mutation.meta?.invalidatesQuery
-      if (invalidates) {
-        invalidates.map((key) =>
-          queryClient.invalidateQueries({ queryKey: key }),
-        )
-      }
+      if (!invalidates) return
+      await Promise.all(
+        invalidates.map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
+      )
     },
   }),
 })

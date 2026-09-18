@@ -21,10 +21,15 @@ import {
 } from "@repo/ui/components/dropdown-menu"
 import toast from "@repo/ui/components/toast"
 import { Edit, Loader, Trash, Upload } from "@repo/ui/icons"
+import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "@tanstack/react-router"
 import { type ChangeEvent, type ComponentProps, useRef, useState } from "react"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { imageUrl, userAPI } from "@/lib/api"
+import { imageUrl } from "@/lib/data-access/api"
+import {
+  changeProfilePicture,
+  deleteProfilePicture,
+} from "@/lib/data-access/mutations"
 import { authActions } from "@/stores/auth-store"
 
 const dialogHandler: ReturnType<typeof CreateDropdownHandler> =
@@ -35,13 +40,13 @@ interface ProfilePictureProps extends ComponentProps<"div"> {
 }
 
 export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
-  const [loading, setLoading] = useState(false)
   const handleError = useErrorHandler()
   const router = useRouter()
   const t = useTranslations("app")
 
   const imageInputRef = useRef<HTMLInputElement>(null)
 
+  const { mutateAsync, isPending } = useMutation(changeProfilePicture)
   const imageOnChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -55,19 +60,16 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
       e.target.value = ""
       return
     }
-
-    setLoading(true)
-
-    try {
-      await userAPI.changeProfilePicture(result.data)
-      await authActions.invalidate()
-      await router.invalidate()
-    } catch (e) {
-      handleError(e)
-    } finally {
-      setLoading(false)
-      e.target.value = ""
-    }
+    await mutateAsync(result.data, {
+      onSuccess: async () => {
+        await authActions.invalidate()
+        await router.invalidate()
+      },
+      onError: (e) => handleError(e),
+      onSettled: () => {
+        e.target.value = ""
+      },
+    })
   }
 
   return (
@@ -75,7 +77,7 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
       <DropdownMenuTrigger handle={dialogHandler}>
         <div
           className="group relative w-fit cursor-pointer"
-          data-loading={loading}
+          data-loading={isPending}
         >
           <input
             type="file"
@@ -157,10 +159,11 @@ function DeleteDialog({ disabled }: DeleteDialogProps) {
   const t = useTranslations("app")
   const tc = useTranslations("common")
 
+  const { mutateAsync } = useMutation(deleteProfilePicture)
   const handleDeletePicture = async () => {
     setLoading(true)
     try {
-      await userAPI.deleteProfilePicture()
+      await mutateAsync()
       await authActions.invalidate()
       await router.invalidate()
     } catch (error) {

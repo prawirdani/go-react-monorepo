@@ -27,7 +27,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { RoleBadge } from "@/components/layout/role-badge"
 import { useErrorHandler } from "@/hooks/use-error-handler"
-import { imageUrl } from "@/lib/api"
+import { imageUrl } from "@/lib/data-access/api"
 import { authActions, useAuthStore } from "@/stores/auth-store"
 
 const dialogHandler = AlertDialogPrimitive.createHandle()
