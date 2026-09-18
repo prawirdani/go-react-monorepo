@@ -1,8 +1,9 @@
 import { fileURLToPath, URL } from "node:url"
+import babel from "@rolldown/plugin-babel"
 import tailwindcss from "@tailwindcss/vite"
 import { devtools } from "@tanstack/devtools-vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
-import viteReact from "@vitejs/plugin-react"
+import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { analyzer } from "vite-bundle-analyzer"
 
@@ -18,11 +19,11 @@ export default defineConfig({
       target: "react",
       autoCodeSplitting: true,
     }),
-    viteReact({
-      babel: {
-        plugins: [["babel-plugin-react-compiler"]],
-      },
-    }),
+    viteReact(),
+    // React Compiler runs first in the Babel pipeline. plugin-react v6 dropped
+    // its `babel` option, so the compiler now arrives as a Rolldown Babel
+    // preset instead — order matters: `viteReact()` then `babel()`.
+    babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
   ],
   resolve: {
