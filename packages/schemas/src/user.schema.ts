@@ -38,6 +38,15 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 // a hand-edited/garbage URL param falls back instead of throwing at the router.
 // Params mirror the backend: ?sort=&order=&page=&limit=&role=&gender= — role
 // and gender are multi-select (comma-joined server-side; gender is UPPERCASE).
+export const USER_SORT_KEYS = ["id", "created_at", "updated_at"] as const;
+export type UserSortKey = (typeof USER_SORT_KEYS)[number];
+
+/** The applied filter values the backend echoes back in `meta.filter`. */
+export type UserFilter = {
+	role: Role[];
+	gender: Gender[];
+};
+
 const userFilters = {
 	role: z.array(z.enum(ROLES)).catch([]),
 	gender: z.array(z.enum(GENDERS)).catch([]),
@@ -45,7 +54,7 @@ const userFilters = {
 
 export const userSearchQuerySchema = z.object({
 	...paginationFields,
-	...sortingFields(["id", "created_at", "updated_at"], "created_at"),
+	...sortingFields(USER_SORT_KEYS, "created_at"),
 	...userFilters,
 });
 

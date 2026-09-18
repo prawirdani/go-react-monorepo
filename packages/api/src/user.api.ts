@@ -1,10 +1,15 @@
 import type {
 	UpdateUserInput,
 	User,
+	UserFilter,
 	UserSearchQuery,
+	UserSortKey,
 } from "@repo/schemas/user";
 import type { APIClient } from "./client";
-import type { PaginationMeta } from "./response";
+import type { QueryableResponse, QueryMeta } from "./response";
+
+/** Meta the users list endpoint echoes: applied filters, sort, pagination. */
+export type UserListMeta = QueryMeta<UserFilter, UserSortKey, true>;
 
 export class UserAPI {
 	private client: APIClient;
@@ -16,7 +21,7 @@ export class UserAPI {
 	// available queries: /api/users?sort=(id/created_at/updated_at)&order=(asc/desc)&page=1&limit=10&role=admin,user&gender=M,F,O
 	async listUser(
 		params: UserSearchQuery,
-	): Promise<{ data: User[]; meta: PaginationMeta }> {
+	): Promise<QueryableResponse<User, UserListMeta>> {
 		const query = new URLSearchParams({
 			page: String(params.page),
 			limit: String(params.limit),
@@ -27,11 +32,9 @@ export class UserAPI {
 		// treats gender as UPPERCASE M/F/O).
 		if (params.role.length) query.set("role", params.role.join(","));
 		if (params.gender.length) query.set("gender", params.gender.join(","));
-		const res = await this.client.Paginated<User>(`/api/users?${query}`);
-		return {
-			data: res.data,
-			meta: res.meta,
-		};
+		return await this.client.Queryable<User, UserListMeta>(
+			`/api/users?${query}`,
+		);
 	}
 
 	async updateUser(payload: UpdateUserInput): Promise<void> {

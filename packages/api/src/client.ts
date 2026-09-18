@@ -1,5 +1,9 @@
 import type { TokenPair } from "@repo/schemas/auth";
-import type { PaginatedResponseBody, ResponseBody } from "./response";
+import type {
+	QueryableResponse,
+	QueryMetaOnly,
+	ResponseBody,
+} from "./response";
 
 const RETRY_HEADER = "X-Api-Retried" as const;
 
@@ -35,18 +39,19 @@ type APIRequestFn = <T>(
 ) => Promise<ResponseBody<T>>;
 
 /**
- * Paginated request. Kept as a distinct type/method rather than a
- * `paginated` flag on options, since the flag had no runtime effect
- * and was being spread into the underlying fetch init unused.
+ * Queryable request: same verb as `Get`, but typed for a list response whose
+ * `meta` carries what the endpoint echoes (pagination, applied filter/sort).
+ * Kept as a distinct type/method rather than a flag on options, since the
+ * flag had no runtime effect and was being spread into the fetch init unused.
  *
- * If pagination ever needs real behavior (e.g. injecting `page`/`cursor`
- * query params, following `next` links), implement it in `makePaginatedVerb`
- * below rather than branching on a boolean in the shared verb factory.
+ * If querying ever needs real behavior (injecting `page`/`cursor` params,
+ * following `next` links), implement it in a dedicated verb rather than
+ * branching on a boolean in the shared verb factory.
  */
-type PaginatedAPIRequestFn = <T>(
+type QueryableAPIRequestFn = <T, TMeta = QueryMetaOnly>(
 	path: string,
 	options?: Omit<FetchOptions, "method">,
-) => Promise<PaginatedResponseBody<T>>;
+) => Promise<QueryableResponse<T, TMeta>>;
 
 export interface APIClientConfig {
 	baseURL: string;
@@ -73,7 +78,7 @@ export class APIClient {
 	}
 
 	public Get = this.makeVerb("GET");
-	public Paginated = this.makeVerb("GET") as unknown as PaginatedAPIRequestFn; // Same as Get but with casted Paginated type
+	public Queryable = this.makeVerb("GET") as unknown as QueryableAPIRequestFn; // Same as Get but with casted Queryable type
 	public Post = this.makeVerb("POST");
 	public Put = this.makeVerb("PUT");
 	public Delete = this.makeVerb("DELETE");

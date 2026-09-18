@@ -107,7 +107,7 @@ function RouteComponent() {
   )
 
   const users = data?.data ?? []
-  const meta = data?.meta
+  const pagination = data?.meta.pagination
 
   const filterGroups = [
     {
@@ -282,9 +282,9 @@ function RouteComponent() {
             )}
           </PanelBody>
 
-          {meta && meta.total > 0 && (
+          {pagination && pagination.total > 0 && (
             <TablePager
-              meta={meta}
+              meta={pagination}
               isPlaceholderData={isPlaceholderData}
               onPage={setPage}
               onLimit={setLimit}
