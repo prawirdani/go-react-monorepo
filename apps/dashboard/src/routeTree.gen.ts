@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as appIndexRouteImport } from './routes/(app)/index'
+import { Route as appForbiddenRouteImport } from './routes/(app)/forbidden'
+import { Route as appUsersRouteRouteImport } from './routes/(app)/users/route'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
@@ -28,6 +30,16 @@ const appRouteRoute = appRouteRouteImport.update({
 const appIndexRoute = appIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appForbiddenRoute = appForbiddenRouteImport.update({
+  id: '/forbidden',
+  path: '/forbidden',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appUsersRouteRoute = appUsersRouteRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => appRouteRoute,
 } as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
@@ -61,9 +73,9 @@ const appSettingsIndexRoute = appSettingsIndexRouteImport.update({
   getParentRoute: () => appRouteRoute,
 } as any)
 const appUsersIndexRoute = appUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => appRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => appUsersRouteRoute,
 } as any)
 const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
   id: '/auth/register/',
@@ -77,6 +89,8 @@ const AuthRegisterCompleteRoute = AuthRegisterCompleteRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/users': typeof appUsersRouteRouteWithChildren
+  '/forbidden': typeof appForbiddenRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -89,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/auth/register/': typeof AuthRegisterIndexRoute
 }
 export interface FileRoutesByTo {
+  '/forbidden': typeof appForbiddenRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -103,6 +118,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
+  '/(app)/users': typeof appUsersRouteRouteWithChildren
+  '/(app)/forbidden': typeof appForbiddenRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -117,6 +134,8 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/users'
+    | '/forbidden'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
@@ -129,6 +148,7 @@ export interface FileRouteTypes {
     | '/auth/register/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/forbidden'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
@@ -142,6 +162,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/(app)'
+    | '/(app)/users'
+    | '/(app)/forbidden'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
@@ -177,6 +199,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof appIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/forbidden': {
+      id: '/(app)/forbidden'
+      path: '/forbidden'
+      fullPath: '/forbidden'
+      preLoaderRoute: typeof appForbiddenRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/users': {
+      id: '/(app)/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof appUsersRouteRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/auth/forgot-password': {
@@ -223,10 +259,10 @@ declare module '@tanstack/react-router' {
     }
     '/(app)/users/': {
       id: '/(app)/users/'
-      path: '/users'
+      path: '/'
       fullPath: '/users/'
       preLoaderRoute: typeof appUsersIndexRouteImport
-      parentRoute: typeof appRouteRoute
+      parentRoute: typeof appUsersRouteRoute
     }
     '/auth/register/': {
       id: '/auth/register/'
@@ -245,20 +281,34 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface appUsersRouteRouteChildren {
+  appUsersIndexRoute: typeof appUsersIndexRoute
+}
+
+const appUsersRouteRouteChildren: appUsersRouteRouteChildren = {
+  appUsersIndexRoute: appUsersIndexRoute,
+}
+
+const appUsersRouteRouteWithChildren = appUsersRouteRoute._addFileChildren(
+  appUsersRouteRouteChildren,
+)
+
 interface appRouteRouteChildren {
+  appUsersRouteRoute: typeof appUsersRouteRouteWithChildren
+  appForbiddenRoute: typeof appForbiddenRoute
   appIndexRoute: typeof appIndexRoute
   appExampleIndexRoute: typeof appExampleIndexRoute
   appProfileIndexRoute: typeof appProfileIndexRoute
   appSettingsIndexRoute: typeof appSettingsIndexRoute
-  appUsersIndexRoute: typeof appUsersIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
+  appUsersRouteRoute: appUsersRouteRouteWithChildren,
+  appForbiddenRoute: appForbiddenRoute,
   appIndexRoute: appIndexRoute,
   appExampleIndexRoute: appExampleIndexRoute,
   appProfileIndexRoute: appProfileIndexRoute,
   appSettingsIndexRoute: appSettingsIndexRoute,
-  appUsersIndexRoute: appUsersIndexRoute,
 }
 
 const appRouteRouteWithChildren = appRouteRoute._addFileChildren(

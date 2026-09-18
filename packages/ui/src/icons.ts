@@ -17,6 +17,7 @@ export {
   IconHourglassOff as HourglassOff,
   IconLayoutDashboard as LayoutDashboard,
   IconLoader2 as Loader,
+  IconLockAccessOff as LockAccessOff,
   IconLockPassword as PasswordLock,
   IconLogout as Logout,
   IconMail as Email,

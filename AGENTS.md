@@ -36,10 +36,11 @@ pnpm --filter dashboard exec tsc --noEmit     # typecheck the app
 
 ### Data access (dashboard)
 - Wire data through `src/lib/data-access/`: `api.ts` (API singletons + `imageUrl`), `queries.ts`, `mutations.ts`. Components import factories from there — never construct an API or reach for a raw instance.
-- Factories live in `@repo/queries` and take API instances as args (`userQueries(authAPI, userAPI)`, `userMutations(userAPI)`) so the package stays app-agnostic.
-- **Auto-invalidation**: a mutation's `meta.invalidatesQuery` is an array of query keys; the `MutationCache` in `main.tsx` invalidates them on **success**. Target the data that actually changed — and account for shared render dependencies. Every user mutation invalidates both `["current-user"]` (header identity) and `["users"]`, because the admin list rows render avatar/name/phone/gender, so a profile edit is visible there too.
+- Factories live in `@repo/queries` and take API instances as args (`authQueries(authAPI)`, `userQueries(userAPI)`, `userMutations(userAPI)`) so the package stays app-agnostic.
+- **Ownership**: `getSession` (`authQueries`, key `["auth"]`) owns identity + permissions (`{ user, permissions }`); `lib/auth/store.ts` owns session lifecycle only; `lib/auth/access.ts` owns `can`/`useCan`, `ACCESS`, and the route guards.
+- **Auto-invalidation**: a mutation's `meta.invalidatesQuery` is an array of query keys; the `MutationCache` in `lib/query-client.ts` invalidates them on **success**. Target the data that actually changed — and account for shared render dependencies. Every user mutation invalidates both `["auth"]` (session identity) and `["users"]`, because the admin list rows render avatar/name/phone/gender, so a profile edit is visible there too.
 - The augmentation that types `mutation.meta` lives in `packages/queries/tanstack-query.d.ts` and is referenced from `packages/queries/src/index.ts`, so consumers inherit it via the package entry — don't re-add it to an app `tsconfig.include`.
-- **Auth is the deliberate exception**: `authAPI` is called raw from `routes/auth/**` and `stores/auth-store.ts`. Session lifecycle (login/logout/identify/refresh) is imperative and not cache-driven — don't wrap it in query factories.
+- **Auth is the deliberate exception**: `authAPI` is called raw from `routes/auth/**`, `lib/auth/session.ts`, and `lib/auth/store.ts`. Session lifecycle (login/logout/identify/refresh) is imperative and not cache-driven — don't wrap it in query factories.
 
 ### Forms (dashboard)
 - Use the shared `useAppForm` wrapper (`src/components/form`). Server errors: `handleError(error, { VALIDATION: (e) => setFormErrors(formApi, e.details), ... })`.
@@ -54,7 +55,7 @@ pnpm --filter dashboard exec tsc --noEmit     # typecheck the app
 - **Dashboard uses 2-space indent; packages use tabs.** Biome configs differ per package — run biome from the package dir (`./node_modules/.bin/biome` if the root wrapper fails).
 - Pre-existing `tsc` failure (not caused by feature work) — 1: `vite.config.ts` rejects an unknown `babel` option (`TS2353`). Route params are typed `FileRouteTypes["to"]` throughout; `keyof FileRoutesByFullPath` no longer type-checks against router links.
 - `reset-password.tsx` loader marks the link invalid on *any* loader error (network/5xx included) — behavior worth revisiting but deliberate for now.
-- Auth store lives in `src/stores/auth-store.ts` (zustand). RBAC gatekeeper code is commented out there.
+- Auth store lives in `src/lib/auth/store.ts` (zustand) and holds **session lifecycle only** (`status`); identity and permissions live in `getSession`. RBAC gatekeeper code is commented out there.
 - Registration gating is **inverted from what the flag's name suggests**: `internal_mode: false` means a *public* deployment where self-registration is allowed; `true` means an internal deployment where signup is admin-only. Read `apps/dashboard/src/lib/health.ts` (`usePublicRegistration`) and the `beforeLoad` in `routes/auth/register/index.tsx` / `routes/auth/register/complete.tsx`. The client gate is presentation only — the backend owns enforcement.
 - Adding a new `exports` subpath to a workspace package (`packages/*/package.json`) requires **restarting the dev server**. Vite caches the `exports` map, and a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath — while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. `pnpm dev` will fix it; don't chase the module itself.
 - Reset-token GET (`/api/auth/password/recover/{token}`) is a one-time token; the TanStack Query cache can serve stale valid state if the URL is revisited after use.

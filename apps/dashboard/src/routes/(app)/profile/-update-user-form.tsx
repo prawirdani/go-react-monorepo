@@ -9,7 +9,6 @@ import { setFormErrors, useAppForm } from "@/components/form"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { updateUser } from "@/lib/data-access/mutations"
 import { GenderOptions } from "@/lib/i18n"
-import { authActions } from "@/stores/auth-store"
 
 interface UpdateUserFormProps {
   user: User
@@ -37,7 +36,6 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
     onSubmit: async ({ value, formApi }) => {
       try {
         await mutateAsync({ userId: user.id, payload: value })
-        await authActions.invalidate()
         await router.invalidate()
         toast.success(t("profile.updateUser.success"))
         onClose()

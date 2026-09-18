@@ -1,4 +1,5 @@
 import { useTranslations } from "@repo/i18n"
+import { AUTH_KEY, type AuthSession } from "@repo/queries"
 import { Button } from "@repo/ui/components/button"
 import { Edit, Email, Password } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
@@ -17,20 +18,19 @@ import {
 } from "@/components/layout/panel"
 import { RoleBadge } from "@/components/layout/role-badge"
 import { GENDER_LABEL_KEYS } from "@/lib/i18n"
-import { useAuthStore } from "@/stores/auth-store"
 import { ChangePasswordForm } from "./-change-password-form"
 import { ProfilePicture } from "./-profile-picture"
 import { UpdateUserForm } from "./-update-user-form"
 
 export const Route = createFileRoute("/(app)/profile/")({
-  loader: () => {
-    const user = useAuthStore.getState().user
-    if (!user) {
+  loader: ({ context }) => {
+    const session = context.queryClient.getQueryData<AuthSession>([AUTH_KEY])
+    if (!session) {
       throw redirect({
         to: "/auth/login",
       })
     }
-    return user
+    return session.user
   },
   component: RouteComponent,
 })

@@ -13,6 +13,7 @@ import {
   type NavItem,
   SidebarNavigations,
 } from "@/components/layout/sidebar-nav"
+import { ACCESS } from "@/lib/auth/access"
 
 const navItems: NavItem[] = [
   {
@@ -24,7 +25,7 @@ const navItems: NavItem[] = [
     titleKey: "nav.users",
     href: "/users",
     icon: UserCog,
-    perm: "user.read",
+    perm: ACCESS.users,
   },
   {
     titleKey: "nav.example",

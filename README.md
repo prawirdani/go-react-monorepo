@@ -81,7 +81,7 @@ The template is built around a **cookie-based** auth flow — no tokens are stor
 - Login/refresh set `httpOnly` cookies (`access_token`, `refresh_token`).
 - `APIClient` always sends `credentials: "include"` and transparently refreshes on `401` (single-flight, retries once).
 - A refresh failure marks the session expired and redirects to `/auth/login`.
-- Auth state lives in `apps/dashboard/src/stores/auth-store.ts` (zustand); `/auth/me` populates the current user.
+- Auth session lifecycle lives in `apps/dashboard/src/lib/auth/store.ts` (zustand, `status` only); identity and permissions live in `getSession` (`authQueries`) and `/auth/me` populates the current user.
 
 ### Registration
 

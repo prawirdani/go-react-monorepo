@@ -290,5 +290,11 @@ export default {
 				"Something went wrong while loading the page. Try again in a moment.",
 			action: "Reload",
 		},
+		forbidden: {
+			heading: "Access denied",
+			message:
+				"You don't have permission to view this page. Ask an administrator if you think this is a mistake.",
+			action: "Back to dashboard",
+		},
 	},
 } as const;

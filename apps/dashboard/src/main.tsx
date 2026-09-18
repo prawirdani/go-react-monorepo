@@ -4,33 +4,14 @@ import { I18nProvider } from "@repo/i18n"
 import { Toaster } from "@repo/ui/components/sonner"
 import { Loader } from "@repo/ui/icons"
 import { ThemeProvider } from "@repo/ui/providers/theme-provider"
-import {
-  MutationCache,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
+import { queryClient } from "@/lib/query-client"
 import reportWebVitals from "./reportWebVitals.ts"
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen"
-
-const queryClient = new QueryClient({
-  mutationCache: new MutationCache({
-    // Global auto invalidation. Success only: a failed mutation changed
-    // nothing, so refetching its targets is wasted work.
-    onSuccess: async (_data, _variables, _onMutateResult, mutation) => {
-      const invalidates = mutation.meta?.invalidatesQuery
-      if (!invalidates) return
-      await Promise.all(
-        invalidates.map((queryKey) =>
-          queryClient.invalidateQueries({ queryKey }),
-        ),
-      )
-    },
-  }),
-})
 
 // Create a new router instance
 const router = createRouter({

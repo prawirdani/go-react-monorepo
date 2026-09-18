@@ -30,7 +30,6 @@ import {
   changeProfilePicture,
   deleteProfilePicture,
 } from "@/lib/data-access/mutations"
-import { authActions } from "@/stores/auth-store"
 
 const dialogHandler: ReturnType<typeof CreateDropdownHandler> =
   CreateDropdownHandler()
@@ -62,7 +61,6 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
     }
     await mutateAsync(result.data, {
       onSuccess: async () => {
-        await authActions.invalidate()
         await router.invalidate()
       },
       onError: (e) => handleError(e),
@@ -164,7 +162,6 @@ function DeleteDialog({ disabled }: DeleteDialogProps) {
     setLoading(true)
     try {
       await mutateAsync()
-      await authActions.invalidate()
       await router.invalidate()
     } catch (error) {
       handleError(error)

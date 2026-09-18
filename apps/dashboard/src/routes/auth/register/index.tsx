@@ -7,14 +7,14 @@ import { setFormErrors, setFormRootError, useAppForm } from "@/components/form"
 import { RootError } from "@/components/form/fields"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { useAuthStore } from "@/lib/auth/store"
 import { authAPI } from "@/lib/data-access/api"
 import { healthQuery } from "@/lib/health"
-import { useAuthStore } from "@/stores/auth-store"
 
 export const Route = createFileRoute("/auth/register/")({
   beforeLoad: async ({ context }) => {
     const auth = useAuthStore.getState()
-    if (auth.user) {
+    if (auth.status === "authenticated") {
       throw redirect({ to: "/", replace: true })
     }
 

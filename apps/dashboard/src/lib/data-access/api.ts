@@ -1,5 +1,5 @@
 import { APIClient, AuditAPI, AuthAPI, UserAPI } from "@repo/api"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore } from "@/lib/auth/store"
 
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_URL.replace(/\/$/, "")
 

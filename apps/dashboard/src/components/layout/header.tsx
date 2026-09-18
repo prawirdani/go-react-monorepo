@@ -23,12 +23,14 @@ import {
 import { useSidebar } from "@repo/ui/components/sidebar"
 import { ThemeModeToggle } from "@repo/ui/components/theme-picker"
 import { Burger, Logout, User } from "@repo/ui/icons"
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { Link, useRouterState } from "@tanstack/react-router"
+import { useState } from "react"
 import { RoleBadge } from "@/components/layout/role-badge"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { authActions } from "@/lib/auth/session"
 import { imageUrl } from "@/lib/data-access/api"
-import { authActions, useAuthStore } from "@/stores/auth-store"
+import { getSession } from "@/lib/data-access/queries"
 
 const dialogHandler = AlertDialogPrimitive.createHandle()
 
@@ -70,19 +72,8 @@ function MonoPath() {
 }
 
 function AvatarSection() {
-  const user = useAuthStore((s) => s.user)
-
-  const navigate = useNavigate()
+  const user = useQuery(getSession).data?.user
   const t = useTranslations("app")
-
-  useEffect(() => {
-    if (!user) {
-      navigate({
-        to: "/auth/login",
-        replace: true,
-      })
-    }
-  }, [user, navigate])
 
   if (!user) return null
 

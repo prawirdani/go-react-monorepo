@@ -8,7 +8,7 @@ import {
 import { type MessageKeys, useFormatter, useTranslations } from "@repo/i18n"
 import toast from "@repo/ui/components/toast"
 import { useCallback } from "react"
-import { REDIRECT_ERROR_CODES, useAuthStore } from "@/stores/auth-store"
+import { REDIRECT_ERROR_CODES, useAuthStore } from "@/lib/auth/store"
 
 // ---------- GLOBAL SINGLE-FLIGHT STATE ----------
 let redirectLatch: Promise<void> | null = null

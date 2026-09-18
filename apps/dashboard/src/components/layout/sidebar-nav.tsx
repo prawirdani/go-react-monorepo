@@ -7,9 +7,10 @@ import {
 } from "@repo/ui/components/collapsible"
 import { ChevronRight, type TablerIcon } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
+import { useQuery } from "@tanstack/react-query"
 import { Link, useLocation } from "@tanstack/react-router"
+import { getSession } from "@/lib/data-access/queries"
 import type { FileRouteTypes } from "@/routeTree.gen"
-import { useAuthStore } from "@/stores/auth-store"
 
 export type NavItem = {
   /** Catalog key, translated at render — the array is module-level. */
@@ -47,13 +48,13 @@ const navItemClass = cn(
 
 export function SidebarNavigations({ items }: { items: NavItem[] }) {
   const t = useTranslations("app")
-  const permissions = useAuthStore((s) => s.permissions)
+  const permissions = useQuery(getSession).data?.permissions ?? []
   const location = useLocation({
     select: (loc) => loc.pathname,
   })
 
   const visibleItems = items.filter(
-    (item) => !item.perm || permissions.has(item.perm),
+    (item) => !item.perm || permissions.includes(item.perm),
   )
 
   return (

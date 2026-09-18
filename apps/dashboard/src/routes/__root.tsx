@@ -4,9 +4,9 @@ import type { QueryClient } from "@tanstack/react-query"
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools"
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
-import { AuthStateWatcher } from "@/components/auth-state-watcher"
 import { InternalServerError, NotFound } from "@/components/route-errors"
-import { authActions, useAuthStore } from "@/stores/auth-store"
+import { authActions } from "@/lib/auth/session"
+import { useAuthStore } from "@/lib/auth/store"
 
 type RouterContext = {
   queryClient: QueryClient
@@ -17,7 +17,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     const authStatus = useAuthStore.getState().status
     if (authStatus === "initial") {
       try {
-        await authActions.identifyUser()
+        await authActions.boot()
       } catch (_) {}
     }
   },
@@ -29,7 +29,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootComponent() {
   return (
     <>
-      <AuthStateWatcher />
       <Outlet />
       <TanStackDevtools
         config={{

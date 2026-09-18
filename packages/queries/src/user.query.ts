@@ -1,31 +1,24 @@
-import type { AuthAPI, UserAPI } from "@repo/api";
+import type { UserAPI } from "@repo/api";
 import type { UpdateUserInput, UserSearchQuery } from "@repo/schemas/user";
 import {
 	keepPreviousData,
 	mutationOptions,
 	queryOptions,
 } from "@tanstack/react-query";
+import { AUTH_KEY } from "./auth.query";
 
 const KEY = "users" as const;
-const IDENTITY_KEY = "current-user" as const;
 
 /**
  * Declarative invalidation targets, read by the dashboard's `MutationCache`
- * (`main.tsx`). Every user mutation touches both: the actor's identity
- * (header, `IDENTITY_KEY`) and the admin list (`KEY`) — whose rows render
+ * (`main.tsx`). Every user mutation touches both: the session identity
+ * (header, `AUTH_KEY`) and the admin list (`KEY`) — whose rows render
  * avatar/name/phone/gender, so a profile edit shows there too.
  */
-const meta = { invalidatesQuery: [[IDENTITY_KEY], [KEY]] };
+const meta = { invalidatesQuery: [[AUTH_KEY], [KEY]] };
 
-export function userQueries(authAPI: AuthAPI, userAPI: UserAPI) {
+export function userQueries(userAPI: UserAPI) {
 	return {
-		currentUser: queryOptions({
-			queryKey: ["current-user"],
-			queryFn: () => authAPI.identify(),
-			staleTime: 15 * 60 * 1000, // 15 minutes
-			placeholderData: keepPreviousData,
-			retry: false,
-		}),
 		listUser: (params: UserSearchQuery) =>
 			queryOptions({
 				queryKey: [KEY, params],

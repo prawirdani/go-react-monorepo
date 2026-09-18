@@ -32,11 +32,7 @@ import toast from "@repo/ui/components/toast"
 import { Trash } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import {
-  createFileRoute,
-  redirect,
-  stripSearchParams,
-} from "@tanstack/react-router"
+import { createFileRoute, stripSearchParams } from "@tanstack/react-router"
 import { FilterDropdown } from "@/components/data-table/filter-dropdown"
 import { SortableHead } from "@/components/data-table/sortable-head"
 import { TablePager } from "@/components/data-table/table-pager"
@@ -54,11 +50,11 @@ import { useFiltering } from "@/hooks/search-query/use-filtering"
 import { usePagination } from "@/hooks/search-query/use-pagination"
 import { useSorting } from "@/hooks/search-query/use-sorting"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { useCan } from "@/lib/auth/access"
 import { imageUrl } from "@/lib/data-access/api"
 import { deleteUser } from "@/lib/data-access/mutations"
-import { listUser } from "@/lib/data-access/queries"
+import { getSession, listUser } from "@/lib/data-access/queries"
 import { GENDER_LABEL_KEYS, ROLE_LABEL_KEYS } from "@/lib/i18n"
-import { can, useAuthStore, useCan } from "@/stores/auth-store"
 
 export const Route = createFileRoute("/(app)/users/")({
   validateSearch: userSearchQuerySchema,
@@ -66,12 +62,6 @@ export const Route = createFileRoute("/(app)/users/")({
   // serialized as `role=[]`. The base params (page/limit/sort/order) stay.
   search: {
     middlewares: [stripSearchParams(userSearchQueryStripDefaults)],
-  },
-  beforeLoad: () => {
-    // Imperative gate: the client only hides what the backend already refuses.
-    if (!can("user.read")) {
-      throw redirect({ to: "/" })
-    }
   },
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {
@@ -93,7 +83,7 @@ function RouteComponent() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const canDelete = useCan("user.delete")
-  const currentUser = useAuthStore((s) => s.user)
+  const currentUser = useQuery(getSession).data?.user
 
   // The router's navigate is generic over this route's own search; the query
   // concerns only need the functional `search` updater. One documented cast,

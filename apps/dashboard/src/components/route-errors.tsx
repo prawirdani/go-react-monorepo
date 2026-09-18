@@ -1,8 +1,55 @@
 import { useTranslations } from "@repo/i18n"
 import { Button } from "@repo/ui/components/button"
-import { MoodPuzzled, ServerOff } from "@repo/ui/icons"
+import { LockAccessOff, MoodPuzzled, ServerOff } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { Link } from "@tanstack/react-router"
+
+export function Forbidden({
+  from,
+  className,
+  fullPage = false,
+}: {
+  from?: string
+  className?: string
+  fullPage?: boolean
+}) {
+  const t = useTranslations("app")
+
+  return (
+    <div
+      className={cn(
+        "grid place-items-center bg-background p-6",
+        fullPage ? "min-h-svh" : "h-full",
+        className,
+      )}
+    >
+      <div
+        role="alert"
+        className="flex w-full max-w-xs flex-col items-center gap-4 text-center"
+      >
+        <LockAccessOff
+          className="size-9 text-muted-foreground"
+          strokeWidth={1.5}
+        />
+        <h1 className="panel-label">{t("errors.forbidden.heading")}</h1>
+        <p className="text-sm text-muted-foreground">
+          {t("errors.forbidden.message")}
+        </p>
+        {from && (
+          <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
+            <span aria-hidden="true" className="text-muted-foreground/60">
+              ~
+            </span>
+            {from}
+          </p>
+        )}
+        <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
+          {t("errors.forbidden.action")}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function NotFound({ fullPage = true }: { fullPage?: boolean }) {
   const t = useTranslations("app")

@@ -15,8 +15,9 @@ import { setFormErrors, setFormRootError, useAppForm } from "@/components/form"
 import { RootError } from "@/components/form/fields"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { authActions } from "@/lib/auth/session"
+import { useAuthStore } from "@/lib/auth/store"
 import { usePublicRegistration } from "@/lib/health"
-import { authActions, useAuthStore } from "@/stores/auth-store"
 
 const loginSearch = z.object({
   redirect: z.string().optional(),
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/auth/login")({
   validateSearch: loginSearch,
   beforeLoad: async ({ search }) => {
     const auth = useAuthStore.getState()
-    if (auth.user) {
+    if (auth.status === "authenticated") {
       throw redirect({ to: search.redirect || "/", replace: true })
     }
   },

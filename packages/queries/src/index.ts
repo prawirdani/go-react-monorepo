@@ -4,4 +4,5 @@
 /// <reference path="../tanstack-query.d.ts" />
 
 export * from "./audit.query";
+export * from "./auth.query";
 export * from "./user.query";

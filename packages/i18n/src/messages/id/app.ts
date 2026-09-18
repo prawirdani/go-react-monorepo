@@ -291,6 +291,12 @@ const app: DeepStringify<typeof en> = {
 				"Terjadi kesalahan saat memuat halaman. Coba lagi beberapa saat.",
 			action: "Muat ulang",
 		},
+		forbidden: {
+			heading: "Akses ditolak",
+			message:
+				"Anda tidak memiliki izin untuk melihat halaman ini. Hubungi administrator jika menurut Anda ini keliru.",
+			action: "Kembali ke dasbor",
+		},
 	},
 };
 
