@@ -67,8 +67,9 @@ export const useAuthStore = create<AuthState>()((set) => ({
 }))
 
 /**
- * Permission check. Fails closed: unknown/absent perm → false.
- * The client gate is UX only; the backend still enforces with 403.
+ * Imperative permission check for non-render callers (router beforeLoad,
+ * event handlers). Fails closed: unknown/absent perm → false. Client gate
+ * is UX only; the backend enforces with 403.
  */
 export function can(permission: Permission): boolean {
   return useAuthStore.getState().permissions.has(permission)

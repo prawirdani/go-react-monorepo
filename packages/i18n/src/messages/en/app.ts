@@ -13,16 +13,13 @@ export default {
 	nav: {
 		groupLabel: "Navigation",
 		dashboard: "Dashboard",
+		users: "Users",
 		example: "Example",
 		settings: "Settings",
 		exampleChild1: "Child 1",
 		exampleChild2: "Child 2",
 		exampleChild3: "Child 3",
 		versionLabel: "Version",
-	},
-	roleOptions: {
-		admin: "Admin",
-		user: "User",
 	},
 	form: {
 		unsaved: {
@@ -167,6 +164,33 @@ export default {
 			action: "Action",
 			entity: "Entity",
 		},
+	},
+	users: {
+		title: "Users",
+		description: "Every account in this console.",
+		breadcrumb: "Users",
+		table: {
+			user: "User",
+			role: "Role",
+			status: "Status",
+			phone: "Phone",
+			gender: "Gender",
+			created: "Created",
+			actions: "Actions",
+		},
+		verified: "Verified",
+		unverified: "Unverified",
+		selfDeleteDisabled: "You cannot delete your own account",
+		delete: {
+			action: "Delete user",
+			title: "Delete user",
+			description: "This account will be permanently removed.",
+			confirm: "Delete",
+			success: "User deleted",
+		},
+		empty: "No users on this page.",
+		error: "Could not load users.",
+		loading: "Loading users…",
 	},
 	profile: {
 		title: "Profile",

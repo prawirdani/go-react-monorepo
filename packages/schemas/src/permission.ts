@@ -7,6 +7,7 @@ export const PERMISSIONS = [
 	"audit.read",
 	"auth.change-password",
 	"auth.register-user",
+	"user.delete",
 	"user.read",
 	"user.update",
 ] as const;

@@ -1,4 +1,5 @@
 import { type MessageKeys, useTranslations } from "@repo/i18n"
+import type { Permission } from "@repo/schemas/permission"
 import {
   Collapsible,
   CollapsibleContent,
@@ -8,11 +9,14 @@ import { ChevronRight, type TablerIcon } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { Link, useLocation } from "@tanstack/react-router"
 import type { FileRouteTypes } from "@/routeTree.gen"
+import { useAuthStore } from "@/stores/auth-store"
 
 export type NavItem = {
   /** Catalog key, translated at render — the array is module-level. */
   titleKey: MessageKeys<"app">
   icon: TablerIcon
+  /** When set, the item is hidden unless the session holds this permission. */
+  perm?: Permission
 } & (
   | {
       // Leaf node: has URL, no children
@@ -43,9 +47,14 @@ const navItemClass = cn(
 
 export function SidebarNavigations({ items }: { items: NavItem[] }) {
   const t = useTranslations("app")
+  const permissions = useAuthStore((s) => s.permissions)
   const location = useLocation({
     select: (loc) => loc.pathname,
   })
+
+  const visibleItems = items.filter(
+    (item) => !item.perm || permissions.has(item.perm),
+  )
 
   return (
     <div className="flex min-w-0 flex-col px-2 py-1 group-data-[collapsible=icon]:px-1.5">
@@ -53,7 +62,7 @@ export function SidebarNavigations({ items }: { items: NavItem[] }) {
         {t("nav.groupLabel")}
       </p>
       <ul className="flex min-w-0 flex-col gap-px">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const label = t(item.titleKey)
           if (item.children) {
             const isParentActive = item.children.some(

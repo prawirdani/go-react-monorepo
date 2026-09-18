@@ -13,6 +13,7 @@ export {
   IconClockX as ClockX,
   IconDiscount as Discount,
   IconEdit as Edit,
+  IconFilter as Filter,
   IconHourglassOff as HourglassOff,
   IconLayoutDashboard as LayoutDashboard,
   IconLoader2 as Loader,

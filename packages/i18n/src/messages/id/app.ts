@@ -13,16 +13,13 @@ const app: DeepStringify<typeof en> = {
 	nav: {
 		groupLabel: "Navigasi",
 		dashboard: "Dashboard",
+		users: "Pengguna",
 		example: "Contoh",
 		settings: "Pengaturan",
 		exampleChild1: "Anak 1",
 		exampleChild2: "Anak 2",
 		exampleChild3: "Anak 3",
 		versionLabel: "Versi",
-	},
-	roleOptions: {
-		admin: "Admin",
-		user: "Pengguna",
 	},
 	form: {
 		unsaved: {
@@ -168,6 +165,33 @@ const app: DeepStringify<typeof en> = {
 			action: "Aksi",
 			entity: "Entitas",
 		},
+	},
+	users: {
+		title: "Pengguna",
+		description: "Semua akun di konsol ini.",
+		breadcrumb: "Pengguna",
+		table: {
+			user: "Pengguna",
+			role: "Peran",
+			status: "Status",
+			phone: "No Handphone",
+			gender: "Jenis Kelamin",
+			created: "Dibuat",
+			actions: "Tindakan",
+		},
+		verified: "Terverifikasi",
+		unverified: "Belum Terverifikasi",
+		selfDeleteDisabled: "Anda tidak dapat menghapus akun sendiri",
+		delete: {
+			action: "Hapus pengguna",
+			title: "Hapus pengguna",
+			description: "Akun ini akan dihapus secara permanen.",
+			confirm: "Hapus",
+			success: "Pengguna dihapus",
+		},
+		empty: "Tidak ada pengguna di halaman ini.",
+		error: "Gagal memuat daftar pengguna.",
+		loading: "Memuat pengguna…",
 	},
 	profile: {
 		title: "Profil",

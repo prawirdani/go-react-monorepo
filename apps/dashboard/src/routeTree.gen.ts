@@ -17,6 +17,7 @@ import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-passw
 import { Route as appExampleIndexRouteImport } from './routes/(app)/example/index'
 import { Route as appProfileIndexRouteImport } from './routes/(app)/profile/index'
 import { Route as appSettingsIndexRouteImport } from './routes/(app)/settings/index'
+import { Route as appUsersIndexRouteImport } from './routes/(app)/users/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthRegisterCompleteRouteImport } from './routes/auth/register/complete'
 
@@ -59,6 +60,11 @@ const appSettingsIndexRoute = appSettingsIndexRouteImport.update({
   path: '/settings/',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appUsersIndexRoute = appUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
   id: '/auth/register/',
   path: '/auth/register/',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/example/': typeof appExampleIndexRoute
   '/profile/': typeof appProfileIndexRoute
   '/settings/': typeof appSettingsIndexRoute
+  '/users/': typeof appUsersIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
 }
 export interface FileRoutesByTo {
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/example': typeof appExampleIndexRoute
   '/profile': typeof appProfileIndexRoute
   '/settings': typeof appSettingsIndexRoute
+  '/users': typeof appUsersIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
 }
 export interface FileRoutesById {
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/(app)/example/': typeof appExampleIndexRoute
   '/(app)/profile/': typeof appProfileIndexRoute
   '/(app)/settings/': typeof appSettingsIndexRoute
+  '/(app)/users/': typeof appUsersIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
 }
 export interface FileRouteTypes {
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/example/'
     | '/profile/'
     | '/settings/'
+    | '/users/'
     | '/auth/register/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/example'
     | '/profile'
     | '/settings'
+    | '/users'
     | '/auth/register'
   id:
     | '__root__'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/(app)/example/'
     | '/(app)/profile/'
     | '/(app)/settings/'
+    | '/(app)/users/'
     | '/auth/register/'
   fileRoutesById: FileRoutesById
 }
@@ -209,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appSettingsIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/users/': {
+      id: '/(app)/users/'
+      path: '/users'
+      fullPath: '/users/'
+      preLoaderRoute: typeof appUsersIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/auth/register/': {
       id: '/auth/register/'
       path: '/auth/register'
@@ -231,6 +250,7 @@ interface appRouteRouteChildren {
   appExampleIndexRoute: typeof appExampleIndexRoute
   appProfileIndexRoute: typeof appProfileIndexRoute
   appSettingsIndexRoute: typeof appSettingsIndexRoute
+  appUsersIndexRoute: typeof appUsersIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
@@ -238,6 +258,7 @@ const appRouteRouteChildren: appRouteRouteChildren = {
   appExampleIndexRoute: appExampleIndexRoute,
   appProfileIndexRoute: appProfileIndexRoute,
   appSettingsIndexRoute: appSettingsIndexRoute,
+  appUsersIndexRoute: appUsersIndexRoute,
 }
 
 const appRouteRouteWithChildren = appRouteRoute._addFileChildren(

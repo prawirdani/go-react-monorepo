@@ -2,7 +2,7 @@ import { useTranslations } from "@repo/i18n"
 import type { Role } from "@repo/schemas/user"
 import { cn } from "@repo/ui/lib/utils"
 import { StateBadge } from "@/components/layout/panel"
-import { RoleLabel } from "@/lib/i18n"
+import { ROLE_LABEL_KEYS } from "@/lib/i18n"
 
 /**
  * A role is an attribute, never state — so it carries no saturation and one
@@ -20,8 +20,8 @@ export function RoleBadge({
   variant?: "chip" | "value"
   className?: string
 }) {
-  const t = useTranslations("app")
-  const label = RoleLabel(t, role)
+  const t = useTranslations("common")
+  const label = t(ROLE_LABEL_KEYS[role])
 
   if (variant === "value") {
     return (

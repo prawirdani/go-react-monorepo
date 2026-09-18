@@ -24,5 +24,5 @@ export const authAPI = new AuthAPI(apiClient)
 export const userAPI = new UserAPI(apiClient)
 export const auditAPI = new AuditAPI(apiClient)
 
-export const userQueries = userQ(authAPI)
+export const userQueries = userQ(authAPI, userAPI)
 export const auditQueries = auditQ(auditAPI)

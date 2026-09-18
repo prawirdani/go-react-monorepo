@@ -1,15 +1,15 @@
-export interface APIResponse<T = null> {
+export interface ResponseBody<T = null> {
 	data: T;
-	message: string | null;
+	message?: string;
 }
 
 export type PaginationMeta = {
 	page: number;
-	size: number;
-	count: number;
-	max_page: number;
+	limit: number;
+	total: number;
+	total_pages: number;
 };
 
-export type APIPaginatedResponse<T> = APIResponse<T[]> & {
-	pagination: PaginationMeta;
+export type PaginatedResponseBody<T> = ResponseBody<T[]> & {
+	meta: PaginationMeta;
 };

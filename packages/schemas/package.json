@@ -22,6 +22,7 @@
 		"./auth": "./src/auth.schema.ts",
 		"./user": "./src/user.schema.ts",
 		"./audit": "./src/audit.schema.ts",
-		"./permission": "./src/permission.ts"
+		"./permission": "./src/permission.ts",
+		"./search-query": "./src/search-query/index.ts"
 	}
 }

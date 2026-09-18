@@ -1,5 +1,5 @@
 import type { TokenPair } from "@repo/schemas/auth";
-import type { APIPaginatedResponse, APIResponse } from "./response";
+import type { PaginatedResponseBody, ResponseBody } from "./response";
 
 const RETRY_HEADER = "X-Api-Retried" as const;
 
@@ -28,16 +28,25 @@ interface FetchOptions extends RequestInit {
 	skipRefresh?: boolean;
 }
 
-type APIRequestFn = {
-	<T>(
-		path: string,
-		options: Omit<FetchOptions, "method"> & { paginated: true },
-	): Promise<APIPaginatedResponse<T>>;
-	<T>(
-		path: string,
-		options?: Omit<FetchOptions, "method"> & { paginated?: false },
-	): Promise<APIResponse<T>>;
-};
+/** Standard (non-paginated) request. */
+type APIRequestFn = <T>(
+	path: string,
+	options?: Omit<FetchOptions, "method">,
+) => Promise<ResponseBody<T>>;
+
+/**
+ * Paginated request. Kept as a distinct type/method rather than a
+ * `paginated` flag on options, since the flag had no runtime effect
+ * and was being spread into the underlying fetch init unused.
+ *
+ * If pagination ever needs real behavior (e.g. injecting `page`/`cursor`
+ * query params, following `next` links), implement it in `makePaginatedVerb`
+ * below rather than branching on a boolean in the shared verb factory.
+ */
+type PaginatedAPIRequestFn = <T>(
+	path: string,
+	options?: Omit<FetchOptions, "method">,
+) => Promise<PaginatedResponseBody<T>>;
 
 export interface APIClientConfig {
 	baseURL: string;
@@ -64,6 +73,7 @@ export class APIClient {
 	}
 
 	public Get = this.makeVerb("GET");
+	public Paginated = this.makeVerb("GET") as unknown as PaginatedAPIRequestFn; // Same as Get but with casted Paginated type
 	public Post = this.makeVerb("POST");
 	public Put = this.makeVerb("PUT");
 	public Delete = this.makeVerb("DELETE");
@@ -171,7 +181,7 @@ export class APIClient {
 				if (response.ok) {
 					const contentType = response.headers.get("content-type");
 					if (contentType?.includes("application/json")) {
-						const resBody = (await response.json()) as APIResponse<TokenPair>;
+						const resBody = (await response.json()) as ResponseBody<TokenPair>;
 						this.onTokenRefreshed?.(resBody.data);
 					}
 				}
@@ -214,11 +224,6 @@ export class APIClient {
 				method,
 				...options,
 			});
-
-			// if (!res.ok) {
-			// 	const errorBody = await res.json().catch((e) => e);
-			// 	throw errorBody;
-			// }
 
 			return await res.json();
 		};

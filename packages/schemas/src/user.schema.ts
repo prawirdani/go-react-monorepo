@@ -1,5 +1,8 @@
 import { z } from "zod";
 import "./error-map";
+import { filteringStripDefaults } from "./search-query/filtering";
+import { paginationFields } from "./search-query/pagination";
+import { sortingFields } from "./search-query/sorting";
 
 const GENDERS = ["M", "F", "O"] as const;
 const ROLES = ["admin", "user"] as const;
@@ -30,6 +33,25 @@ export const updateUserSchema = z.object({
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+// Search query for the admin users table. Every field `.catch`es to a default so
+// a hand-edited/garbage URL param falls back instead of throwing at the router.
+// Params mirror the backend: ?sort=&order=&page=&limit=&role=&gender= — role
+// and gender are multi-select (comma-joined server-side; gender is UPPERCASE).
+const userFilters = {
+	role: z.array(z.enum(ROLES)).catch([]),
+	gender: z.array(z.enum(GENDERS)).catch([]),
+};
+
+export const userSearchQuerySchema = z.object({
+	...paginationFields,
+	...sortingFields(["id", "created_at", "updated_at"], "created_at"),
+	...userFilters,
+});
+
+export type UserSearchQuery = z.infer<typeof userSearchQuerySchema>;
+
+export const userSearchQueryStripDefaults = filteringStripDefaults(userFilters);
 
 const MAX_PROFILE_PIC_SIZE = 2 * 1024 * 1024; // 2MB
 export const profilePictureSchema = z

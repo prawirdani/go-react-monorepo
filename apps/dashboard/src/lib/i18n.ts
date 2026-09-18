@@ -16,8 +16,4 @@ export const GenderOptions = (tc: Translator<"common">) =>
 export const ROLE_LABEL_KEYS = {
   admin: "roleOptions.admin",
   user: "roleOptions.user",
-} as const satisfies Record<Role, MessageKeys<"app">>
-
-/** Resolves a role enum to its translated label. */
-export const RoleLabel = (t: Translator<"app">, role: Role) =>
-  t(ROLE_LABEL_KEYS[role])
+} as const satisfies Record<Role, MessageKeys<"common">>

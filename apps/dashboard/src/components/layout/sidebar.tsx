@@ -6,7 +6,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@repo/ui/components/sidebar"
-import { Edit, LayoutDashboard, Settings } from "@repo/ui/icons"
+import { Edit, LayoutDashboard, Settings, UserCog } from "@repo/ui/icons"
 import type * as React from "react"
 import { BrandLockup } from "@/components/layout/brand"
 import {
@@ -19,6 +19,12 @@ const navItems: NavItem[] = [
     titleKey: "nav.dashboard",
     href: "/",
     icon: LayoutDashboard,
+  },
+  {
+    titleKey: "nav.users",
+    href: "/users",
+    icon: UserCog,
+    perm: "user.read",
   },
   {
     titleKey: "nav.example",
