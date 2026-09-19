@@ -188,6 +188,12 @@ export default {
 			confirm: "Delete",
 			success: "User deleted",
 		},
+		edit: {
+			action: "Edit user",
+			title: "Edit user",
+			description: "Update this account's name, phone, and gender.",
+			success: "User updated.",
+		},
 		empty: "No users on this page.",
 		error: "Could not load users.",
 		loading: "Loading users…",

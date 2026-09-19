@@ -189,6 +189,13 @@ const app: DeepStringify<typeof en> = {
 			confirm: "Hapus",
 			success: "Pengguna dihapus",
 		},
+		edit: {
+			action: "Ubah pengguna",
+			title: "Ubah pengguna",
+			description:
+				"Perbarui nama, nomor telepon, dan jenis kelamin akun ini.",
+			success: "Pengguna diperbarui.",
+		},
 		empty: "Tidak ada pengguna di halaman ini.",
 		error: "Gagal memuat daftar pengguna.",
 		loading: "Memuat pengguna…",

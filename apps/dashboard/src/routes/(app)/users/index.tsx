@@ -55,6 +55,7 @@ import { imageUrl } from "@/lib/data-access/api"
 import { deleteUser } from "@/lib/data-access/mutations"
 import { getSession, listUser } from "@/lib/data-access/queries"
 import { GENDER_LABEL_KEYS, ROLE_LABEL_KEYS } from "@/lib/i18n"
+import { EditUserDialog } from "./-edit-user-dialog"
 
 export const Route = createFileRoute("/(app)/users/")({
   validateSearch: userSearchQuerySchema,
@@ -82,6 +83,7 @@ function RouteComponent() {
   const format = useFormatter()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const canEdit = useCan("user.update")
   const canDelete = useCan("user.delete")
   const currentUser = useQuery(getSession).data?.user
 
@@ -191,13 +193,13 @@ function RouteComponent() {
                     >
                       {t("users.table.created")}
                     </SortableHead>
-                    {canDelete && (
-                      <TableHead className="w-[72px] px-3 text-right">
+                    {canEdit || canDelete ? (
+                      <TableHead className="w-[104px] px-3 text-right">
                         <span className="sr-only">
                           {t("users.table.actions")}
                         </span>
                       </TableHead>
-                    )}
+                    ) : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -258,14 +260,19 @@ function RouteComponent() {
                           dateStyle: "short",
                         })}
                       </TableCell>
-                      {canDelete && (
+                      {canEdit || canDelete ? (
                         <TableCell className="px-3 text-right">
-                          <DeleteUserDialog
-                            user={user}
-                            disabled={user.id === currentUser?.id}
-                          />
+                          <div className="flex justify-end gap-1">
+                            {canEdit && <EditUserDialog user={user} />}
+                            {canDelete && (
+                              <DeleteUserDialog
+                                user={user}
+                                disabled={user.id === currentUser?.id}
+                              />
+                            )}
+                          </div>
                         </TableCell>
-                      )}
+                      ) : null}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -290,6 +297,7 @@ function RouteComponent() {
 /** Same loading shape as the example route's table, matching the row above. */
 function UsersLoading() {
   const t = useTranslations("app")
+  const canEdit = useCan("user.update")
   const canDelete = useCan("user.delete")
 
   return (
@@ -318,7 +326,7 @@ function UsersLoading() {
             <TableHead className="w-[130px] px-3 panel-label">
               {t("users.table.created")}
             </TableHead>
-            {canDelete && <TableHead className="w-[72px] px-3" />}
+            {canEdit || canDelete ? <TableHead className="w-[104px] px-3" /> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -349,11 +357,11 @@ function UsersLoading() {
               <TableCell className="px-3 py-3">
                 <Skeleton className="h-4 w-20" />
               </TableCell>
-              {canDelete && (
+              {canEdit || canDelete ? (
                 <TableCell className="flex justify-end px-3 py-3">
                   <Skeleton className="h-8 w-8" />
                 </TableCell>
-              )}
+              ) : null}
             </TableRow>
           ))}
         </TableBody>
