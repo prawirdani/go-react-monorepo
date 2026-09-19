@@ -223,7 +223,7 @@ const app: DeepStringify<typeof en> = {
 			changePassword: "Ubah kata sandi",
 		},
 		changePassword: {
-			success: "Kata sandi berhasil diperbarui!",
+			success: "Kata sandi diperbarui. Silakan masuk lagi dengan kata sandi baru Anda.",
 			mismatch: "Kata sandi Anda tidak cocok",
 			currentLabel: "Kata sandi lama",
 			newLabel: "Kata sandi baru",
@@ -273,6 +273,8 @@ const app: DeepStringify<typeof en> = {
 			validation: "Beberapa isian belum valid. Periksa kembali formulir.",
 			credentials: "Email atau kata sandi Anda salah.",
 			expired: "Sesi Anda telah berakhir. Silakan login kembali.",
+			invalid:
+				"Sesi Anda sudah tidak berlaku lagi. Silakan login kembali untuk melanjutkan.",
 			invalidSession: "Sesi Anda tidak valid. Silakan login kembali.",
 			invalidRecoveryToken:
 				"Tautan pemulihan tidak valid atau sudah kedaluwarsa.",

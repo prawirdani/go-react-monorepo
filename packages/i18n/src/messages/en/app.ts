@@ -221,7 +221,7 @@ export default {
 			changePassword: "Change password",
 		},
 		changePassword: {
-			success: "Password updated successfully!",
+			success: "Password updated. Please sign in again with your new password.",
 			mismatch: "Your password does not match",
 			currentLabel: "Current password",
 			newLabel: "New password",
@@ -271,6 +271,8 @@ export default {
 			validation: "Some fields are not valid. Please check the form again.",
 			credentials: "Your email or password is incorrect.",
 			expired: "Your session has ended. Please sign in again.",
+			invalid:
+				"Your session is no longer valid. Please sign in again to continue.",
 			invalidSession: "Your session is not valid. Please sign in again.",
 			invalidRecoveryToken: "The recovery link is invalid or has expired.",
 			invalidRegistrationToken:

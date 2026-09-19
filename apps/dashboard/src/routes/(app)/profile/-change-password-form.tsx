@@ -5,6 +5,7 @@ import { FieldGroup } from "@repo/ui/components/field"
 import toast from "@repo/ui/components/toast"
 import { setFormErrors, useAppForm } from "@/components/form"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { useAuthStore } from "@/lib/auth/store"
 import { authAPI } from "@/lib/data-access/api"
 
 interface ChangePasswordFormProps {
@@ -31,6 +32,11 @@ export function ChangePasswordForm({ onClose }: ChangePasswordFormProps) {
         toast.success(t("profile.changePassword.success"))
         onClose()
         form.reset()
+        // The backend already revoked every session and blacklisted this access
+        // token, so `authAPI.logout()` would be a request with nothing to
+        // authenticate. Flip the lifecycle status and let SessionEndedWatcher
+        // navigate; it calls clearSession() once we are off the authed layout.
+        useAuthStore.getState().setUnauthenticated()
       } catch (error) {
         handleError(error, {
           VALIDATION: (e) => setFormErrors(formApi, e.details),
