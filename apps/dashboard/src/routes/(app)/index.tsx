@@ -17,6 +17,7 @@ import {
   type Tone,
 } from "@/components/layout/panel"
 import { useCan } from "@/lib/auth/access"
+import { auditEntries } from "@/lib/data-access/queries"
 import { AuditPanel } from "./-audit-panel"
 
 export const Route = createFileRoute("/(app)/")({
@@ -25,6 +26,13 @@ export const Route = createFileRoute("/(app)/")({
   // serialized as `entity=[]` or `actor=`.
   search: {
     middlewares: [stripSearchParams(auditSearchQueryStripDefaults)],
+  },
+  loaderDeps: ({ search }) => search,
+  // Fire-and-forget warmup, not a render gate: the audit panel owns its own
+  // loading/error states. Nothing returned, so the router does not await it;
+  // `prefetchQuery` cannot reject where an unawaited `ensureQueryData` would.
+  loader: ({ context, deps }) => {
+    context.queryClient.prefetchQuery(auditEntries(deps))
   },
   component: Component,
 })

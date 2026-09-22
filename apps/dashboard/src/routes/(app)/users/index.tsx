@@ -68,9 +68,13 @@ export const Route = createFileRoute("/(app)/users/")({
     middlewares: [stripSearchParams(userSearchQueryStripDefaults)],
   },
   loaderDeps: ({ search }) => search,
-  loader: async ({ context, deps }) => {
-    // Warms the cache for the render below, which owns its own loading state.
-    await context.queryClient.ensureQueryData(listUser(deps))
+  // Fire-and-forget warmup, NOT a render gate: the component below owns its own
+  // loading and error states, so the loader must not block the transition.
+  // Nothing is returned on purpose — returning the promise would make the router
+  // await it. `prefetchQuery` is used rather than `ensureQueryData` because the
+  // latter rejects, and an unawaited rejection is an unhandled one.
+  loader: ({ context, deps }) => {
+    context.queryClient.prefetchQuery(listUser(deps))
   },
   component: RouteComponent,
 })
@@ -226,6 +230,10 @@ function RouteComponent() {
                   {users.map((user) => {
                     const isExpanded = expandedId === user.id
                     const panelId = `user-sessions-${user.id}`
+                    // Bulk revoke on your own row would sign you out; offer it
+                    // only for other people's accounts.
+                    const canRevokeAll =
+                      canRevokeSessions && user.id !== currentUser?.id
 
                     return (
                       <Fragment key={user.id}>
@@ -350,7 +358,7 @@ function RouteComponent() {
                                 <SessionList
                                   userId={user.id}
                                   canRevoke={canRevokeSessions}
-                                  showRevokeAll={canRevokeSessions}
+                                  showRevokeAll={canRevokeAll}
                                   currentSessionId={currentSessionId}
                                   className="mt-2 border-t border-border"
                                 />

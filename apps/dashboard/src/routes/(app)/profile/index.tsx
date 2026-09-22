@@ -188,10 +188,12 @@ function SecurityPanel({ className }: { className?: string }) {
           <p className="px-3 pt-1.5 pb-3 text-sm text-muted-foreground">
             {t("profile.sessions.description")}
           </p>
+          {/* No revoke-all: every session listed here is the viewer's own, so
+              it would sign them out — the header owns sign-out. Bulk revocation
+              lives on the users page, for other people's accounts. */}
           <SessionList
             userId={user.id}
             canRevoke
-            showRevokeAll
             currentSessionId={currentSessionId}
             className="border-t border-border"
           />

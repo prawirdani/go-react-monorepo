@@ -30,9 +30,19 @@ export function authQueries(authAPI: AuthAPI) {
 					sessionId: identity.session_id,
 				};
 			},
-			// No grace window: a revoked session must be visible on the next
-			// navigation, not 15 minutes later.
-			staleTime: 0,
+			// Infinite on purpose: this is refreshed ONLY by explicit invalidation.
+			// `boot()` and `login()` `fetchQuery` it, `clearSession()` removes it,
+			// and every identity mutation carries `AUTH_KEY` in
+			// `meta.invalidatesQuery`. A stale-while-revalidate window here would
+			// refetch identify + permissions on every route mount, because route
+			// components (and each `useCan` call) subscribe with fresh observers.
+			//
+			// Revocation does not depend on this expiring: the next real request
+			// 401s, the interceptor's refresh fails, and `onTokenRefreshFailed`
+			// ends the session. Accepted trade-off: an out-of-band permission
+			// change is not observed until something invalidates `AUTH_KEY` — the
+			// backend still enforces with 403.
+			staleTime: Number.POSITIVE_INFINITY,
 			retry: false,
 		}),
 		/**

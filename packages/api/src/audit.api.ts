@@ -1,6 +1,6 @@
 import type { AuditEntry, AuditSearchQuery } from "@repo/schemas/audit";
 import type { APIClient } from "./client";
-import type { QueryMetaOnly, QueryableResponse } from "./response";
+import type { QueryableResponse, QueryMetaOnly } from "./response";
 
 /**
  * `/api/audit` is confirmed to echo pagination only; its echo of applied
