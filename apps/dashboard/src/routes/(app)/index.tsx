@@ -3,6 +3,7 @@ import {
   auditSearchQuerySchema,
   auditSearchQueryStripDefaults,
 } from "@repo/schemas/audit"
+import { Badge } from "@repo/ui/components/badge"
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router"
 import { Page } from "@/components/layout/page"
 import {
@@ -88,7 +89,7 @@ const services: {
 
 function SampleTag() {
   const t = useTranslations("app")
-  return <StateBadge tone="warning">{t("dashboard.sampleTag")}</StateBadge>
+  return <Badge variant="outline">{t("dashboard.sampleTag")}</Badge>
 }
 
 function Component() {
@@ -128,21 +129,20 @@ function Component() {
             aside={<SampleTag />}
           />
           <PanelBody className="flex-1">
-            <ul className="divide-y divide-border">
+            <PanelRows>
               {services.map((service) => (
-                <li
+                <PanelRow
                   key={service.nameKey}
-                  className="flex items-center justify-between gap-3 px-3 py-2"
-                >
-                  <span className="min-w-0 truncate text-sm">
-                    {t(service.nameKey)}
-                  </span>
-                  <StateBadge tone={service.tone}>
-                    {t(service.stateKey)}
-                  </StateBadge>
-                </li>
+                  label={t(service.nameKey)}
+                  value={
+                    <StateBadge tone={service.tone}>
+                      {t(service.stateKey)}
+                    </StateBadge>
+                  }
+                  mono={false}
+                />
               ))}
-            </ul>
+            </PanelRows>
           </PanelBody>
         </Panel>
 

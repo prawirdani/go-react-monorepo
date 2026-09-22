@@ -12,6 +12,7 @@ const common: DeepStringify<typeof en> = {
 		f: "Perempuan",
 		o: "Lainnya",
 	},
+	genderPlaceholder: "Pilih jenis kelamin",
 	// Shared by every list surface (pager + filters). Arg-free by contract:
 	// counts and ranges are composed in JSX from these labels plus numbers.
 	searchQuery: {
@@ -23,6 +24,8 @@ const common: DeepStringify<typeof en> = {
 		next: "Halaman berikutnya",
 		filter: "Filter",
 		clear: "Hapus filter",
+		sortNewest: "Terbaru dahulu",
+		sortOldest: "Terlama dahulu",
 		date: {
 			trigger: "Tanggal",
 			apply: "Terapkan",

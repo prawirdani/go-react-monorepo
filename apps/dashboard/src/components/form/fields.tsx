@@ -265,11 +265,13 @@ export function FileField({ accept, ...props }: FileFieldProps) {
 
 type SelectProps<T> = {
   className?: string
+  placeholder?: string
   items: { value: T; label: string }[]
 }
 
 export function Select<T extends string | number>({
   items,
+  placeholder,
   className,
 }: SelectProps<T>) {
   const field = useFieldContext<T>()
@@ -289,7 +291,7 @@ export function Select<T extends string | number>({
         name={field.name}
         aria-invalid={invalid}
       >
-        <SelectValue />
+        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent side="bottom" alignItemWithTrigger={false}>
         <SelectGroup>

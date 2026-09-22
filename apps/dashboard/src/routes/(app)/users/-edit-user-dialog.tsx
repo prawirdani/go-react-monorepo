@@ -99,7 +99,7 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
                     <field.Label text={t("profile.identity.name")} required />
                     <div>
                       <field.TextField
-                        placeholder={t("profile.updateUser.namePlaceholder")}
+                        placeholder={t("users.edit.namePlaceholder")}
                       />
                       <field.Errors />
                     </div>
@@ -115,7 +115,7 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
                     <div>
                       <field.TextField
                         type="number"
-                        placeholder={t("profile.updateUser.phonePlaceholder")}
+                        placeholder={t("users.edit.phonePlaceholder")}
                       />
                       <field.Errors />
                     </div>
@@ -129,7 +129,11 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
                   <field.Container>
                     <field.Label text={t("profile.identity.gender")} />
                     <div>
-                      <field.Select className="w-full" items={genderOptions} />
+                      <field.Select
+                        className="w-full"
+                        items={genderOptions}
+                        placeholder={tc("genderPlaceholder")}
+                      />
                       <field.Errors />
                     </div>
                   </field.Container>
@@ -143,9 +147,7 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
               selector={(state) => [state.isSubmitting]}
               children={([isSubmitting]) => (
                 <DialogClose
-                  render={
-                    <Button variant="outline" disabled={isSubmitting} />
-                  }
+                  render={<Button variant="outline" disabled={isSubmitting} />}
                 >
                   {tc("actions.cancel")}
                 </DialogClose>

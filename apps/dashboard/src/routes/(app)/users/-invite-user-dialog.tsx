@@ -81,7 +81,7 @@ export function InviteUserDialog() {
                     <field.Label text={t("profile.identity.name")} required />
                     <div>
                       <field.TextField
-                        placeholder={t("profile.updateUser.namePlaceholder")}
+                        placeholder={t("users.invite.namePlaceholder")}
                       />
                       <field.Errors />
                     </div>
@@ -97,7 +97,7 @@ export function InviteUserDialog() {
                     <div>
                       <field.TextField
                         type="email"
-                        placeholder={t("auth.fields.emailPlaceholder")}
+                        placeholder={t("users.invite.emailPlaceholder")}
                       />
                       <field.Errors />
                     </div>

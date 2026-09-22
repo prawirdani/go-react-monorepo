@@ -122,6 +122,8 @@ A graphite ladder with a faint cool cast, interrupted only by five syntax-derive
 - **Hairline Seam** (oklch(1 0 0 / 12%)): Decorative panel dividers. Deliberately low-contrast — it is texture, not a control boundary.
 - **Field Edge** (oklch(0.56 0.006 260)): The only border that must be *found*. Opaque, solved to 3.24:1 / 3.05:1 against ground and panel in dark, and well above that in light, so every input, select, textarea, and combobox boundary meets WCAG 1.4.11.
 
+**Ladder depth.** The neutral rungs sit close together: `--muted` is only ≈0.05 L from `--card` in every palette and both modes. Any neutral treatment — banding, hover, an expanded wash — therefore has to be *budgeted* inside that shallow span rather than picked freely. The measured range from the faintest usable stripe (≈0.011 L) to the hover weight (≈0.028 L) is the entire budget.
+
 ### Secondary
 
 - **String Green** (oklch(0.76 0.15 155)): Success and healthy state only.
@@ -134,6 +136,8 @@ A graphite ladder with a faint cool cast, interrupted only by five syntax-derive
 **The State-Only Rule.** Saturation exists to mean something. A colour that does not encode state does not appear. If a screen needs emphasis and has no state to report, the answer is weight, scale, or a seam — not hue.
 
 **The One Accent Rule.** The primary accent fills at most one control per view region. Its scarcity is what makes the primary action unambiguous.
+
+**The Banding Rule.** Alternating row or record banding is a reading aid, never a signal: it is drawn from the neutral family (`--muted`), never a state hue, and must sit strictly below the hover and expanded weights so those still read as the stronger states. Banding is spent from the shallow neutral budget described under **Neutral**, so a stripe cannot be made arbitrarily heavier by raising its alpha — see **Elevation & Depth** for how a single alpha lands differently on each surface.
 
 ## Typography
 
@@ -151,7 +155,7 @@ Each palette carries its own typeface pair. The pair switches through `--font-ui
 
 - **Title** (600, 1.125rem → 1.25rem at `md`, `-0.025em`): Page titles only. One per screen, sitting flush over a seam.
 - **Body** (400, 0.875rem): All UI text, form labels, table cells, prose.
-- **Label** (600, 0.6875rem, `0.14em`, uppercase): Every panel nameplate, table column head, and section marker — via the single `.panel-label` class.
+- **Label** (600, 0.6875rem, `0.14em`, uppercase): Every panel nameplate, table column head, and section marker — and the per-field labels of the small-screen record view, where a table's column heads move inline — all via the single `.panel-label` class.
 - **Data** (400, 0.875rem mono, `tabular-nums`): Figures, timestamps, IDs, paths. Applied by opting a cell in with `data-mono`, not by defaulting a container to mono.
 
 ### Named Rules
@@ -166,7 +170,7 @@ The spatial model is a **seam grid**. Panels sit edge to edge inside a `PanelGri
 
 Panels declare responsive priority and collapse to a single stack on narrow screens; the desktop arrangement is intentionally asymmetric (7/5 then 5/7 on a 12-column grid) so the surface reads as a working arrangement rather than a marketing grid of equal tiles.
 
-Density is tight and deliberately uneven: container padding is `0.75rem` rising to `1.25rem` at `md`; row rhythm is `0.5rem` vertical within a panel; panel headers are a fixed `2.25rem` strip; page headers carry a seam beneath and `0.75rem` of breathing room. Page descriptions cap at `70ch`.
+Density is tight and deliberately uneven: container padding is `0.75rem` rising to `1.25rem` at `md`; row rhythm is `0.5rem` vertical within a panel; panel headers are a fixed `2.25rem` strip — except the **control-bearing variant**, where a header carries controls rather than only a nameplate: that resolves to `h-auto py-2` and measures 49px, rising to 70px and 110px as its toolbar wraps to two and three rows; page headers carry a seam beneath and `0.75rem` of breathing room. Page descriptions cap at `70ch`.
 
 ## Elevation & Depth
 
@@ -179,6 +183,10 @@ Because there is no shadow vocabulary, elevation is a strict ordering rather tha
 **The No-Shadow Rule.** If an element looks like it needs a shadow to separate from its background, the ground step is wrong. Fix the step, not the shadow. Zero-offset halos and offset drop shadows are both decoration here.
 
 **The One Step Rule.** A surface takes one step of elevation, never two. Nested elevation is how card-inside-card layouts happen; panels contain seams and content, not lifted panels.
+
+**The Fill-Free Block Rule.** A detail block that may sit on either a panel or a banded record — the audit payload is the reference case — carries no fill of its own; its outer border and seam grid do the dividing. A fill that reads correctly on one surface inverts on the other: `--card` under a dark band is recessed, under a light band it is raised, and raised is card-inside-card.
+
+**The Compound Rule.** An alpha tint is not a fixed value; it composites over whatever lies behind it. One `bg-muted/N` therefore yields a different delta per surface — measured ≈0.016 L directly on card, but ≈0.011 L over a parent already tinted at `--muted/30`. A shared list mounted on surfaces of differing tint (the session list mounts on card, inside a banded record, and inside an expanded wash) cannot carry a single band weight; when you pick one, say which surface it was chosen for.
 
 ## Shapes
 
@@ -218,7 +226,7 @@ Borders come in exactly two weights of meaning: **seams** (decorative dividers, 
 - **Background:** Panel Graphite on Ground Graphite; Raised Graphite for floating surfaces.
 - **Shadow Strategy:** none — see Elevation & Depth.
 - **Border:** none on the panel itself. The seam belongs to the `PanelGrid` container, which is the seam colour with a 1px gap. Panel headers carry a `border-b` seam; stacked rows use `divide-y`.
-- **Internal Padding:** `0.75rem` horizontal on panel headers and rows; `PanelHeader` is a fixed `2.25rem` strip.
+- **Internal Padding:** `0.75rem` horizontal on panel headers and rows; `PanelHeader` is a fixed `2.25rem` strip, taller for the control-bearing variant (see **Layout**).
 
 ### Inputs / Fields
 

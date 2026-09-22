@@ -1,4 +1,5 @@
 import { useTranslations } from "@repo/i18n"
+import { Badge } from "@repo/ui/components/badge"
 import { Skeleton } from "@repo/ui/components/skeleton"
 import {
   Table,
@@ -8,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@repo/ui/components/table"
+import { cn } from "@repo/ui/lib/utils"
 import { createFileRoute } from "@tanstack/react-router"
 import { Page } from "@/components/layout/page"
 import {
@@ -16,12 +18,16 @@ import {
   PanelGrid,
   PanelHeader,
   PanelNote,
-  StateBadge,
 } from "@/components/layout/panel"
 
 export const Route = createFileRoute("/(app)/example/")({
   component: RouteComponent,
 })
+
+// Keys come from the row's own value rather than the map index, so no index-key
+// suppression is needed. The value doubles as parity, so it stays index-derived
+// like every other striped list.
+const SKELETON_ROWS = [0, 1, 2, 3, 4] as const
 
 function RouteComponent() {
   const t = useTranslations("app")
@@ -39,9 +45,7 @@ function RouteComponent() {
         <Panel className="animate-panel-in">
           <PanelHeader
             title={t("example.tablePanel")}
-            aside={
-              <StateBadge tone="warning">{t("dashboard.sampleTag")}</StateBadge>
-            }
+            aside={<Badge variant="outline">{t("dashboard.sampleTag")}</Badge>}
           />
           <PanelBody className="flex-1">
             <Table>
@@ -66,9 +70,11 @@ function RouteComponent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: yes
-                  <TableRow key={i}>
+                {SKELETON_ROWS.map((row) => (
+                  <TableRow
+                    key={row}
+                    className={cn(row % 2 === 1 && "bg-muted/29")}
+                  >
                     <TableCell className="px-3 py-4">
                       <Skeleton className="h-5 w-1/3" />
                     </TableCell>

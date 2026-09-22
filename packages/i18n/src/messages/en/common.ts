@@ -9,6 +9,7 @@ export default {
 		f: "Female",
 		o: "Other",
 	},
+	genderPlaceholder: "Select gender",
 	// Shared by every list surface (pager + filters). Arg-free by contract:
 	// counts and ranges are composed in JSX from these labels plus numbers.
 	searchQuery: {
@@ -20,6 +21,8 @@ export default {
 		next: "Next page",
 		filter: "Filter",
 		clear: "Clear filters",
+		sortNewest: "Newest first",
+		sortOldest: "Oldest first",
 		date: {
 			trigger: "Date",
 			apply: "Apply",

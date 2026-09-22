@@ -186,8 +186,6 @@ export default {
 			created: "Created",
 			actions: "Actions",
 		},
-		verified: "Verified",
-		unverified: "Unverified",
 		selfDeleteDisabled: "You cannot delete your own account",
 		delete: {
 			action: "Delete user",
@@ -200,6 +198,8 @@ export default {
 			action: "Edit user",
 			title: "Edit user",
 			description: "Update this account's name, phone, and gender.",
+			namePlaceholder: "Enter the user's full name",
+			phonePlaceholder: "Enter the user's phone number",
 			success: "User updated.",
 		},
 		invite: {
@@ -207,6 +207,8 @@ export default {
 			title: "Invite user",
 			description:
 				"Sends this person an invitation to finish setting up their account.",
+			namePlaceholder: "Enter the user's full name",
+			emailPlaceholder: "Enter the user's email address",
 			success: "Invitation sent.",
 		},
 		sessions: {

@@ -23,6 +23,10 @@ import { useErrorHandler } from "@/hooks/use-error-handler"
 import { revokeSession, revokeUserSessions } from "@/lib/data-access/mutations"
 import { listUserSessions } from "@/lib/data-access/queries"
 
+// Stable row keys for the loading skeleton; the values are also their position,
+// so parity stays index-derived like every other striped list.
+const SKELETON_ROWS = [0, 1, 2] as const
+
 interface SessionListProps {
   userId: string
   canRevoke: boolean
@@ -77,12 +81,13 @@ export function SessionList({
         </div>
       )}
       <ul className="divide-y divide-border">
-        {sessions.map((session) => (
+        {sessions.map((session, index) => (
           <SessionRow
             key={session.id}
             session={session}
             canRevoke={canRevoke}
             isCurrent={session.id === currentSessionId}
+            striped={index % 2 === 1}
           />
         ))}
       </ul>
@@ -106,17 +111,24 @@ function SessionRow({
   session,
   canRevoke,
   isCurrent,
+  striped,
 }: {
   session: SessionEntry
   canRevoke: boolean
   isCurrent: boolean
+  striped: boolean
 }) {
   const t = useTranslations("common")
   const format = useFormatter()
   const device = describeDevice(session.user_agent, t("sessions.unknownDevice"))
 
   return (
-    <li className="flex items-start gap-3 px-3 py-2.5">
+    <li
+      className={cn(
+        "flex items-start gap-3 px-3 py-2.5",
+        striped && "bg-muted/29",
+      )}
+    >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm">{device.title}</p>
@@ -299,9 +311,14 @@ function SessionListLoading({ className }: { className?: string }) {
         {t("sessions.loading")}
       </p>
       <div className="divide-y divide-border">
-        {Array.from({ length: 3 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows
-          <div key={i} className="flex items-start gap-3 px-3 py-2.5">
+        {SKELETON_ROWS.map((row) => (
+          <div
+            key={row}
+            className={cn(
+              "flex items-start gap-3 px-3 py-2.5",
+              row % 2 === 1 && "bg-muted/29",
+            )}
+          >
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-3 w-24" />

@@ -52,13 +52,15 @@ export function PanelHeader({
     <header
       data-slot="panel-header"
       className={cn(
-        "flex h-9 shrink-0 items-center justify-between gap-3 border-b border-border px-3",
+        "flex h-9 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-3",
         className,
       )}
       {...props}
     >
       {title ? <h2 className="panel-label truncate">{title}</h2> : children}
-      {aside && <div className="flex shrink-0 items-center gap-2">{aside}</div>}
+      {aside && (
+        <div className="flex min-w-0 flex-wrap items-center gap-2">{aside}</div>
+      )}
     </header>
   )
 }

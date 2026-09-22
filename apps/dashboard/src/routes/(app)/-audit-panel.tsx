@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@repo/ui/components/table"
-import { ChevronRight } from "@repo/ui/icons"
+import { ChevronDown, ChevronRight, ChevronUp } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { getRouteApi } from "@tanstack/react-router"
@@ -25,13 +25,20 @@ import { DateFilter } from "@/components/data-table/date-filter"
 import { FilterDropdown } from "@/components/data-table/filter-dropdown"
 import { SortableHead } from "@/components/data-table/sortable-head"
 import { TablePager } from "@/components/data-table/table-pager"
-import { Panel, PanelBody, PanelHeader } from "@/components/layout/panel"
+import {
+  Panel,
+  PanelBody,
+  PanelHeader,
+  PanelRow,
+  PanelRows,
+} from "@/components/layout/panel"
 import type { SearchQueryNavigate } from "@/hooks/search-query/types"
 import { useDateFiltering } from "@/hooks/search-query/use-date-filtering"
 import { useFiltering } from "@/hooks/search-query/use-filtering"
 import { usePagination } from "@/hooks/search-query/use-pagination"
 import { useSorting } from "@/hooks/search-query/use-sorting"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { auditEntries } from "@/lib/data-access/queries"
 
 // Reached without importing the route module (that would be a cycle).
@@ -42,6 +49,14 @@ const ENTITY_LABEL_KEYS = {
   user: "dashboard.audit.entityOptions.user",
   registration_token: "dashboard.audit.entityOptions.registrationToken",
 } as const satisfies Record<AuditEntity, MessageKeys<"app">>
+
+// Keys come from the row's own value, not the map index, so no index-key
+// suppression is needed. The value doubles as parity, so it stays index-derived
+// like every other striped list.
+const SKELETON_ROWS = [0, 1, 2, 3, 4] as const
+
+// Stable keys for the compact loading skeleton's attribute rows.
+const SKELETON_ATTRS = ["actor", "entity"]
 
 /**
  * Live audit log. Owns its own query and loading state — the home route has no
@@ -66,6 +81,10 @@ export function AuditPanel({ className }: { className?: string }) {
 
   const entries = data?.data ?? []
   const pagination = data?.meta.pagination
+
+  // One rendering at a time: below `lg` the table is not mounted at all, so its
+  // `id={panelId}` payload targets never duplicate.
+  const isCompact = useMediaQuery("(max-width: 1023px)")
 
   // One entry open at a time, matching the users table.
   const [expandedId, setExpandedId] = useState<number | null>(null)
@@ -125,7 +144,7 @@ export function AuditPanel({ className }: { className?: string }) {
               onChange={(e) => setActorInput(e.target.value)}
               placeholder={t("dashboard.audit.actorPlaceholder")}
               aria-label={t("dashboard.audit.actorSearch")}
-              className="h-8 w-80 rounded-sm"
+              className="h-8 rounded-sm sm:w-80"
             />
           </>
         }
@@ -133,6 +152,7 @@ export function AuditPanel({ className }: { className?: string }) {
       <PanelBody className="flex-1" aria-busy={isPlaceholderData || undefined}>
         {isPending ? (
           <AuditLoading
+            compact={isCompact}
             sort={search.sort}
             order={search.order}
             onSort={toggleSort}
@@ -145,12 +165,19 @@ export function AuditPanel({ className }: { className?: string }) {
           <p className="px-3 py-4 text-sm text-muted-foreground">
             {t("dashboard.audit.empty")}
           </p>
+        ) : isCompact ? (
+          <AuditRecords
+            entries={entries}
+            expandedId={expandedId}
+            onToggle={toggleExpanded}
+            order={search.order}
+            onToggleSort={toggleSort}
+          />
         ) : (
           <Table
-            className={cn(
-              "md:table-fixed",
-              isPlaceholderData ? "opacity-60 transition-opacity" : undefined,
-            )}
+            className={
+              isPlaceholderData ? "opacity-60 transition-opacity" : undefined
+            }
           >
             <AuditHeader
               sort={search.sort}
@@ -158,12 +185,13 @@ export function AuditPanel({ className }: { className?: string }) {
               onSort={toggleSort}
             />
             <TableBody>
-              {entries.map((entry) => (
+              {entries.map((entry, index) => (
                 <AuditRow
                   key={entry.id}
                   entry={entry}
                   expanded={expandedId === entry.id}
                   onToggle={() => toggleExpanded(entry.id)}
+                  striped={index % 2 === 1}
                 />
               ))}
             </TableBody>
@@ -223,14 +251,23 @@ function AuditRow({
   entry,
   expanded,
   onToggle,
+  striped,
 }: {
   entry: AuditEntry
   expanded: boolean
   onToggle: () => void
+  striped: boolean
 }) {
   const t = useTranslations("app")
   const format = useFormatter()
   const panelId = `audit-entry-${entry.id}`
+
+  // `entity` is a plain string on the wire (the enum only types the search
+  // param), so look the localized label up defensively and fall back to the raw
+  // value — an audit log must never render a blank cell for a new entity.
+  const entityKey = ENTITY_LABEL_KEYS[entry.entity as AuditEntity] as
+    | MessageKeys<"app">
+    | undefined
 
   const hasPayload =
     entry.prev !== null || entry.next !== null || entry.meta !== null
@@ -247,7 +284,10 @@ function AuditRow({
               }
             : undefined
         }
-        className={cn(hasPayload && "cursor-pointer")}
+        // Parity comes from the data index, not the DOM: the expanded payload
+        // row is a sibling `<tr>`, so a selector-based stripe would shift on
+        // expand.
+        className={cn(hasPayload && "cursor-pointer", striped && "bg-muted/29")}
       >
         <TableCell data-mono className="px-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
@@ -285,7 +325,7 @@ function AuditRow({
         </TableCell>
         <TableCell className="px-3">{entry.action}</TableCell>
         <TableCell className="px-3 text-end">
-          <span>{entry.entity}</span>
+          <span>{entityKey ? t(entityKey) : entry.entity}</span>
           <span className="ml-2 font-mono text-xs text-muted-foreground">
             {entry.entity_id}
           </span>
@@ -312,6 +352,147 @@ function AuditRow({
   )
 }
 
+/**
+ * Below `lg`, one bay per entry: action + timestamp, then attribute seams, then
+ * a payload trigger. Seams only — a bay, not a card.
+ */
+function AuditRecords({
+  entries,
+  expandedId,
+  onToggle,
+  order,
+  onToggleSort,
+}: {
+  entries: AuditEntry[]
+  expandedId: number | null
+  onToggle: (id: number) => void
+  order: SortOrder
+  onToggleSort: (field: "created_at") => void
+}) {
+  const t = useTranslations("app")
+  const tc = useTranslations("common")
+  const format = useFormatter()
+  // created_at is the list's only sortable field, so the label names the
+  // ordering directly and is unambiguous in context.
+  const sortLabel =
+    order === "asc"
+      ? tc("searchQuery.sortOldest")
+      : tc("searchQuery.sortNewest")
+
+  return (
+    <>
+      <div className="flex justify-end border-b border-border px-3 py-2">
+        <button
+          type="button"
+          onClick={() => onToggleSort("created_at")}
+          title={sortLabel}
+          className="inline-flex cursor-pointer items-center gap-1 rounded-sm text-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {sortLabel}
+          {order === "asc" ? (
+            <ChevronUp aria-hidden="true" className="size-3.5" />
+          ) : (
+            <ChevronDown aria-hidden="true" className="size-3.5" />
+          )}
+        </button>
+      </div>
+      <ul className="divide-y divide-border">
+        {entries.map((entry, index) => {
+          const isExpanded = expandedId === entry.id
+          const panelId = `audit-entry-${entry.id}`
+          const hasPayload =
+            entry.prev !== null || entry.next !== null || entry.meta !== null
+          // Defensive lookup, same as the table: never render a blank entity.
+          const entityKey = ENTITY_LABEL_KEYS[entry.entity as AuditEntity] as
+            | MessageKeys<"app">
+            | undefined
+
+          return (
+            // Index-derived parity, same mechanism as the tables.
+            <li key={entry.id} className={cn(index % 2 === 1 && "bg-muted/29")}>
+              <div className="px-3 py-3">
+                <p className="text-sm">{entry.action}</p>
+                <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                  {format.dateTime(new Date(entry.created_at), {
+                    dateStyle: "long",
+                    timeStyle: "medium",
+                  })}
+                </p>
+              </div>
+
+              <PanelRows className="border-t border-border">
+                <PanelRow
+                  label={
+                    <span className="panel-label">
+                      {t("dashboard.table.actor")}
+                    </span>
+                  }
+                  value={
+                    entry.actor?.name ?? (
+                      <span className="text-muted-foreground">
+                        {t("dashboard.audit.system")}
+                      </span>
+                    )
+                  }
+                  mono={false}
+                />
+                <PanelRow
+                  label={
+                    <span className="panel-label">
+                      {t("dashboard.table.entity")}
+                    </span>
+                  }
+                  value={
+                    <span className="flex min-w-0 flex-col">
+                      <span>{entityKey ? t(entityKey) : entry.entity}</span>
+                      <span className="break-all font-mono text-xs text-muted-foreground">
+                        {entry.entity_id}
+                      </span>
+                    </span>
+                  }
+                  mono={false}
+                />
+              </PanelRows>
+
+              {hasPayload && (
+                <button
+                  type="button"
+                  onClick={() => onToggle(entry.id)}
+                  aria-expanded={isExpanded}
+                  aria-controls={panelId}
+                  className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ChevronRight
+                    aria-hidden="true"
+                    className={cn(
+                      "transition-transform",
+                      isExpanded && "rotate-90",
+                    )}
+                  />
+                  {t("dashboard.audit.payload")}
+                </button>
+              )}
+
+              {hasPayload && isExpanded && (
+                <div id={panelId} className="border-t border-border p-3">
+                  <div className="grid gap-px overflow-hidden rounded-sm border border-border bg-border">
+                    <PayloadBlock label="prev" value={entry.prev} />
+                    <PayloadBlock label="next" value={entry.next} />
+                    <PayloadBlock
+                      label={t("dashboard.audit.context")}
+                      value={entry.meta}
+                    />
+                  </div>
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </>
+  )
+}
+
 /** Raw JSON, as JSON: one full-width mono block per payload, stacked. */
 function PayloadBlock({
   label,
@@ -321,7 +502,10 @@ function PayloadBlock({
   value: AuditEntry["prev"] | AuditEntry["meta"]
 }) {
   return (
-    <div className="min-w-0 bg-card">
+    // No fill of its own: the block sits flush on whatever surface contains it
+    // (the table's card, or a tinted bay in the records view). Division is by
+    // the seam grid around it, not by a nested surface.
+    <div className="min-w-0">
       <p className="panel-label border-b border-border px-2 py-1">{label}</p>
       {value === null ? (
         <p className="px-2 py-1.5 font-mono text-xs text-muted-foreground">—</p>
@@ -334,12 +518,14 @@ function PayloadBlock({
   )
 }
 
-/** Same loading shape as the loaded table. */
+/** Loading shape follows whichever rendering is mounted: table or stacked bays. */
 function AuditLoading({
+  compact,
   sort,
   order,
   onSort,
 }: {
+  compact: boolean
   sort: string
   order: SortOrder
   onSort: (field: "created_at") => void
@@ -351,28 +537,57 @@ function AuditLoading({
       <p role="status" className="sr-only">
         {t("dashboard.audit.loading")}
       </p>
-      <Table>
-        <AuditHeader sort={sort} order={order} onSort={onSort} />
-        <TableBody>
-          {Array.from({ length: 5 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows
-            <TableRow key={i}>
-              <TableCell className="px-3 py-4">
-                <Skeleton className="h-4 w-2/3" />
-              </TableCell>
-              <TableCell className="px-3 py-4">
-                <Skeleton className="h-4 w-1/2" />
-              </TableCell>
-              <TableCell className="px-3 py-4">
-                <Skeleton className="h-4 w-3/4" />
-              </TableCell>
-              <TableCell className="px-3 py-4">
-                <Skeleton className="h-4 w-2/3" />
-              </TableCell>
-            </TableRow>
+      {compact ? (
+        <ul className="divide-y divide-border">
+          {SKELETON_ROWS.map((row) => (
+            <li key={row} className={cn(row % 2 === 1 && "bg-muted/29")}>
+              <div className="flex flex-col gap-1 px-3 py-3">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
+              </div>
+              <div className="flex flex-col gap-2 border-t border-border px-3 py-3">
+                {SKELETON_ATTRS.map((attr) => (
+                  <div
+                    key={attr}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-border px-3 py-2">
+                <Skeleton className="h-4 w-16" />
+              </div>
+            </li>
           ))}
-        </TableBody>
-      </Table>
+        </ul>
+      ) : (
+        <Table>
+          <AuditHeader sort={sort} order={order} onSort={onSort} />
+          <TableBody>
+            {SKELETON_ROWS.map((row) => (
+              <TableRow
+                key={row}
+                className={cn(row % 2 === 1 && "bg-muted/29")}
+              >
+                <TableCell className="px-3 py-4">
+                  <Skeleton className="h-4 w-2/3" />
+                </TableCell>
+                <TableCell className="px-3 py-4">
+                  <Skeleton className="h-4 w-1/2" />
+                </TableCell>
+                <TableCell className="px-3 py-4">
+                  <Skeleton className="h-4 w-3/4" />
+                </TableCell>
+                <TableCell className="px-3 py-4">
+                  <Skeleton className="h-4 w-2/3" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </>
   )
 }

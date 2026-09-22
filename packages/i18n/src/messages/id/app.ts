@@ -49,8 +49,8 @@ const app: DeepStringify<typeof en> = {
 		fields: {
 			email: "Email",
 			password: "Kata Sandi",
-			emailPlaceholder: "Masukan alamat email Anda",
-			passwordPlaceholder: "Masukan kata sandi Anda",
+			emailPlaceholder: "Masukkan alamat email Anda",
+			passwordPlaceholder: "Masukkan kata sandi Anda",
 		},
 		login: {
 			title: "Masuk",
@@ -112,7 +112,7 @@ const app: DeepStringify<typeof en> = {
 			invalidLink: "halaman masuk",
 			invalidTail: "untuk memulai ulang.",
 			confirmLabel: "Konfirmasi kata sandi",
-			confirmPlaceholder: "Masukan ulang kata sandi Anda",
+			confirmPlaceholder: "Masukkan ulang kata sandi Anda",
 			submit: "Aktifkan akun",
 			success: "Akun Anda sudah siap.",
 		},
@@ -187,8 +187,6 @@ const app: DeepStringify<typeof en> = {
 			created: "Dibuat",
 			actions: "Tindakan",
 		},
-		verified: "Terverifikasi",
-		unverified: "Belum Terverifikasi",
 		selfDeleteDisabled: "Anda tidak dapat menghapus akun sendiri",
 		delete: {
 			action: "Hapus pengguna",
@@ -200,8 +198,9 @@ const app: DeepStringify<typeof en> = {
 		edit: {
 			action: "Ubah pengguna",
 			title: "Ubah pengguna",
-			description:
-				"Perbarui nama, nomor telepon, dan jenis kelamin akun ini.",
+			description: "Perbarui nama, nomor telepon, dan jenis kelamin akun ini.",
+			namePlaceholder: "Masukkan nama lengkap pengguna",
+			phonePlaceholder: "Masukkan nomor handphone pengguna",
 			success: "Pengguna diperbarui.",
 		},
 		invite: {
@@ -209,6 +208,8 @@ const app: DeepStringify<typeof en> = {
 			title: "Undang pengguna",
 			description:
 				"Kirim undangan kepada orang ini untuk menyelesaikan pembuatan akunnya.",
+			namePlaceholder: "Masukkan nama lengkap pengguna",
+			emailPlaceholder: "Masukkan alamat email pengguna",
 			success: "Undangan terkirim.",
 		},
 		sessions: {
@@ -246,14 +247,15 @@ const app: DeepStringify<typeof en> = {
 			description: "Perangkat yang saat ini masuk ke akun ini.",
 		},
 		changePassword: {
-			success: "Kata sandi diperbarui. Silakan masuk lagi dengan kata sandi baru Anda.",
+			success:
+				"Kata sandi diperbarui. Silakan masuk lagi dengan kata sandi baru Anda.",
 			mismatch: "Kata sandi Anda tidak cocok",
 			currentLabel: "Kata sandi lama",
 			newLabel: "Kata sandi baru",
 			confirmLabel: "Konfirmasi kata sandi baru",
-			currentPlaceholder: "Masukan kata sandi Anda saat ini",
-			newPlaceholder: "Masukan kata sandi baru",
-			confirmPlaceholder: "Masukan ulang kata sandi baru",
+			currentPlaceholder: "Masukkan kata sandi Anda saat ini",
+			newPlaceholder: "Masukkan kata sandi baru",
+			confirmPlaceholder: "Masukkan ulang kata sandi baru",
 		},
 		updateUser: {
 			success: "Profile berhasil diperbarui",

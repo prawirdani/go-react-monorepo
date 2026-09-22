@@ -97,7 +97,11 @@ export function UpdateUserForm({ user, onClose }: UpdateUserFormProps) {
               >
                 <field.Label text={t("profile.identity.gender")} />
                 <div>
-                  <field.Select className="w-full" items={genderOptions} />
+                  <field.Select
+                    className="w-full"
+                    items={genderOptions}
+                    placeholder={tc("genderPlaceholder")}
+                  />
                   <field.Errors />
                 </div>
               </field.Container>
