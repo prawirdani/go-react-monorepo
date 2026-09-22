@@ -1,4 +1,5 @@
 import { useTranslations } from "@repo/i18n"
+import { AUDIT_SEARCH_DEFAULTS } from "@repo/schemas/audit"
 import { registerSchema } from "@repo/schemas/auth"
 import { FieldGroup } from "@repo/ui/components/field"
 import { AlertTriangle, Check } from "@repo/ui/icons"
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/auth/register/")({
   beforeLoad: async ({ context }) => {
     const auth = useAuthStore.getState()
     if (auth.status === "authenticated") {
-      throw redirect({ to: "/", replace: true })
+      throw redirect({ to: "/", search: AUDIT_SEARCH_DEFAULTS, replace: true })
     }
 
     // Public self-registration is allowed only on a public deployment, i.e.

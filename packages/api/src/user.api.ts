@@ -19,6 +19,7 @@ export class UserAPI {
 	}
 
 	// available queries: /api/users?sort=(id/created_at/updated_at)&order=(asc/desc)&page=1&limit=10&role=admin,user&gender=M,F,O
+	/* requires user.read permission */
 	async listUser(
 		params: UserSearchQuery,
 	): Promise<QueryableResponse<User, UserListMeta>> {
@@ -37,16 +38,21 @@ export class UserAPI {
 		);
 	}
 
+	/* requires user.update permission or self (current user) */
 	async updateUser(userId: string, payload: UpdateUserInput): Promise<void> {
 		await this.client.Put(`/api/users/${userId}`, {
 			body: JSON.stringify(payload),
 		});
 	}
 
+	/*
+	 * requires user.delete permission
+	 */
 	async deleteUser(userId: string): Promise<void> {
 		await this.client.Delete(`/api/users/${userId}`);
 	}
 
+	/* self (current user) */
 	async changeProfilePicture(pict: File): Promise<void> {
 		const formData = new FormData();
 		if (pict) {
@@ -58,6 +64,7 @@ export class UserAPI {
 		});
 	}
 
+	/* self (current user) */
 	async deleteProfilePicture(): Promise<void> {
 		await this.client.Delete("/api/users/profile-picture");
 	}

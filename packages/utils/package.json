@@ -17,5 +17,8 @@
 	},
 	"exports": {
 		"./*": "./src/*.ts"
+	},
+	"dependencies": {
+		"bowser": "^2.14.1"
 	}
 }

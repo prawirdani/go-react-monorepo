@@ -41,12 +41,6 @@ type APIRequestFn = <T>(
 /**
  * Queryable request: same verb as `Get`, but typed for a list response whose
  * `meta` carries what the endpoint echoes (pagination, applied filter/sort).
- * Kept as a distinct type/method rather than a flag on options, since the
- * flag had no runtime effect and was being spread into the fetch init unused.
- *
- * If querying ever needs real behavior (injecting `page`/`cursor` params,
- * following `next` links), implement it in a dedicated verb rather than
- * branching on a boolean in the shared verb factory.
  */
 type QueryableAPIRequestFn = <T, TMeta = QueryMetaOnly>(
 	path: string,

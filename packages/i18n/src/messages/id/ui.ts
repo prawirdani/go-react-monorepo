@@ -6,6 +6,10 @@ const ui: DeepStringify<typeof en> = {
 		label: "Navigasi remah",
 		more: "Lainnya",
 	},
+	calendar: {
+		previousMonth: "Bulan sebelumnya",
+		nextMonth: "Bulan berikutnya",
+	},
 	dialog: {
 		close: "Tutup",
 	},

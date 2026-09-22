@@ -29,10 +29,11 @@ import {
   TableRow,
 } from "@repo/ui/components/table"
 import toast from "@repo/ui/components/toast"
-import { Trash } from "@repo/ui/icons"
+import { ChevronRight, Trash } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router"
+import { Fragment, useState } from "react"
 import { FilterDropdown } from "@/components/data-table/filter-dropdown"
 import { SortableHead } from "@/components/data-table/sortable-head"
 import { TablePager } from "@/components/data-table/table-pager"
@@ -45,6 +46,7 @@ import {
   StateBadge,
 } from "@/components/layout/panel"
 import { RoleBadge } from "@/components/layout/role-badge"
+import { SessionList } from "@/components/session-list"
 import type { SearchQueryNavigate } from "@/hooks/search-query/types"
 import { useFiltering } from "@/hooks/search-query/use-filtering"
 import { usePagination } from "@/hooks/search-query/use-pagination"
@@ -56,6 +58,7 @@ import { deleteUser } from "@/lib/data-access/mutations"
 import { getSession, listUser } from "@/lib/data-access/queries"
 import { GENDER_LABEL_KEYS, ROLE_LABEL_KEYS } from "@/lib/i18n"
 import { EditUserDialog } from "./-edit-user-dialog"
+import { InviteUserDialog } from "./-invite-user-dialog"
 
 export const Route = createFileRoute("/(app)/users/")({
   validateSearch: userSearchQuerySchema,
@@ -85,7 +88,19 @@ function RouteComponent() {
   const navigate = Route.useNavigate()
   const canEdit = useCan("user.update")
   const canDelete = useCan("user.delete")
+  const canInvite = useCan("auth.register-user")
+  const canViewSessions = useCan("auth.view-user-sessions")
+  const canRevokeSessions = useCan("auth.revoke-user-sessions")
   const currentUser = useQuery(getSession).data?.user
+
+  // One row open at a time. The session query only mounts while a row is open.
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const toggleExpanded = (id: string) =>
+    setExpandedId((prev) => (prev === id ? null : id))
+
+  // Every cell that can render: user, role, status, phone, gender, created,
+  // plus the actions cell when edit or delete is allowed.
+  const columnCount = 6 + (canEdit || canDelete ? 1 : 0)
 
   // The router's navigate is generic over this route's own search; the query
   // concerns only need the functional `search` updater. One documented cast,
@@ -139,12 +154,15 @@ function RouteComponent() {
             title={t("users.title")}
             className="h-auto py-2"
             aside={
-              <FilterDropdown
-                groups={filterGroups}
-                activeCount={activeFilterCount}
-                onToggle={toggleFilter}
-                onClear={() => clearFilters(["role", "gender"])}
-              />
+              <>
+                {canInvite && <InviteUserDialog />}
+                <FilterDropdown
+                  groups={filterGroups}
+                  activeCount={activeFilterCount}
+                  onToggle={toggleFilter}
+                  onClear={() => clearFilters(["role", "gender"])}
+                />
+              </>
             }
           />
           <PanelBody
@@ -203,78 +221,145 @@ function RouteComponent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="px-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            className="size-8 shrink-0"
-                            key={user.profile_picture || "fallback"}
+                  {users.map((user) => {
+                    const isExpanded = expandedId === user.id
+                    const panelId = `user-sessions-${user.id}`
+
+                    return (
+                      <Fragment key={user.id}>
+                        <TableRow
+                          onClick={
+                            canViewSessions
+                              ? (e) => {
+                                  // Ignore clicks on the row's own controls
+                                  // (edit, delete, expander); outer row only.
+                                  if (
+                                    (e.target as HTMLElement).closest(
+                                      "button, a",
+                                    )
+                                  ) {
+                                    return
+                                  }
+                                  toggleExpanded(user.id)
+                                }
+                              : undefined
+                          }
+                          className={cn(canViewSessions && "cursor-pointer")}
+                        >
+                          <TableCell className="px-3">
+                            <div className="flex items-center gap-3">
+                              {canViewSessions && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-expanded={isExpanded}
+                                  aria-controls={panelId}
+                                  aria-label={t("users.sessions.toggle")}
+                                  onClick={() => toggleExpanded(user.id)}
+                                >
+                                  <ChevronRight
+                                    className={cn(
+                                      "transition-transform",
+                                      isExpanded && "rotate-90",
+                                    )}
+                                  />
+                                </Button>
+                              )}
+                              <Avatar
+                                className="size-8 shrink-0"
+                                key={user.profile_picture || "fallback"}
+                              >
+                                {user.profile_picture && (
+                                  <AvatarImage
+                                    src={imageUrl.profile(
+                                      user.profile_picture,
+                                    )}
+                                    alt=""
+                                  />
+                                )}
+                                <AvatarFallback>
+                                  {user.name.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm">{user.name}</p>
+                                <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+                                  {user.email}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-3">
+                            <RoleBadge role={user.role} />
+                          </TableCell>
+                          <TableCell className="px-3">
+                            {user.email_verified_at ? (
+                              <StateBadge tone="success">
+                                {t("users.verified")}
+                              </StateBadge>
+                            ) : (
+                              <StateBadge tone="destructive">
+                                {t("users.unverified")}
+                              </StateBadge>
+                            )}
+                          </TableCell>
+                          <TableCell
+                            data-mono
+                            className="px-3 text-xs text-muted-foreground"
                           >
-                            {user.profile_picture && (
-                              <AvatarImage
-                                src={imageUrl.profile(user.profile_picture)}
-                                alt=""
-                              />
-                            )}
-                            <AvatarFallback>
-                              {user.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm">{user.name}</p>
-                            <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
-                              {user.email}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-3">
-                        <RoleBadge role={user.role} />
-                      </TableCell>
-                      <TableCell className="px-3">
-                        {user.email_verified_at ? (
-                          <StateBadge tone="success">
-                            {t("users.verified")}
-                          </StateBadge>
-                        ) : (
-                          <StateBadge tone="destructive">
-                            {t("users.unverified")}
-                          </StateBadge>
+                            {user.phone ?? "—"}
+                          </TableCell>
+                          <TableCell className="px-3 text-sm text-muted-foreground">
+                            {user.gender
+                              ? tc(GENDER_LABEL_KEYS[user.gender])
+                              : "—"}
+                          </TableCell>
+                          <TableCell
+                            data-mono
+                            className="px-3 text-xs text-muted-foreground"
+                          >
+                            {format.dateTime(new Date(user.created_at), {
+                              dateStyle: "short",
+                            })}
+                          </TableCell>
+                          {canEdit || canDelete ? (
+                            <TableCell className="px-3 text-right">
+                              <div className="flex justify-end gap-1">
+                                {canEdit && <EditUserDialog user={user} />}
+                                {canDelete && (
+                                  <DeleteUserDialog
+                                    user={user}
+                                    disabled={user.id === currentUser?.id}
+                                  />
+                                )}
+                              </div>
+                            </TableCell>
+                          ) : null}
+                        </TableRow>
+
+                        {canViewSessions && isExpanded && (
+                          <TableRow className="hover:bg-transparent">
+                            <TableCell
+                              colSpan={columnCount}
+                              className="whitespace-normal bg-muted/30 p-0"
+                            >
+                              <div id={panelId}>
+                                <p className="panel-label px-3 pt-3">
+                                  {t("users.sessions.panel")}
+                                </p>
+                                <SessionList
+                                  userId={user.id}
+                                  canRevoke={canRevokeSessions}
+                                  showRevokeAll={canRevokeSessions}
+                                  className="mt-2 border-t border-border"
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         )}
-                      </TableCell>
-                      <TableCell
-                        data-mono
-                        className="px-3 text-xs text-muted-foreground"
-                      >
-                        {user.phone ?? "—"}
-                      </TableCell>
-                      <TableCell className="px-3 text-sm text-muted-foreground">
-                        {user.gender ? tc(GENDER_LABEL_KEYS[user.gender]) : "—"}
-                      </TableCell>
-                      <TableCell
-                        data-mono
-                        className="px-3 text-xs text-muted-foreground"
-                      >
-                        {format.dateTime(new Date(user.created_at), {
-                          dateStyle: "short",
-                        })}
-                      </TableCell>
-                      {canEdit || canDelete ? (
-                        <TableCell className="px-3 text-right">
-                          <div className="flex justify-end gap-1">
-                            {canEdit && <EditUserDialog user={user} />}
-                            {canDelete && (
-                              <DeleteUserDialog
-                                user={user}
-                                disabled={user.id === currentUser?.id}
-                              />
-                            )}
-                          </div>
-                        </TableCell>
-                      ) : null}
-                    </TableRow>
-                  ))}
+                      </Fragment>
+                    )
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -299,6 +384,7 @@ function UsersLoading() {
   const t = useTranslations("app")
   const canEdit = useCan("user.update")
   const canDelete = useCan("user.delete")
+  const canViewSessions = useCan("auth.view-user-sessions")
 
   return (
     <>
@@ -335,6 +421,9 @@ function UsersLoading() {
             <TableRow key={i}>
               <TableCell className="px-3 py-3">
                 <div className="flex items-center gap-3">
+                  {canViewSessions && (
+                    <Skeleton className="size-7 shrink-0 rounded-sm" />
+                  )}
                   <Skeleton className="size-8 shrink-0 rounded-full" />
                   <div className="flex flex-col gap-1">
                     <Skeleton className="h-4 w-24" />

@@ -2,6 +2,7 @@ export type { TablerIcon } from "@tabler/icons-react"
 export {
   IconAlertCircle as AlertCircle,
   IconAlertTriangle as AlertTriangle,
+  IconCalendar as Calendar,
   IconCheck as Check,
   IconChevronDown as ChevronDown,
   IconChevronLeft as ChevronLeft,
@@ -36,5 +37,6 @@ export {
   IconUpload as Upload,
   IconUser as User,
   IconUserCog as UserCog,
+  IconUserPlus as UserPlus,
   IconX as X,
 } from "@tabler/icons-react"

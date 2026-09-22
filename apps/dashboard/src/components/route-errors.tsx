@@ -1,4 +1,5 @@
 import { useTranslations } from "@repo/i18n"
+import { AUDIT_SEARCH_DEFAULTS } from "@repo/schemas/audit"
 import { Button } from "@repo/ui/components/button"
 import { LockAccessOff, MoodPuzzled, ServerOff } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
@@ -43,7 +44,7 @@ export function Forbidden({
             {from}
           </p>
         )}
-        <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
+        <Button variant="outline" nativeButton={false} render={<Link to="/" search={AUDIT_SEARCH_DEFAULTS} />}>
           {t("errors.forbidden.action")}
         </Button>
       </div>
@@ -73,7 +74,7 @@ export function NotFound({ fullPage = true }: { fullPage?: boolean }) {
         <p className="text-sm text-muted-foreground">
           {t("errors.notFound.message")}
         </p>
-        <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
+        <Button variant="outline" nativeButton={false} render={<Link to="/" search={AUDIT_SEARCH_DEFAULTS} />}>
           {t("errors.notFound.action")}
         </Button>
       </div>

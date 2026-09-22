@@ -3,6 +3,10 @@ export default {
 		label: "Breadcrumb",
 		more: "More",
 	},
+	calendar: {
+		previousMonth: "Previous month",
+		nextMonth: "Next month",
+	},
 	dialog: {
 		close: "Close",
 	},

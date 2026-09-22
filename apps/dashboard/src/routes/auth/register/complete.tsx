@@ -8,7 +8,6 @@ import { setFormErrors, useAppForm } from "@/components/form"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { authAPI } from "@/lib/data-access/api"
-import { healthQuery } from "@/lib/health"
 
 const search = z.object({
   token: z.string(),
@@ -16,24 +15,16 @@ const search = z.object({
 
 export const Route = createFileRoute("/auth/register/complete")({
   validateSearch: search,
-  beforeLoad: async ({ context, search }) => {
+  beforeLoad: ({ search }) => {
     if (!search.token) {
       throw redirect({ to: "/auth/login", replace: true })
     }
 
-    // Same gate as /auth/register: the completion form is unreachable unless the
-    // backend is running as a public deployment (`internal_mode: false`).
-    let publicRegistration = false
-    try {
-      const health = await context.queryClient.ensureQueryData(healthQuery)
-      publicRegistration = health.internal_mode === false
-    } catch {
-      publicRegistration = false
-    }
-
-    if (!publicRegistration) {
-      throw redirect({ to: "/auth/login", replace: true })
-    }
+    // Deliberately NOT gated on `internal_mode`. This route serves admin
+    // invites, which an internal deployment (`internal_mode: true`) still
+    // issues — gating it here would dead-end every invited user. The token is
+    // the authorization: the loader rejects one that is expired, used, or
+    // revoked.
   },
   loaderDeps: ({ search }) => ({ token: search.token }),
   loader: async ({ deps: { token }, context }) => {
@@ -49,7 +40,8 @@ export const Route = createFileRoute("/auth/register/complete")({
         ? new Date(data.expires_at).getTime() <= Date.now()
         : false
       const isUsed = data ? data.used_at !== null : false
-      invalid = isExpired || isUsed
+      const isRevoked = !!data.revoked_at
+      invalid = isExpired || isUsed || isRevoked
     } catch (error) {
       invalid = true
       console.error(error)

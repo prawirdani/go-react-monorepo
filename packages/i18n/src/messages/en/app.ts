@@ -151,8 +151,16 @@ export default {
 			loading: "Loading audit entries…",
 			empty: "No audit entries yet.",
 			error: "Could not load the audit log.",
-			noActor: "No actor",
+			system: "System",
 			payload: "Payload",
+			context: "Context",
+			actorSearch: "Actor",
+			actorPlaceholder: "Name or ID",
+			entityOptions: {
+				session: "Session",
+				user: "User",
+				registrationToken: "Registration token",
+			},
 		},
 		actionsNote:
 			"The example page holds a table with its loading state. Use it as a starting point for the list and filters you need.",
@@ -194,6 +202,17 @@ export default {
 			description: "Update this account's name, phone, and gender.",
 			success: "User updated.",
 		},
+		invite: {
+			action: "Invite user",
+			title: "Invite user",
+			description:
+				"Sends this person an invitation to finish setting up their account.",
+			success: "Invitation sent.",
+		},
+		sessions: {
+			toggle: "Sessions",
+			panel: "Active sessions",
+		},
 		empty: "No users on this page.",
 		error: "Could not load users.",
 		loading: "Loading users…",
@@ -219,6 +238,10 @@ export default {
 			unverified: "Not verified",
 			password: "Password",
 			changePassword: "Change password",
+		},
+		sessions: {
+			panel: "Active sessions",
+			description: "Devices currently signed into this account.",
 		},
 		changePassword: {
 			success: "Password updated. Please sign in again with your new password.",

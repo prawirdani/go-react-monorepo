@@ -17,6 +17,7 @@ import {
   StateBadge,
 } from "@/components/layout/panel"
 import { RoleBadge } from "@/components/layout/role-badge"
+import { SessionList } from "@/components/session-list"
 import { GENDER_LABEL_KEYS } from "@/lib/i18n"
 import { ChangePasswordForm } from "./-change-password-form"
 import { ProfilePicture } from "./-profile-picture"
@@ -178,6 +179,21 @@ function SecurityPanel({ className }: { className?: string }) {
             <ChangePasswordForm onClose={() => setShowPasswordForm(false)} />
           </div>
         )}
+
+        <div className="border-t border-border">
+          <p className="panel-label px-3 pt-3">
+            {t("profile.sessions.panel")}
+          </p>
+          <p className="px-3 pt-1.5 pb-3 text-sm text-muted-foreground">
+            {t("profile.sessions.description")}
+          </p>
+          <SessionList
+            userId={user.id}
+            canRevoke
+            showRevokeAll
+            className="border-t border-border"
+          />
+        </div>
       </PanelBody>
     </Panel>
   )

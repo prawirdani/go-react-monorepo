@@ -5,23 +5,21 @@ import {
 	mutationOptions,
 	queryOptions,
 } from "@tanstack/react-query";
-import { AUTH_KEY } from "./auth.query";
-
-const KEY = "users" as const;
+import { AUTH_KEY, USER_KEY } from "./keys";
 
 /**
  * Declarative invalidation targets, read by the dashboard's `MutationCache`
- * (`main.tsx`). Every user mutation touches both: the session identity
- * (header, `AUTH_KEY`) and the admin list (`KEY`) — whose rows render
- * avatar/name/phone/gender, so a profile edit shows there too.
+ * (`lib/query-client.ts`). Every user mutation touches both: the session
+ * identity (header, `AUTH_KEY`) and the admin list (`USER_KEY`) — whose rows
+ * render avatar/name/phone/gender, so a profile edit shows there too.
  */
-const meta = { invalidatesQuery: [[AUTH_KEY], [KEY]] };
+const meta = { invalidatesQuery: [[AUTH_KEY], [USER_KEY]] };
 
 export function userQueries(userAPI: UserAPI) {
 	return {
 		listUser: (params: UserSearchQuery) =>
 			queryOptions({
-				queryKey: [KEY, params],
+				queryKey: [USER_KEY, params],
 				queryFn: () => userAPI.listUser(params),
 				placeholderData: keepPreviousData, // keep old page visible while the next loads
 				retry: false,

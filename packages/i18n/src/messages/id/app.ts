@@ -152,8 +152,16 @@ const app: DeepStringify<typeof en> = {
 			loading: "Memuat entri audit…",
 			empty: "Belum ada entri audit.",
 			error: "Gagal memuat log audit.",
-			noActor: "Tanpa pelaku",
+			system: "Sistem",
 			payload: "Muatan",
+			context: "Konteks",
+			actorSearch: "Aktor",
+			actorPlaceholder: "Nama atau ID",
+			entityOptions: {
+				session: "Sesi",
+				user: "Pengguna",
+				registrationToken: "Token registrasi",
+			},
 		},
 		actionsNote:
 			"Halaman contoh berisi tabel dengan status pemuatan. Pakai sebagai titik awal untuk daftar dan filter yang Anda butuhkan.",
@@ -196,6 +204,17 @@ const app: DeepStringify<typeof en> = {
 				"Perbarui nama, nomor telepon, dan jenis kelamin akun ini.",
 			success: "Pengguna diperbarui.",
 		},
+		invite: {
+			action: "Undang pengguna",
+			title: "Undang pengguna",
+			description:
+				"Kirim undangan kepada orang ini untuk menyelesaikan pembuatan akunnya.",
+			success: "Undangan terkirim.",
+		},
+		sessions: {
+			toggle: "Sesi",
+			panel: "Sesi aktif",
+		},
 		empty: "Tidak ada pengguna di halaman ini.",
 		error: "Gagal memuat daftar pengguna.",
 		loading: "Memuat pengguna…",
@@ -221,6 +240,10 @@ const app: DeepStringify<typeof en> = {
 			unverified: "Belum Terverifikasi",
 			password: "Kata Sandi",
 			changePassword: "Ubah kata sandi",
+		},
+		sessions: {
+			panel: "Sesi aktif",
+			description: "Perangkat yang saat ini masuk ke akun ini.",
 		},
 		changePassword: {
 			success: "Kata sandi diperbarui. Silakan masuk lagi dengan kata sandi baru Anda.",

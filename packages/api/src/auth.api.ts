@@ -5,7 +5,9 @@ import type {
 	OpaqueTokenMeta,
 	RecoverPasswordInput,
 	RegisterInput,
+	RegistrationToken,
 	ResetPasswordInput,
+	SessionEntry,
 	TokenPair,
 } from "@repo/schemas/auth";
 import type { Permission } from "@repo/schemas/permission";
@@ -21,9 +23,10 @@ export class AuthAPI {
 	}
 
 	/**
-	 * Public self-registration only exists while the backend runs in internal
-	 * mode, where the caller has no session to send — so the public form passes
-	 * `{ noAuth: true }`. Defaults to sending the session (the admin case).
+	 * Registers a user. The public form exists only on a *public* deployment
+	 * (`internal_mode: false`), where the caller has no session to send — so it
+	 * passes `{ noAuth: true }`. The admin/invite case requires
+	 * auth.register-user and defaults to sending the session.
 	 */
 	async register(
 		payload: RegisterInput,
@@ -35,6 +38,7 @@ export class AuthAPI {
 		});
 	}
 
+	/** Completes registration from a token. Unauthenticated. */
 	async completeRegistration(
 		payload: CompleteRegistrationInput,
 	): Promise<void> {
@@ -44,13 +48,15 @@ export class AuthAPI {
 		});
 	}
 
-	async getRegistrationToken(rawToken: string): Promise<OpaqueTokenMeta> {
-		const res = await this.client.Get<OpaqueTokenMeta>(
+	/** Reads a registration token's metadata. Unauthenticated. */
+	async getRegistrationToken(rawToken: string): Promise<RegistrationToken> {
+		const res = await this.client.Get<RegistrationToken>(
 			`/api/auth/register/${rawToken}`,
 		);
 		return res.data;
 	}
 
+	/** Authenticates and sets the session cookies. Unauthenticated. */
 	async login(credentials: LoginInput): Promise<TokenPair> {
 		const res = await this.client.Post<TokenPair>("/api/auth/login", {
 			body: JSON.stringify(credentials),
@@ -60,19 +66,21 @@ export class AuthAPI {
 		return res.data;
 	}
 
+	/** Destroys the current session and clears its cookies. */
 	async logout(): Promise<void> {
 		await this.client.Delete<null>("/api/auth/logout", {
 			skipRefresh: true,
 		});
 	}
 
+	/** Returns the current user. Self. */
 	async identify(): Promise<User> {
 		const res = await this.client.Get<User>("/api/auth/me");
 		return res.data;
 	}
 
 	/**
-	 * Changing password for authed user.
+	 * Changes the current user's password. Self.
 	 */
 	async changePassword(payload: ChangePasswordInput): Promise<void> {
 		await this.client.Put("/api/auth/password/change", {
@@ -81,7 +89,7 @@ export class AuthAPI {
 	}
 
 	/**
-	 * Requests a password recovery email.
+	 * Requests a password recovery email. Unauthenticated.
 	 *
 	 * @returns An object containing `retry_after`, represented timestamp with ISO 8601 date-time when another request is allowed.
 	 */
@@ -110,9 +118,7 @@ export class AuthAPI {
 		};
 	}
 
-	/**
-	 * Get password recovery token.
-	 */
+	/** Gets a password recovery token's metadata. Unauthenticated. */
 	async getPasswordRecoveryToken(token: string): Promise<OpaqueTokenMeta> {
 		const res = await this.client.Get<OpaqueTokenMeta>(
 			`/api/auth/password/recover/${token}`,
@@ -120,20 +126,43 @@ export class AuthAPI {
 		return res.data;
 	}
 
-	/**
-	 * Reset password using password recovery token.
-	 */
+	/** Resets a password using a recovery token. Unauthenticated. */
 	async resetPassword(payload: ResetPasswordInput): Promise<void> {
 		await this.client.Put("/api/auth/password/reset", {
 			body: JSON.stringify(payload),
 		});
 	}
 
-	/**
-	 * Retrieves permission list on current active user.
-	 */
+	/** Lists the current user's permissions. Self. */
 	async getPermissions(): Promise<Permission[]> {
 		const res = await this.client.Get<Permission[]>("/api/auth/permissions");
 		return res.data;
+	}
+
+	/**
+	 * Lists active sessions of given user id.
+	 * Requires auth.view-user-sessions permission or self (current user).
+	 */
+	async listUserSession(userId: string): Promise<SessionEntry[]> {
+		const res = await this.client.Get<SessionEntry[]>(
+			`/api/auth/sessions/users/${userId}`,
+		);
+		return res.data;
+	}
+
+	/**
+	 * Revokes all active sessions of given user id.
+	 * Requires auth.revoke-user-sessions permission or self (current user).
+	 */
+	async revokeUserSessions(userId: string) {
+		await this.client.Delete(`/api/auth/users/${userId}`);
+	}
+
+	/**
+	 * Revokes specific session.
+	 * Requires auth.revoke-user-sessions permission or self (current user).
+	 */
+	async revokeSession(sessionId: string) {
+		await this.client.Delete(`/api/auth/sessions/${sessionId}`);
 	}
 }

@@ -5,4 +5,5 @@
 
 export * from "./audit.query";
 export * from "./auth.query";
+export * from "./keys";
 export * from "./user.query";

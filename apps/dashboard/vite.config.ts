@@ -9,6 +9,14 @@ import { analyzer } from "vite-bundle-analyzer"
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     analyzer({
       analyzerMode: "static",

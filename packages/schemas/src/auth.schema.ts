@@ -14,6 +14,21 @@ export type OpaqueTokenMeta = {
 	used_at: string | null;
 };
 
+export type RegistrationToken = OpaqueTokenMeta & {
+	revoked_at: string | null;
+};
+
+export type SessionEntry = {
+	id: string;
+	user_id: string;
+	ip_addr: string;
+	user_agent: string;
+	accessed_at: string;
+	created_at: string;
+	expires_at: string;
+	revoked_at: string | null;
+};
+
 const newPasswordSchema = z
 	.string()
 	.nonempty("validation.newPassword.required")

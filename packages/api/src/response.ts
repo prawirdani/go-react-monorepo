@@ -21,14 +21,18 @@ interface Sort<TSortKey extends string> {
 // Helper to detect an "unset" generic
 type IsNever<T> = [T] extends [never] ? true : false;
 
-// All three slices are opt-in — pass `never` (or just omit) to exclude one
+// All three slices are opt-in — pass `never` (or just omit) to exclude one.
+// The opt-out branch is `unknown`, not `never`: `never` is absorbing under
+// intersection (`never & { pagination: … }` is `never`), so using it as the
+// sentinel would collapse `QueryMetaOnly` to `never` and leave a default-meta
+// `meta` unusable. `X & unknown = X` keeps the remaining slices.
 export type QueryMeta<
 	TFilter = never,
 	TSortKey extends string = never,
 	TPagination = never,
-> = (IsNever<TFilter> extends true ? never : { filter: TFilter }) &
-	(IsNever<TSortKey> extends true ? never : { sort: Sort<TSortKey> }) &
-	(IsNever<TPagination> extends true ? never : { pagination: PaginationMeta });
+> = (IsNever<TFilter> extends true ? unknown : { filter: TFilter }) &
+	(IsNever<TSortKey> extends true ? unknown : { sort: Sort<TSortKey> }) &
+	(IsNever<TPagination> extends true ? unknown : { pagination: PaginationMeta });
 
 /** Default meta: an endpoint that echoes pagination only, no filter/sort. */
 export type QueryMetaOnly = QueryMeta<never, never, true>;
