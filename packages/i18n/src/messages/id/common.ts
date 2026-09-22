@@ -50,6 +50,9 @@ const common: DeepStringify<typeof en> = {
 			"Semua perangkat yang masuk ke akun ini dikeluarkan, termasuk perangkat ini.",
 		revoked: "Sesi dicabut.",
 		revokedAll: "Semua sesi dicabut.",
+		thisDevice: "Perangkat ini",
+		revokeCurrentDisabled:
+			"Anda tidak dapat mencabut sesi yang sedang Anda gunakan. Keluar saja.",
 		ipLabel: "Alamat IP",
 		signedIn: "Masuk",
 		lastActive: "Terakhir aktif",

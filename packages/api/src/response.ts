@@ -37,22 +37,26 @@ export type QueryMeta<
 /** Default meta: an endpoint that echoes pagination only, no filter/sort. */
 export type QueryMetaOnly = QueryMeta<never, never, true>;
 
-/**
- * A list response whose `meta` carries whatever the endpoint echoes —
- * pagination, applied filters, applied sort. Not pagination-specific.
- */
-export type QueryableResponse<TData, TMeta = QueryMetaOnly> = ResponseBody<
-	TData[]
-> & {
+/** The success envelope with an endpoint-specific `meta` slice. */
+export type ResponseBodyWithMeta<TData, TMeta> = ResponseBody<TData> & {
 	meta: TMeta;
 };
 
+/**
+ * A list response. A special case of `ResponseBodyWithMeta`, not a parallel
+ * shape.
+ */
+export type QueryableResponse<
+	TData,
+	TMeta = QueryMetaOnly,
+> = ResponseBodyWithMeta<TData[], TMeta>;
+
 // example:
-// All three
+// A list carrying all three meta slices
 // type UserListResponse = QueryableResponse<User, QueryMeta<UserFilter, UserSortKey, true>>;
 //
-// // Only pagination (the default)
+// // A list carrying pagination only (the default)
 // type LogListResponse = QueryableResponse<LogEntry>;
 //
-// // Only filter + sort, no pagination
-// type ExportResponse = QueryableResponse<User, QueryMeta<UserFilter, UserSortKey>>;
+// // A single object carrying a declared meta slice
+// type MeResponse = ResponseBodyWithMeta<User, { session_id: string }>;

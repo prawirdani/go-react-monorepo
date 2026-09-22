@@ -91,7 +91,9 @@ function RouteComponent() {
   const canInvite = useCan("auth.register-user")
   const canViewSessions = useCan("auth.view-user-sessions")
   const canRevokeSessions = useCan("auth.revoke-user-sessions")
-  const currentUser = useQuery(getSession).data?.user
+  const session = useQuery(getSession).data
+  const currentUser = session?.user
+  const currentSessionId = session?.sessionId
 
   // One row open at a time. The session query only mounts while a row is open.
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -271,9 +273,7 @@ function RouteComponent() {
                               >
                                 {user.profile_picture && (
                                   <AvatarImage
-                                    src={imageUrl.profile(
-                                      user.profile_picture,
-                                    )}
+                                    src={imageUrl.profile(user.profile_picture)}
                                     alt=""
                                   />
                                 )}
@@ -351,6 +351,7 @@ function RouteComponent() {
                                   userId={user.id}
                                   canRevoke={canRevokeSessions}
                                   showRevokeAll={canRevokeSessions}
+                                  currentSessionId={currentSessionId}
                                   className="mt-2 border-t border-border"
                                 />
                               </div>
@@ -412,7 +413,9 @@ function UsersLoading() {
             <TableHead className="w-[130px] px-3 panel-label">
               {t("users.table.created")}
             </TableHead>
-            {canEdit || canDelete ? <TableHead className="w-[104px] px-3" /> : null}
+            {canEdit || canDelete ? (
+              <TableHead className="w-[104px] px-3" />
+            ) : null}
           </TableRow>
         </TableHeader>
         <TableBody>

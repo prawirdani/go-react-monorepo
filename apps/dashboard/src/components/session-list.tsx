@@ -18,6 +18,7 @@ import { Logout } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { parseUA } from "@repo/utils/parser"
 import { useMutation, useQuery } from "@tanstack/react-query"
+import { StateBadge } from "@/components/layout/panel"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { revokeSession, revokeUserSessions } from "@/lib/data-access/mutations"
 import { listUserSessions } from "@/lib/data-access/queries"
@@ -26,6 +27,8 @@ interface SessionListProps {
   userId: string
   canRevoke: boolean
   showRevokeAll?: boolean
+  /** The id of the session this browser is authenticated with, if known. */
+  currentSessionId?: string
   className?: string
 }
 
@@ -37,6 +40,7 @@ export function SessionList({
   userId,
   canRevoke,
   showRevokeAll = false,
+  currentSessionId,
   className,
 }: SessionListProps) {
   const t = useTranslations("common")
@@ -78,6 +82,7 @@ export function SessionList({
             key={session.id}
             session={session}
             canRevoke={canRevoke}
+            isCurrent={session.id === currentSessionId}
           />
         ))}
       </ul>
@@ -100,9 +105,11 @@ function describeDevice(raw: string, fallback: string) {
 function SessionRow({
   session,
   canRevoke,
+  isCurrent,
 }: {
   session: SessionEntry
   canRevoke: boolean
+  isCurrent: boolean
 }) {
   const t = useTranslations("common")
   const format = useFormatter()
@@ -111,7 +118,12 @@ function SessionRow({
   return (
     <li className="flex items-start gap-3 px-3 py-2.5">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm">{device.title}</p>
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm">{device.title}</p>
+          {isCurrent && (
+            <StateBadge tone="info">{t("sessions.thisDevice")}</StateBadge>
+          )}
+        </div>
         {device.subtitle && (
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {device.subtitle}
@@ -147,7 +159,15 @@ function SessionRow({
           />
         </p>
       </div>
-      {canRevoke && <RevokeSessionDialog sessionId={session.id} />}
+      {canRevoke && (
+        <RevokeSessionDialog
+          sessionId={session.id}
+          disabled={isCurrent}
+          disabledReason={
+            isCurrent ? t("sessions.revokeCurrentDisabled") : undefined
+          }
+        />
+      )}
     </li>
   )
 }
@@ -156,14 +176,20 @@ function SessionMeta({ label, value }: { label: string; value: string }) {
   return (
     <span className="whitespace-nowrap">
       {label}{" "}
-      <span className="font-mono tabular-nums text-foreground/80">
-        {value}
-      </span>
+      <span className="font-mono tabular-nums text-foreground/80">{value}</span>
     </span>
   )
 }
 
-function RevokeSessionDialog({ sessionId }: { sessionId: string }) {
+function RevokeSessionDialog({
+  sessionId,
+  disabled = false,
+  disabledReason,
+}: {
+  sessionId: string
+  disabled?: boolean
+  disabledReason?: string
+}) {
   const t = useTranslations("common")
   const handleError = useErrorHandler()
   const { mutateAsync, isPending } = useMutation(revokeSession)
@@ -181,8 +207,9 @@ function RevokeSessionDialog({ sessionId }: { sessionId: string }) {
           <Button
             variant="destructive"
             size="icon-sm"
-            title={t("sessions.revoke")}
-            aria-label={t("sessions.revoke")}
+            disabled={disabled}
+            title={disabledReason ?? t("sessions.revoke")}
+            aria-label={disabledReason ?? t("sessions.revoke")}
           >
             <Logout />
           </Button>

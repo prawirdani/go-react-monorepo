@@ -32,11 +32,18 @@ interface FetchOptions extends RequestInit {
 	skipRefresh?: boolean;
 }
 
-/** Standard (non-paginated) request. */
-type APIRequestFn = <T>(
+// `never` means "no meta declared"; it must map to `unknown`, the intersection
+// identity, so a bare `<T>` call site keeps exactly its old type.
+type ResponseMeta<TMeta> = [TMeta] extends [never] ? unknown : { meta: TMeta };
+
+/**
+ * Standard (non-paginated) request. The caller declares `meta` because it
+ * varies per endpoint — which is why the verb itself cannot know it.
+ */
+type APIRequestFn = <T, TMeta = never>(
 	path: string,
 	options?: Omit<FetchOptions, "method">,
-) => Promise<ResponseBody<T>>;
+) => Promise<ResponseBody<T> & ResponseMeta<TMeta>>;
 
 /**
  * Queryable request: same verb as `Get`, but typed for a list response whose

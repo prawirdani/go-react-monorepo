@@ -47,6 +47,9 @@ export default {
 			"Every device signed into this account is signed out, including this one.",
 		revoked: "Session revoked.",
 		revokedAll: "All sessions revoked.",
+		thisDevice: "This device",
+		revokeCurrentDisabled:
+			"You cannot revoke the session you are using. Sign out instead.",
 		ipLabel: "IP address",
 		signedIn: "Signed in",
 		lastActive: "Last active",

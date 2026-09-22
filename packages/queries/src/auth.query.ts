@@ -5,10 +5,14 @@ import type { User } from "@repo/schemas/user";
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
 import { AUTH_KEY, SESSIONS_KEY, USER_KEY } from "./keys";
 
-/** The session as one cached fact: identity and permissions must not disagree. */
+/**
+ * The session as one cached fact: identity, permissions, and the session id the
+ * identity was resolved with must not disagree.
+ */
 export type AuthSession = {
 	user: User;
 	permissions: Permission[];
+	sessionId: string;
 };
 
 export function authQueries(authAPI: AuthAPI) {
@@ -16,11 +20,15 @@ export function authQueries(authAPI: AuthAPI) {
 		getSession: queryOptions({
 			queryKey: [AUTH_KEY],
 			queryFn: async (): Promise<AuthSession> => {
-				const [user, permissions] = await Promise.all([
+				const [identity, permissions] = await Promise.all([
 					authAPI.identify(),
 					authAPI.getPermissions(),
 				]);
-				return { user, permissions };
+				return {
+					user: identity.user,
+					permissions,
+					sessionId: identity.session_id,
+				};
 			},
 			// No grace window: a revoked session must be visible on the next
 			// navigation, not 15 minutes later.

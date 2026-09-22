@@ -73,10 +73,15 @@ export class AuthAPI {
 		});
 	}
 
-	/** Returns the current user. Self. */
-	async identify(): Promise<User> {
-		const res = await this.client.Get<User>("/api/auth/me");
-		return res.data;
+	/**
+	 * Returns the current user. Self.
+	 * `meta.session_id` identifies the session this request was made with.
+	 */
+	async identify(): Promise<{ user: User; session_id: string }> {
+		const res = await this.client.Get<User, { session_id: string }>(
+			"/api/auth/me",
+		);
+		return { user: res.data, session_id: res.meta.session_id };
 	}
 
 	/**

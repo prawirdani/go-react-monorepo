@@ -3,6 +3,7 @@ import { AUTH_KEY, type AuthSession } from "@repo/queries"
 import { Button } from "@repo/ui/components/button"
 import { Edit, Email, Password } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 import { useState } from "react"
@@ -18,6 +19,7 @@ import {
 } from "@/components/layout/panel"
 import { RoleBadge } from "@/components/layout/role-badge"
 import { SessionList } from "@/components/session-list"
+import { getSession } from "@/lib/data-access/queries"
 import { GENDER_LABEL_KEYS } from "@/lib/i18n"
 import { ChangePasswordForm } from "./-change-password-form"
 import { ProfilePicture } from "./-profile-picture"
@@ -119,6 +121,7 @@ function IdentityPanel({ className }: { className?: string }) {
 
 function SecurityPanel({ className }: { className?: string }) {
   const user = Route.useLoaderData()
+  const currentSessionId = useQuery(getSession).data?.sessionId
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const t = useTranslations("app")
 
@@ -181,9 +184,7 @@ function SecurityPanel({ className }: { className?: string }) {
         )}
 
         <div className="border-t border-border">
-          <p className="panel-label px-3 pt-3">
-            {t("profile.sessions.panel")}
-          </p>
+          <p className="panel-label px-3 pt-3">{t("profile.sessions.panel")}</p>
           <p className="px-3 pt-1.5 pb-3 text-sm text-muted-foreground">
             {t("profile.sessions.description")}
           </p>
@@ -191,6 +192,7 @@ function SecurityPanel({ className }: { className?: string }) {
             userId={user.id}
             canRevoke
             showRevokeAll
+            currentSessionId={currentSessionId}
             className="border-t border-border"
           />
         </div>
