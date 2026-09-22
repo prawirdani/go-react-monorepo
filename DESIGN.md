@@ -184,9 +184,9 @@ Because there is no shadow vocabulary, elevation is a strict ordering rather tha
 
 **The One Step Rule.** A surface takes one step of elevation, never two. Nested elevation is how card-inside-card layouts happen; panels contain seams and content, not lifted panels.
 
-**The Fill-Free Block Rule.** A detail block that may sit on either a panel or a banded record — the audit payload is the reference case — carries no fill of its own; its outer border and seam grid do the dividing. A fill that reads correctly on one surface inverts on the other: `--card` under a dark band is recessed, under a light band it is raised, and raised is card-inside-card.
+**The Fill-Free Block Rule.** A detail block that may sit on either a panel or a banded record — the audit payload is the reference case — carries no fill of its own: a fill that reads correctly on one surface inverts on the other, because `--card` under a dark band is recessed while under a light band it is raised, and raised is card-inside-card. Its division therefore comes from **borders between its own children** (`divide-y`), never from a container fill. That distinction is load-bearing: a `gap-px` container painted `bg-border` is a *fill*, and it only reads as seams while every child is opaque. Pair a transparent child with it and the whole block collapses into one solid plate.
 
-**The Compound Rule.** An alpha tint is not a fixed value; it composites over whatever lies behind it. One `bg-muted/N` therefore yields a different delta per surface — measured ≈0.016 L directly on card, but ≈0.011 L over a parent already tinted at `--muted/30`. A shared list mounted on surfaces of differing tint (the session list mounts on card, inside a banded record, and inside an expanded wash) cannot carry a single band weight; when you pick one, say which surface it was chosen for.
+**The Compound Rule.** An alpha tint is not a fixed value; it composites over whatever lies behind it. One `bg-muted/N` therefore yields a different delta per surface — measured ≈0.016 L directly on card, but ≈0.011 L over a parent already tinted at `--muted/30`. A shared list mounted on surfaces of differing tint (the session list mounts on card, inside a banded record, and inside an expanded wash) cannot carry a single band weight; when you pick one, say which surface it was chosen for. **Accepted exception:** where a banded list sits on an expanded surface, the stripe composites to ≈0.028 L — the hover weight. The Banding Rule's ordering therefore holds everywhere *except* on an expanded surface, where band and hover converge by design: expansion feedback is a functional signal, and the wash it composites over is already a deliberate state.
 
 ## Shapes
 
@@ -250,7 +250,7 @@ The swatch is painted entirely from tokens: it carries `data-theme` plus the cur
 
 ### Do:
 
-- **Do** separate surfaces with a 1px seam and the next graphite step; build seams into the grid container with `gap-px`, not onto each panel.
+- **Do** separate surfaces with a 1px seam and the next graphite step; build seams into the grid container with `gap-px`, not onto each panel. A `gap-px` container must be painted with the seam colour **and** every child must be opaque — otherwise the "seams" turn into one solid plate.
 - **Do** spend colour only on state, drawing from the syntax vocabulary (blue keyword, green string, amber value, red error, violet comment).
 - **Do** use `.panel-label` for every nameplate and column head; it is the one small-caps treatment.
 - **Do** opt figures, IDs, and timestamps into mono with `data-mono`, and add `tabular-nums` where columns must align.

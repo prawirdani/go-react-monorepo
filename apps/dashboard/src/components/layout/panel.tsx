@@ -5,6 +5,10 @@ import type * as React from "react"
  * The world's structural unit: a graphite panel separated from its neighbours
  * by a 1px hairline seam. Panels tile on a shared seam grid — no shadows,
  * no floating cards.
+ *
+ * Seams here come from this container's own fill showing through a 1px gap, so
+ * every child MUST paint an opaque background (`Panel` does, via `bg-card`). A
+ * transparent child turns the whole grid into a solid `--border` plate.
  */
 export function PanelGrid({
   className,

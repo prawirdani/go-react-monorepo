@@ -186,7 +186,6 @@ export default {
 			created: "Created",
 			actions: "Actions",
 		},
-		selfDeleteDisabled: "You cannot delete your own account",
 		delete: {
 			action: "Delete user",
 			title: "Delete user",

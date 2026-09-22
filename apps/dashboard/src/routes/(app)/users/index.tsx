@@ -296,8 +296,10 @@ function RouteComponent() {
                                   variant="ghost"
                                   size="icon-sm"
                                   aria-expanded={isExpanded}
-                                  aria-controls={panelId}
-                                  aria-label={t("users.sessions.toggle")}
+                                  aria-controls={
+                                    isExpanded ? panelId : undefined
+                                  }
+                                  aria-label={`${t("users.sessions.toggle")} — ${user.name}`}
                                   onClick={() => toggleExpanded(user.id)}
                                 >
                                   <ChevronRight
@@ -316,6 +318,7 @@ function RouteComponent() {
                                   <AvatarImage
                                     src={imageUrl.profile(user.profile_picture)}
                                     alt=""
+                                    loading="lazy"
                                   />
                                 )}
                                 <AvatarFallback>
@@ -357,12 +360,7 @@ function RouteComponent() {
                             <TableCell className="px-3 text-right">
                               <div className="flex justify-end gap-1">
                                 {canEdit && <EditUserDialog user={user} />}
-                                {canDelete && (
-                                  <DeleteUserDialog
-                                    user={user}
-                                    disabled={isSelf}
-                                  />
-                                )}
+                                {canDelete && <DeleteUserDialog user={user} />}
                               </div>
                             </TableCell>
                           ) : (
@@ -594,7 +592,13 @@ function UserRecords({
 
           return (
             // Index-derived parity, same mechanism as the tables.
-            <li key={user.id} className={cn(index % 2 === 1 && "bg-muted/29")}>
+            <li
+              key={user.id}
+              className={cn(
+                "has-aria-expanded:bg-muted/50",
+                index % 2 === 1 && "bg-muted/29",
+              )}
+            >
               <div className="flex items-center gap-3 px-3 py-3">
                 <Avatar
                   className="size-8 shrink-0"
@@ -604,6 +608,7 @@ function UserRecords({
                     <AvatarImage
                       src={imageUrl.profile(user.profile_picture)}
                       alt=""
+                      loading="lazy"
                     />
                   )}
                   <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
@@ -617,9 +622,7 @@ function UserRecords({
                 {showActions && !isSelf && (
                   <div className="flex shrink-0 items-center gap-1">
                     {canEdit && <EditUserDialog user={user} />}
-                    {canDelete && (
-                      <DeleteUserDialog user={user} disabled={isSelf} />
-                    )}
+                    {canDelete && <DeleteUserDialog user={user} />}
                   </div>
                 )}
               </div>
@@ -667,7 +670,8 @@ function UserRecords({
                   type="button"
                   onClick={() => onToggle(user.id)}
                   aria-expanded={isExpanded}
-                  aria-controls={panelId}
+                  aria-label={`${t("users.sessions.toggle")} — ${user.name}`}
+                  aria-controls={isExpanded ? panelId : undefined}
                   className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ChevronRight
@@ -703,13 +707,7 @@ function UserRecords({
   )
 }
 
-function DeleteUserDialog({
-  user,
-  disabled,
-}: {
-  user: User
-  disabled: boolean
-}) {
+function DeleteUserDialog({ user }: { user: User }) {
   const t = useTranslations("app")
   const tc = useTranslations("common")
   const handleError = useErrorHandler()
@@ -729,8 +727,6 @@ function DeleteUserDialog({
           <Button
             variant="destructive"
             size="icon-sm"
-            disabled={disabled}
-            title={disabled ? t("users.selfDeleteDisabled") : undefined}
             aria-label={t("users.delete.action")}
           >
             <Trash />

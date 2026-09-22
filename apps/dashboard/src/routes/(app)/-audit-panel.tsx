@@ -296,8 +296,8 @@ function AuditRow({
                 variant="ghost"
                 size="icon-sm"
                 aria-expanded={expanded}
-                aria-controls={panelId}
-                aria-label={t("dashboard.audit.payload")}
+                aria-controls={expanded ? panelId : undefined}
+                aria-label={`${t("dashboard.audit.payload")} — ${entry.action}`}
                 onClick={onToggle}
               >
                 <ChevronRight
@@ -336,7 +336,7 @@ function AuditRow({
           <TableCell colSpan={4} className="whitespace-normal px-3 pb-3">
             <div
               id={panelId}
-              className="grid gap-px overflow-hidden rounded-sm border border-border bg-border"
+              className="divide-y divide-border overflow-hidden rounded-sm border border-border"
             >
               <PayloadBlock label="prev" value={entry.prev} />
               <PayloadBlock label="next" value={entry.next} />
@@ -409,7 +409,13 @@ function AuditRecords({
 
           return (
             // Index-derived parity, same mechanism as the tables.
-            <li key={entry.id} className={cn(index % 2 === 1 && "bg-muted/29")}>
+            <li
+              key={entry.id}
+              className={cn(
+                "has-aria-expanded:bg-muted/50",
+                index % 2 === 1 && "bg-muted/29",
+              )}
+            >
               <div className="px-3 py-3">
                 <p className="text-sm">{entry.action}</p>
                 <p className="mt-0.5 font-mono text-xs text-muted-foreground">
@@ -459,7 +465,8 @@ function AuditRecords({
                   type="button"
                   onClick={() => onToggle(entry.id)}
                   aria-expanded={isExpanded}
-                  aria-controls={panelId}
+                  aria-label={`${t("dashboard.audit.payload")} — ${entry.action}`}
+                  aria-controls={isExpanded ? panelId : undefined}
                   className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ChevronRight
@@ -475,7 +482,7 @@ function AuditRecords({
 
               {hasPayload && isExpanded && (
                 <div id={panelId} className="border-t border-border p-3">
-                  <div className="grid gap-px overflow-hidden rounded-sm border border-border bg-border">
+                  <div className="divide-y divide-border overflow-hidden rounded-sm border border-border">
                     <PayloadBlock label="prev" value={entry.prev} />
                     <PayloadBlock label="next" value={entry.next} />
                     <PayloadBlock

@@ -187,7 +187,6 @@ const app: DeepStringify<typeof en> = {
 			created: "Dibuat",
 			actions: "Tindakan",
 		},
-		selfDeleteDisabled: "Anda tidak dapat menghapus akun sendiri",
 		delete: {
 			action: "Hapus pengguna",
 			title: "Hapus pengguna",

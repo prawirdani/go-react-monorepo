@@ -60,8 +60,8 @@ export function ThemeModeToggle({
       }
     >
       <span aria-hidden="true" className="relative size-4 shrink-0">
-        <IconSun className="absolute inset-0 size-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-        <IconMoon className="absolute inset-0 size-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+        <IconSun className="absolute inset-0 size-4 scale-100 rotate-0 transition-transform dark:scale-0 dark:-rotate-90" />
+        <IconMoon className="absolute inset-0 size-4 scale-0 rotate-90 transition-transform dark:scale-100 dark:rotate-0" />
       </span>
       {resolvedMode === "dark" ? t("theme.toLight") : t("theme.toDark")}
     </Button>
