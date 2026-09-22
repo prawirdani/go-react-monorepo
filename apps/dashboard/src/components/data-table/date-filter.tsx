@@ -142,7 +142,7 @@ export function DateFilter({
           locale={dateFnsLocale}
           disabled={(date) => date > new Date()}
         />
-        <div className="flex justify-between gap-2 p-1">
+        <div className="flex justify-between gap-2 p-2">
           {active && (
             <Button
               className="flex-1"

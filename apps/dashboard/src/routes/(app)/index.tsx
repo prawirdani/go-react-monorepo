@@ -100,8 +100,8 @@ function Component() {
   // the two panels a non-admin may see.
   return (
     <Page title={t("dashboard.title")} description={t("dashboard.description")}>
-      <PanelGrid className="lg:grid-cols-12">
-        <Panel className="animate-panel-in lg:col-span-7">
+      <PanelGrid className="lg:grid-cols-12 animate-panel-in">
+        <Panel className="lg:col-span-7">
           <PanelHeader
             title={t("dashboard.panels.summary")}
             aside={<SampleTag />}
