@@ -44,6 +44,7 @@ func NewServer(container *Container, onPostShutdown func(error) error) (*Server,
 	app.Use(m.InstrumentHandler(func(err error) int {
 		return http.ParseError(err).Status()
 	}))
+	app.Use(http.NoCache())
 	app.Use(http.SecurityHeaders(container.Config.IsProduction()))
 	app.Use(logger.New())
 	app.Use(requestid.New())

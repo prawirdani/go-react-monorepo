@@ -150,3 +150,10 @@ func AuditContext() fiber.Handler {
 		return c.Next()
 	}
 }
+
+func NoCache() fiber.Handler {
+	return func(c fiber.Ctx) error {
+		c.Set("Cache-Control", "private, no-cache, must-revalidate")
+		return c.Next()
+	}
+}
