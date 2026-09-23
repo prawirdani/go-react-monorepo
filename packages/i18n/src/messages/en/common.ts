@@ -21,8 +21,8 @@ export default {
 		next: "Next page",
 		filter: "Filter",
 		clear: "Clear filters",
-		sortNewest: "Newest first",
-		sortOldest: "Oldest first",
+		sortNewest: "Latest",
+		sortOldest: "Oldest",
 		date: {
 			trigger: "Date",
 			apply: "Apply",

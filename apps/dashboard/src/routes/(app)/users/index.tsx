@@ -30,7 +30,14 @@ import {
   TableRow,
 } from "@repo/ui/components/table"
 import toast from "@repo/ui/components/toast"
-import { ChevronDown, ChevronRight, ChevronUp, Trash } from "@repo/ui/icons"
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Inbox,
+  Trash,
+} from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router"
@@ -49,6 +56,7 @@ import {
 } from "@/components/layout/panel"
 import { RoleBadge } from "@/components/layout/role-badge"
 import { SessionList } from "@/components/session-list"
+import { StateBlock } from "@/components/state-block"
 import type { SearchQueryNavigate } from "@/hooks/search-query/types"
 import { useFiltering } from "@/hooks/search-query/use-filtering"
 import { usePagination } from "@/hooks/search-query/use-pagination"
@@ -193,13 +201,28 @@ function RouteComponent() {
             {isPending ? (
               <UsersLoading compact={isCompact} />
             ) : isError ? (
-              <p role="alert" className="px-3 py-4 text-sm text-destructive">
-                {t("users.error")}
-              </p>
+              <StateBlock
+                tone="destructive"
+                icon={AlertTriangle}
+                message={t("users.error")}
+                className="px-3 py-8"
+              />
             ) : users.length === 0 ? (
-              <p className="px-3 py-4 text-sm text-muted-foreground">
-                {t("users.empty")}
-              </p>
+              <StateBlock
+                icon={Inbox}
+                message={t("users.empty")}
+                className="px-3 py-8"
+                action={
+                  activeFilterCount > 0 ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => clearFilters(["role", "gender"])}
+                    >
+                      {tc("searchQuery.clear")}
+                    </Button>
+                  ) : undefined
+                }
+              />
             ) : isCompact ? (
               <UserRecords
                 users={users}
@@ -571,7 +594,7 @@ function UserRecords({
           type="button"
           onClick={() => onToggleSort("created_at")}
           title={sortLabel}
-          className="inline-flex cursor-pointer items-center gap-1 rounded-sm text-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex cursor-pointer items-center gap-1 rounded-sm text-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring font-medium"
         >
           {sortLabel}
           {order === "asc" ? (
@@ -653,13 +676,14 @@ function UserRecords({
                   mono={false}
                 />
                 <PanelRow
+                  className="[&>dd]:text-xs"
                   label={
                     <span className="panel-label">
                       {t("users.table.created")}
                     </span>
                   }
                   value={format.dateTime(new Date(user.created_at), {
-                    dateStyle: "medium",
+                    dateStyle: "short",
                     timeStyle: "short",
                   })}
                 />
@@ -672,12 +696,12 @@ function UserRecords({
                   aria-expanded={isExpanded}
                   aria-label={`${t("users.sessions.toggle")} — ${user.name}`}
                   aria-controls={isExpanded ? panelId : undefined}
-                  className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-xs outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ChevronRight
                     aria-hidden="true"
                     className={cn(
-                      "transition-transform",
+                      "h-5 transition-transform",
                       isExpanded && "rotate-90",
                     )}
                   />

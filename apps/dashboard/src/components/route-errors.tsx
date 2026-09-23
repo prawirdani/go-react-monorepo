@@ -4,6 +4,7 @@ import { Button } from "@repo/ui/components/button"
 import { LockAccessOff, MoodPuzzled, ServerOff } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { Link } from "@tanstack/react-router"
+import { StateBlock } from "@/components/state-block"
 
 export function Forbidden({
   from,
@@ -24,18 +25,21 @@ export function Forbidden({
         className,
       )}
     >
-      <div
-        role="alert"
-        className="flex w-full max-w-xs flex-col items-center gap-4 text-center"
+      <StateBlock
+        alert
+        icon={LockAccessOff}
+        heading={t("errors.forbidden.heading")}
+        message={t("errors.forbidden.message")}
+        action={
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/" search={AUDIT_SEARCH_DEFAULTS} />}
+          >
+            {t("errors.forbidden.action")}
+          </Button>
+        }
       >
-        <LockAccessOff
-          className="size-9 text-muted-foreground"
-          strokeWidth={1.5}
-        />
-        <h1 className="panel-label">{t("errors.forbidden.heading")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("errors.forbidden.message")}
-        </p>
         {from && (
           <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
             <span aria-hidden="true" className="text-muted-foreground/60">
@@ -44,10 +48,7 @@ export function Forbidden({
             {from}
           </p>
         )}
-        <Button variant="outline" nativeButton={false} render={<Link to="/" search={AUDIT_SEARCH_DEFAULTS} />}>
-          {t("errors.forbidden.action")}
-        </Button>
-      </div>
+      </StateBlock>
     </div>
   )
 }
@@ -62,22 +63,21 @@ export function NotFound({ fullPage = true }: { fullPage?: boolean }) {
         fullPage ? "min-h-svh" : "h-full",
       )}
     >
-      <div
-        role="alert"
-        className="flex w-full max-w-xs flex-col items-center gap-4 text-center"
-      >
-        <MoodPuzzled
-          className="size-9 text-muted-foreground"
-          strokeWidth={1.5}
-        />
-        <h1 className="panel-label">{t("errors.notFound.heading")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("errors.notFound.message")}
-        </p>
-        <Button variant="outline" nativeButton={false} render={<Link to="/" search={AUDIT_SEARCH_DEFAULTS} />}>
-          {t("errors.notFound.action")}
-        </Button>
-      </div>
+      <StateBlock
+        alert
+        icon={MoodPuzzled}
+        heading={t("errors.notFound.heading")}
+        message={t("errors.notFound.message")}
+        action={
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/" search={AUDIT_SEARCH_DEFAULTS} />}
+          >
+            {t("errors.notFound.action")}
+          </Button>
+        }
+      />
     </div>
   )
 }
@@ -87,19 +87,17 @@ export function InternalServerError({ error: _ }: { error: unknown }) {
 
   return (
     <div className="grid min-h-svh place-items-center bg-background p-6">
-      <div
-        role="alert"
-        className="flex w-full max-w-xs flex-col items-center gap-4 text-center"
-      >
-        <ServerOff className="size-9 text-muted-foreground" strokeWidth={1.5} />
-        <h1 className="panel-label">{t("errors.server.heading")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("errors.server.message")}
-        </p>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          {t("errors.server.action")}
-        </Button>
-      </div>
+      <StateBlock
+        alert
+        icon={ServerOff}
+        heading={t("errors.server.heading")}
+        message={t("errors.server.message")}
+        action={
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            {t("errors.server.action")}
+          </Button>
+        }
+      />
     </div>
   )
 }

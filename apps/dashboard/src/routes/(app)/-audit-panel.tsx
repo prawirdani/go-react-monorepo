@@ -16,7 +16,13 @@ import {
   TableHeader,
   TableRow,
 } from "@repo/ui/components/table"
-import { ChevronDown, ChevronRight, ChevronUp } from "@repo/ui/icons"
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Inbox,
+} from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import { getRouteApi } from "@tanstack/react-router"
@@ -32,6 +38,7 @@ import {
   PanelRow,
   PanelRows,
 } from "@/components/layout/panel"
+import { StateBlock } from "@/components/state-block"
 import type { SearchQueryNavigate } from "@/hooks/search-query/types"
 import { useDateFiltering } from "@/hooks/search-query/use-date-filtering"
 import { useFiltering } from "@/hooks/search-query/use-filtering"
@@ -64,6 +71,7 @@ const SKELETON_ATTRS = ["actor", "entity"]
  */
 export function AuditPanel({ className }: { className?: string }) {
   const t = useTranslations("app")
+  const tc = useTranslations("common")
   const search = routeApi.useSearch()
   const navigate = routeApi.useNavigate()
 
@@ -120,7 +128,7 @@ export function AuditPanel({ className }: { className?: string }) {
     <Panel className={className}>
       <PanelHeader
         title={t("dashboard.panels.audit")}
-        className="h-auto py-2"
+        className="h-auto py-2 flex"
         aside={
           <>
             <FilterDropdown
@@ -144,7 +152,7 @@ export function AuditPanel({ className }: { className?: string }) {
               onChange={(e) => setActorInput(e.target.value)}
               placeholder={t("dashboard.audit.actorPlaceholder")}
               aria-label={t("dashboard.audit.actorSearch")}
-              className="h-8 rounded-sm sm:w-80"
+              className="h-8 rounded-sm w-full sm:w-64"
             />
           </>
         }
@@ -158,13 +166,28 @@ export function AuditPanel({ className }: { className?: string }) {
             onSort={toggleSort}
           />
         ) : isError ? (
-          <p role="alert" className="px-3 py-4 text-sm text-destructive">
-            {t("dashboard.audit.error")}
-          </p>
+          <StateBlock
+            tone="destructive"
+            icon={AlertTriangle}
+            message={t("dashboard.audit.error")}
+            className="px-3 py-8"
+          />
         ) : entries.length === 0 ? (
-          <p className="px-3 py-4 text-sm text-muted-foreground">
-            {t("dashboard.audit.empty")}
-          </p>
+          <StateBlock
+            icon={Inbox}
+            message={t("dashboard.audit.empty")}
+            className="px-3 py-8"
+            action={
+              search.entity.length > 0 ? (
+                <Button
+                  variant="outline"
+                  onClick={() => clearFilters(["entity"])}
+                >
+                  {tc("searchQuery.clear")}
+                </Button>
+              ) : undefined
+            }
+          />
         ) : isCompact ? (
           <AuditRecords
             entries={entries}
@@ -310,7 +333,7 @@ function AuditRow({
             )}
             <span>
               {format.dateTime(new Date(entry.created_at), {
-                dateStyle: "long",
+                dateStyle: "short",
                 timeStyle: "medium",
               })}
             </span>
@@ -420,7 +443,7 @@ function AuditRecords({
                 <p className="text-sm">{entry.action}</p>
                 <p className="mt-0.5 font-mono text-xs text-muted-foreground">
                   {format.dateTime(new Date(entry.created_at), {
-                    dateStyle: "long",
+                    dateStyle: "short",
                     timeStyle: "medium",
                   })}
                 </p>
@@ -443,6 +466,7 @@ function AuditRecords({
                   mono={false}
                 />
                 <PanelRow
+                  className="flex items-center justify-between"
                   label={
                     <span className="panel-label">
                       {t("dashboard.table.entity")}
@@ -450,7 +474,9 @@ function AuditRecords({
                   }
                   value={
                     <span className="flex min-w-0 flex-col">
-                      <span>{entityKey ? t(entityKey) : entry.entity}</span>
+                      <span className="text-end">
+                        {entityKey ? t(entityKey) : entry.entity}
+                      </span>
                       <span className="break-all font-mono text-xs text-muted-foreground">
                         {entry.entity_id}
                       </span>
@@ -467,12 +493,12 @@ function AuditRecords({
                   aria-expanded={isExpanded}
                   aria-label={`${t("dashboard.audit.payload")} — ${entry.action}`}
                   aria-controls={isExpanded ? panelId : undefined}
-                  className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-xs outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ChevronRight
                     aria-hidden="true"
                     className={cn(
-                      "transition-transform",
+                      "transition-transform h-6",
                       isExpanded && "rotate-90",
                     )}
                   />

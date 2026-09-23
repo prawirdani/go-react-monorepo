@@ -16,6 +16,7 @@ export {
   IconEdit as Edit,
   IconFilter as Filter,
   IconHourglassOff as HourglassOff,
+  IconInbox as Inbox,
   IconLayoutDashboard as LayoutDashboard,
   IconLoader2 as Loader,
   IconLockAccessOff as LockAccessOff,

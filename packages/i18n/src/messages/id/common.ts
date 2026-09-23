@@ -24,8 +24,8 @@ const common: DeepStringify<typeof en> = {
 		next: "Halaman berikutnya",
 		filter: "Filter",
 		clear: "Hapus filter",
-		sortNewest: "Terbaru dahulu",
-		sortOldest: "Terlama dahulu",
+		sortNewest: "Terbaru",
+		sortOldest: "Terlama",
 		date: {
 			trigger: "Tanggal",
 			apply: "Terapkan",

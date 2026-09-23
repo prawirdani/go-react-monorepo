@@ -14,11 +14,12 @@ import {
 import { Button } from "@repo/ui/components/button"
 import { Skeleton } from "@repo/ui/components/skeleton"
 import toast from "@repo/ui/components/toast"
-import { Logout } from "@repo/ui/icons"
+import { AlertTriangle, Inbox, Logout } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { parseUA } from "@repo/utils/parser"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { StateBadge } from "@/components/layout/panel"
+import { StateBlock } from "@/components/state-block"
 import { useErrorHandler } from "@/hooks/use-error-handler"
 import { revokeSession, revokeUserSessions } from "@/lib/data-access/mutations"
 import { listUserSessions } from "@/lib/data-access/queries"
@@ -54,12 +55,12 @@ export function SessionList({
 
   if (isError) {
     return (
-      <p
-        role="alert"
-        className={cn("px-3 py-4 text-sm text-destructive", className)}
-      >
-        {t("sessions.error")}
-      </p>
+      <StateBlock
+        tone="destructive"
+        icon={AlertTriangle}
+        message={t("sessions.error")}
+        className={cn("px-3 py-6", className)}
+      />
     )
   }
 
@@ -67,9 +68,11 @@ export function SessionList({
 
   if (sessions.length === 0) {
     return (
-      <p className={cn("px-3 py-4 text-sm text-muted-foreground", className)}>
-        {t("sessions.empty")}
-      </p>
+      <StateBlock
+        icon={Inbox}
+        message={t("sessions.empty")}
+        className={cn("px-3 py-6", className)}
+      />
     )
   }
 
