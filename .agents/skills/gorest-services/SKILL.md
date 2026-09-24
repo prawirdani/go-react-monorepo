@@ -1,6 +1,6 @@
 ---
 name: gorest-services
-description: "Service-layer conventions for github.com/prawirdani/golang-restapi — interface-driven dependencies, Transact for multi-step writes, nullable mutation + Validate, audit entries inside the transaction, post-commit side effects (events, storage cleanup), async goroutines with snapshotted logger context, per-domain permission tables, and throttling. Use when writing or reviewing business logic in internal/ entity packages."
+description: "Service-layer conventions for github.com/prawirdani/golang-restapi — interface-driven dependencies, Transact for multi-step writes, nullable mutation + Validate, audit entries inside the transaction, side-effect placement (outbox events in-tx, non-transactional cleanup post-commit), async goroutines with snapshotted logger context, per-domain permission tables, and throttling. Use when writing or reviewing business logic in internal/ entity packages."
 user-invocable: true
 license: MIT
 compatibility: Designed for AI coding agents working in the golang-restapi repository.
@@ -19,7 +19,9 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 
 2. **Multi-step writes wrap in `s.transactor.Transact(ctx, func(ctx) error {...})`.**    Repositories join the tx automatically through `db.GetConn(ctx)` — no explicit begin/commit. Examples: `Register` and `Login` in `internal/auth/service.go`.
 
-3. **Side effects that must survive rollback happen AFTER commit, outside the closure.** Notification events are produced only once `Transact` returns nil (`s.eventProducer.ProduceRegistrationCompletionEvent`, `ProducePasswordRecoveryEvent` in `auth/service.go`); storage cleanup runs after the DB swap succeeds (`s.asyncDeleteImage` in `user/service.go`).
+3. **Place side effects by whether they can join the transaction.**
+   - **Events go INSIDE the `Transact` closure, through the transactional outbox.** `s.eventProducer.ProduceRegistrationCompletionEvent` / `ProducePasswordRecoveryEvent` (`internal/auth/service.go`) write the `outbox_messages` row on the caller's connection, so the event commits or rolls back with the business state — an invitation can never exist without its email. Do **not** produce after the closure returns; that reintroduces the crash window the outbox exists to close.
+   - **Effects that cannot join a transaction run AFTER commit.** Storage cleanup runs once the DB swap succeeds (`s.asyncDeleteImage` in `user/service.go`); its failure is logged, not fatal.
 
 4. **Mutate domain models through their methods/fields, then validate:**
    ```go
@@ -52,8 +54,8 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 ## Checklist (Review mode)
 
 - [ ] Service struct fields are interfaces, not concrete infrastructure types
-- [ ] Multi-step writes inside one `Transact`; post-commit side effects outside it
-- [ ] Email/storage cleanup failure after commit logged, not fatal (or handled explicitly)
+- [ ] Multi-step writes inside one `Transact`; outbox events produced inside it (never after commit)
+- [ ] Non-transactional side effects (storage cleanup) run after commit, their failure logged not fatal
 - [ ] Nullable fields via `pkg/nullable`; model `Validate()` before persisting
 - [ ] Goroutines use fresh `context.Background()` + snapshot logger
 - [ ] Rate-limited operations call `TryAcquire` first with a namespaced key
@@ -63,7 +65,7 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 
 ## References
 
-- `internal/auth/service.go` — `Transact`, audit-in-tx, throttling, post-commit event production, `permTables`
+- `internal/auth/service.go` — `Transact`, audit-in-tx, throttling, outbox event production inside `Transact`, `permTables`
 - `internal/user/service.go` — validation, storage swap + async cleanup, `permTables`
 - `internal/user/model.go` / `gender.go` — nullable + Validate patterns
 - `internal/ports/throttle/throttle.go` — Throttler contract

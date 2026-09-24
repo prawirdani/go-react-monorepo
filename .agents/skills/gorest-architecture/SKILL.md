@@ -17,8 +17,10 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(m
 
 1. **Layering is strict.** Dependencies flow one way:
    - `internal/<entity>/` — models, service interfaces, service implementations, errors. ZERO infrastructure or transport imports (no pgx, no redis, no Fiber).
-   - `internal/infrastructure/` — implementations (postgres repos, r2 storage, redis messaging/throttle). May import domain, never the reverse.
+   - `internal/ports/` — cross-cutting interfaces the domain and infrastructure agree on (`repository.Transactor`, `storage`, `throttle`, `outbox`, `revocation`). Stdlib and small value types only; no infrastructure imports.
+   - `internal/infrastructure/` — implementations (postgres repos + outbox repo + auth event producer, r2 storage, redis throttle/revocation). May import domain and ports, never the reverse.
    - `internal/transport/http/` — handlers, middleware, context helpers. May import domain and pkg/, never infrastructure directly.
+   - `internal/worker/` — background delivery logic: the outbox poll worker and `AuthWorker` (renders and sends auth emails). May import domain and ports, never infrastructure.
    - `pkg/` — framework-agnostic helpers (log, mailer, metrics, nullable, strings, validator).
    - `cmd/api` + `cmd/worker` — composition roots only.
 
