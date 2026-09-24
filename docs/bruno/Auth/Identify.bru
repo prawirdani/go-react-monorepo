@@ -1,0 +1,182 @@
+meta {
+  name: Identify
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{BASE_URL}}/{{authPath}}/me
+  body: none
+  auth: inherit
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/me
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      cache-control: private, must-revalidate
+      content-type: application/json
+      etag: "5e6ca8ff98558541e108a4a582c111564fd49239c87377aee1649c94bcc237b4"
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:31:37 GMT
+      content-length: 185
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": {
+            "id": "019dba85-428c-7c0e-9969-bf03b2564234",
+            "name": "Prawirdani",
+            "email": "prawirdani@gmail.com",
+            "phone": null,
+            "profile_image": null,
+            "created_at": "2026-04-23T13:26:28.749646Z",
+            "updated_at": "2026-04-23T13:26:28.749646Z"
+          },
+          "message": null
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/me
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      content-type: application/json
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:32:05 GMT
+      content-length: 111
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Expired Access Token
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/me
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "access token expired",
+            "details": null,
+            "code": "AUTH_EXPIRED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid Session
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/me
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "session has been expired or revoked",
+            "details": null,
+            "code": "AUTH_INVALID_SESSION"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: User Not Found
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/me
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 404
+      text: Not Found
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "the requested resource was not found",
+            "details": null,
+            "code": "RESOURCE_NOT_FOUND"
+          }
+        }
+      '''
+    }
+  }
+}

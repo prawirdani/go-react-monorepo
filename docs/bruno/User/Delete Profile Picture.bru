@@ -1,0 +1,72 @@
+meta {
+  name: Delete Profile Picture
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{BASE_URL}}/{{userPath}}/profile-picture
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: Success
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/profile-picture
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "profile picture deleted"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/profile-picture
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}

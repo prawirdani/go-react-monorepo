@@ -1,0 +1,159 @@
+meta {
+  name: Revoke User Sessions
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{BASE_URL}}/{{authPath}}/sessions/users/{{userID}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/users/{{userID}}
+    method: DELETE
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      date: Thu, 24 Sep 2026 10:40:50 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 36
+      cache-control: private, no-cache, must-revalidate
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: djvQEg8r-zaSxASQOOj3FwBAHzrQA6JNDqRiN0Xh31g
+      vary: Origin, Accept-Encoding
+      etag: W/"36-4141481186"
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "user sessions revoked."
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid Path Parameter
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/users/not-a-uuid
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "invalid value 'not-a-uuid' for parameter 'id'",
+            "details": {
+              "parameter": "id",
+              "value": "not-a-uuid"
+            },
+            "code": "INVALID_PARAMETER"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/users/{{userID}}
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Forbidden
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/users/{{userID}}
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "unauthorized action",
+            "details": null,
+            "code": "RBAC_UNAUTHORIZED_PERM"
+          }
+        }
+      '''
+    }
+  }
+}

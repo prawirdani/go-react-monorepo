@@ -1,0 +1,226 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{BASE_URL}}/{{authPath}}/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{email}}",
+    "password": "{{password}}"
+  }
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "email":"prawirdani@gmail.com",
+        "password": "12345678"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      cache-control: private, must-revalidate
+      content-type: application/json
+      etag: "5fa808cf91def546914d327f27eb5fbc4e5c0536ee17a287774c6061c57b0185"
+      set-cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzaWQiOiIwMTlkYmE4OC1hZGM4LTcwZDItYmI2OS0xYzQ1ODdhOWE0MjIiLCJzdWIiOiIwMTlkYmE4NS00MjhjLTdjMGUtOTk2OS1iZjAzYjI1NjQyMzQiLCJleHAiOjE3NzcwMzc0MTIsImlhdCI6MTc3Njk1MTAxMn0.GNuxhTtnJf_NUEmnRAL6Kv8Qtu312TQMfgXSXd4TA2U; Path=/; Expires=Fri, 24 Apr 2026 13:30:12 GMT; SameSite=Lax,refresh_token=rt_gZGZZEVxQVfwsRdpoI1CrhjUUGUKNChqidBDY9bODoU; Path=/; Expires=Thu, 30 Apr 2026 13:30:12 GMT; SameSite=Lax
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:30:12 GMT
+      content-length: 320
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzaWQiOiIwMTlkYmE4OC1hZGM4LTcwZDItYmI2OS0xYzQ1ODdhOWE0MjIiLCJzdWIiOiIwMTlkYmE4NS00MjhjLTdjMGUtOTk2OS1iZjAzYjI1NjQyMzQiLCJleHAiOjE3NzcwMzc0MTIsImlhdCI6MTc3Njk1MTAxMn0.GNuxhTtnJf_NUEmnRAL6Kv8Qtu312TQMfgXSXd4TA2U",
+            "refresh_token": "rt_gZGZZEVxQVfwsRdpoI1CrhjUUGUKNChqidBDY9bODoU"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Malformed JSON
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "email": "prawirdani@gmail.com",
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "Request body contains badly-formed JSON (at position 12)",
+            "details": null,
+            "code": "REQ_MALFORMED_JSON"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid Creds
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "email":"prawirdani@gmail.xcom",
+        "password": "12345678"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      content-type: application/json
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:30:22 GMT
+      content-length: 110
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "check your credentials",
+            "details": null,
+            "code": "AUTH_CREDENTIALS"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Validation Errors
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+                
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      content-type: application/json
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:31:00 GMT
+      content-length: 144
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "the request contains invalid data",
+            "details": {
+              "email": [
+                "this field is required"
+              ],
+              "password": [
+                "this field is required"
+              ]
+            },
+            "code": "VALIDATION"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Rate Limited
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "email": "prawirdani@gmail.com",
+        "password": "12345678"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 429
+      text: Too Many Requests
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "too many request try again latter",
+            "details": null,
+            "code": "REQ_RATE_LIMIT"
+          }
+        }
+      '''
+    }
+  }
+}

@@ -1,0 +1,73 @@
+meta {
+  name: Health
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{BASE_URL}}/api/healthz
+  body: none
+  auth: none
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: Healthy
+
+  request: {
+    url: {{BASE_URL}}/api/healthz
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "status": "ok",
+          "internal_mode": false
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Dependency Unavailable
+
+  request: {
+    url: {{BASE_URL}}/api/healthz
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "status": "unavailable",
+          "dependencies": {
+            "postgres": "failed to ping postgres: dial tcp 127.0.0.1:5432: connect: connection refused",
+            "redis": "dial tcp 127.0.0.1:6379: connect: connection refused"
+          }
+        }
+      '''
+    }
+  }
+}

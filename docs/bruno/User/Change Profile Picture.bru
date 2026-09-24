@@ -1,0 +1,238 @@
+meta {
+  name: Change Profile Picture
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{BASE_URL}}/{{userPath}}/profile-picture
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  image: @file(./profile-picture.png) @contentType(image/png)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/profile-picture
+    method: PUT
+    mode: multipartForm
+    body:multipart-form: {
+      image: @file(./profile-picture.png)
+    }
+  }
+  
+  response: {
+    headers: {
+      cache-control: private, must-revalidate
+      content-type: application/json
+      etag: "9d2129be0f393aece39785a448436858be033d0f3724f8d916f769f2223de3b4"
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 14:21:28 GMT
+      content-length: 75
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": null,
+          "message": "profile picture updated!"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Missing Profile Picture
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/profile-picture
+    method: PUT
+    mode: multipartForm
+    body:multipart-form: {
+    }
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "profile picture is required",
+            "details": {
+              "key": "image"
+            },
+            "code": "MULTIPART_FORM"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: File Too Large
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/profile-picture
+    method: PUT
+    mode: multipartForm
+    body:multipart-form: {
+      image: @file(./profile-picture.png)
+    }
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "file size exceeds maximum allowed",
+            "details": {
+              "max_bytes": 2097152,
+              "received_bytes": 3145728
+            },
+            "code": "UPLOAD_MAX_SIZE"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid MIME Type
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/profile-picture
+    method: PUT
+    mode: multipartForm
+    body:multipart-form: {
+      image: @file(./profile-picture.png)
+    }
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "invalid file mime types",
+            "details": {
+              "claimed_mime": "image/svg+xml",
+              "actual_mime": "text/plain",
+              "allowed_mimes": [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+              ]
+            },
+            "code": "UPLOAD_MIME_TYPES"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/profile-picture
+    method: PUT
+    mode: multipartForm
+    body:multipart-form: {
+      image: @file(./profile-picture.png)
+    }
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Body Too Large
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/profile-picture
+    method: PUT
+    mode: multipartForm
+    body:multipart-form: {
+      image: @file(./profile-picture.png)
+    }
+  }
+
+  response: {
+    status: {
+      code: 413
+      text: Request Entity Too Large
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "request body too large",
+            "details": {
+              "max_bytes": 5242880
+            },
+            "code": "BODY_TOO_LARGE"
+          }
+        }
+      '''
+    }
+  }
+}

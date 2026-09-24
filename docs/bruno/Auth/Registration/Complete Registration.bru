@@ -1,0 +1,264 @@
+meta {
+  name: Complete Registration
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{BASE_URL}}/{{authPath}}/register/complete
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "password": "{{password}}",
+    "token": "{{token}}"
+  }
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register/complete
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "password": "12345678",
+        "token": "regt_MP0ovhKAXTREv6o_Df9XmFnLKQcH0mMaQIIssMPGO9c"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      date: Tue, 15 Sep 2026 14:42:03 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 48
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: U8o8hiJoHMB914lfGtS49WPZpvFR12LKIUFXFmc_mqQ
+      vary: Origin, Accept-Encoding
+    }
+  
+    status: {
+      code: 201
+      text: Created
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": null,
+          "message": "registration completed"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Malformed JSON
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register/complete
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "password": "12345678",
+        "token": "regt_MP0ovhKAXTREv6o_Df9XmFnLKQcH0mMaQIIssMPGO9c",
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "Request body contains badly-formed JSON (at position 12)",
+            "details": null,
+            "code": "REQ_MALFORMED_JSON"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid/Expired Token
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register/complete
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "password": "12345678",
+        "token": "regt_MP0ovhKAXTREv6o_Df9XmFnLKQcH0mMaQIIssMPGO9c"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      date: Tue, 15 Sep 2026 14:43:12 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 117
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: ER_6r1yh8uVTtzEyvCGvn6Z1FvrS9VQw_C1vChDraIo
+      vary: Origin
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "invalid or expired registration token",
+            "details": null,
+            "code": "AUTH_INVALID_REGISTRATION_TOKEN"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Validation Error
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register/complete
+    method: POST
+    mode: json
+    body:json: {
+      {
+        
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      date: Tue, 15 Sep 2026 14:43:30 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 162
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: KlLJK-sl1yyEKrRu-cm5b1X8e6z-kARg52T5th8sRAU
+      vary: Origin
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "the request contains invalid data",
+            "details": {
+              "password": [
+                "this field is required"
+              ],
+              "token": [
+                "this field is required"
+              ]
+            },
+            "code": "VALIDATION"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Rate Limited
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register/complete
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "password": "12345678",
+        "token": "regt_MP0ovhKAXTREv6o_Df9XmFnLKQcH0mMaQIIssMPGO9c"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 429
+      text: Too Many Requests
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "too many request try again latter",
+            "details": null,
+            "code": "REQ_RATE_LIMIT"
+          }
+        }
+      '''
+    }
+  }
+}

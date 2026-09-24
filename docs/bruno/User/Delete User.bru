@@ -1,0 +1,135 @@
+meta {
+  name: Delete User
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{BASE_URL}}/{{userPath}}/{{userID}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: Success
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/{{userID}}
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "user deleted."
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid Path Parameter
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/not-a-uuid
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "invalid value 'not-a-uuid' for parameter 'id'",
+            "details": {
+              "parameter": "id",
+              "value": "not-a-uuid"
+            },
+            "code": "INVALID_PARAMETER"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/{{userID}}
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Forbidden
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/{{userID}}
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "unauthorized action",
+            "details": null,
+            "code": "RBAC_UNAUTHORIZED_PERM"
+          }
+        }
+      '''
+    }
+  }
+}

@@ -1,0 +1,300 @@
+meta {
+  name: Register
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{BASE_URL}}/{{authPath}}/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Prawirdani",
+    "email": "{{email}}"
+  }
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdani",
+        "email": "prawirdani@gmail.com"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      date: Tue, 15 Sep 2026 14:40:40 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 67
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: MZUxIHJyp7Ja5jWsln5qEQ9SuYV--b5boxJU6B9eQY4
+      vary: Origin, Accept-Encoding
+    }
+  
+    status: {
+      code: 201
+      text: Created
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": null,
+          "message": "registration successful, check your email"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Malformed JSON
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdani",
+        "email": "prawirdani@gmail.com",
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "Request body contains badly-formed JSON (at position 12)",
+            "details": null,
+            "code": "REQ_MALFORMED_JSON"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Validation Error
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register
+    method: POST
+    mode: json
+    body:json: {
+      {
+          
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      date: Tue, 15 Sep 2026 14:41:37 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 158
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: MwNVCmUHMBD4z8e9cHIqumMYHCUSZMYfOHjKi80tN1Y
+      vary: Origin
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "the request contains invalid data",
+            "details": {
+              "email": [
+                "this field is required"
+              ],
+              "name": [
+                "this field is required"
+              ]
+            },
+            "code": "VALIDATION"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Conflict Email
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdani",
+        "email": "prawirdani@gmail.com"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      date: Tue, 15 Sep 2026 14:43:49 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 88
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: nzcG4GqhYwjVzDzV0-2zLGrkpvMEJJ6yIDLfc-zj46E
+      vary: Origin
+    }
+  
+    status: {
+      code: 409
+      text: Conflict
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "email already exists",
+            "details": null,
+            "code": "USER_EMAIL_CONFLICT"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated (APP_INTERNAL_MODE=true)
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdani",
+        "email": "prawirdani@gmail.com"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Forbidden (APP_INTERNAL_MODE=true)
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/register
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdani",
+        "email": "prawirdani@gmail.com"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "unauthorized action",
+            "details": null,
+            "code": "RBAC_UNAUTHORIZED_PERM"
+          }
+        }
+      '''
+    }
+  }
+}

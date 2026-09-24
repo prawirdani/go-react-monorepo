@@ -1,0 +1,249 @@
+meta {
+  name: Update User
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{BASE_URL}}/{{userPath}}/{{userID}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Prawirdono",
+    "phone": "08123123123",
+    "gender": "m"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: Success
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/{{userID}}
+    method: PUT
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdono",
+        "phone": "08123123123",
+        "gender": "m"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "user updated!"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid Path Parameter
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/not-a-uuid
+    method: PUT
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdono",
+        "phone": "08123123123",
+        "gender": "m"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "invalid value 'not-a-uuid' for parameter 'id'",
+            "details": {
+              "parameter": "id",
+              "value": "not-a-uuid"
+            },
+            "code": "INVALID_PARAMETER"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/{{userID}}
+    method: PUT
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdono",
+        "phone": "08123123123",
+        "gender": "m"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Forbidden
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/{{userID}}
+    method: PUT
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdono",
+        "phone": "08123123123",
+        "gender": "m"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "unauthorized action",
+            "details": null,
+            "code": "RBAC_UNAUTHORIZED_PERM"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: User Not Found
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/01a0b000-d7f4-7568-8831-c4f447b80868
+    method: PUT
+    mode: json
+    body:json: {
+      {
+        "name": "Prawirdono",
+        "phone": "08123123123",
+        "gender": "m"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 404
+      text: Not Found
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "the requested resource was not found",
+            "details": null,
+            "code": "RESOURCE_NOT_FOUND"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Validation Error
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/{{userID}}
+    method: PUT
+    mode: json
+    body:json: {
+      {
+        "phone": "08123123123",
+        "gender": "m"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "the request contains invalid data",
+            "details": {
+              "name": [
+                "this field is required"
+              ]
+            },
+            "code": "VALIDATION"
+          }
+        }
+      '''
+    }
+  }
+}
+

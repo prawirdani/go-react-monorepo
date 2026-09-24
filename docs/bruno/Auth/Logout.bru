@@ -1,0 +1,108 @@
+meta {
+  name: Logout
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{BASE_URL}}/{{authPath}}/logout
+  body: none
+  auth: inherit
+}
+
+example {
+  name: Success (Idempotent)
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/logout
+    method: DELETE
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      cache-control: private, must-revalidate
+      content-type: application/json
+      etag: "9cf2d6f61269a987082551988d07dd8ea5977c2bbe7dcf7183346ac157eba69d"
+      set-cookie: access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT,refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:31:54 GMT
+      content-length: 61
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": null,
+          "message": "logged out"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/logout
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid Session
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/logout
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "session has been expired or revoked",
+            "details": null,
+            "code": "AUTH_INVALID_SESSION"
+          }
+        }
+      '''
+    }
+  }
+}

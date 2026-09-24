@@ -1,0 +1,156 @@
+meta {
+  name: Get Permissions
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{BASE_URL}}/{{authPath}}/permissions
+  body: none
+  auth: inherit
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/permissions
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      date: Tue, 15 Sep 2026 16:09:50 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 131
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: TjZ3mhPvBIYKcuyzD9u71fu5MoE3tATBBJEn0_cmDv0
+      vary: Origin, Accept-Encoding
+      etag: W/"131-3006680522"
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": [
+            "audit.read",
+            "auth.change-password",
+            "auth.register-user",
+            "auth.revoke-user-sessions",
+            "auth.view-user-sessions",
+            "user.delete",
+            "user.read",
+            "user.update"
+          ],
+          "message": null
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Success (plain user)
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/permissions
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "data": [],
+          "message": null
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/permissions
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Expired Access Token
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/permissions
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "access token expired",
+            "details": null,
+            "code": "AUTH_EXPIRED"
+          }
+        }
+      '''
+    }
+  }
+}

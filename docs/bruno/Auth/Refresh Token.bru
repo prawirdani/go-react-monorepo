@@ -1,0 +1,126 @@
+meta {
+  name: Refresh Token
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{BASE_URL}}/{{authPath}}/refresh
+  body: none
+  auth: none
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/refresh
+    method: POST
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      cache-control: private, must-revalidate
+      content-type: application/json
+      etag: "44fe18ad4b95a45416996f01480010a046770b4b666887903f9404090175ce2c"
+      set-cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzaWQiOiIwMTlkYmE4OS1kZmQ5LTdmM2ItYjY5OC1jZDFkZTI5YjQ4MTEiLCJzdWIiOiIwMTlkYmE4NS00MjhjLTdjMGUtOTk2OS1iZjAzYjI1NjQyMzQiLCJleHAiOjE3NzcwMzc1MDcsImlhdCI6MTc3Njk1MTEwN30.t2l44CrCmGYeF3NAg_F5O6pBMQtX1GlRkEa4MO0Ggq4; Path=/; Expires=Fri, 24 Apr 2026 13:31:47 GMT; SameSite=Lax,refresh_token=rt_HeNZvz3JuwYg3EI9xXDfCRU_K8GnmQCqCVwp8AyUNFc; Path=/; Expires=Thu, 30 Apr 2026 13:31:47 GMT; SameSite=Lax
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:31:47 GMT
+      content-length: 319
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzaWQiOiIwMTlkYmE4OS1kZmQ5LTdmM2ItYjY5OC1jZDFkZTI5YjQ4MTEiLCJzdWIiOiIwMTlkYmE4NS00MjhjLTdjMGUtOTk2OS1iZjAzYjI1NjQyMzQiLCJleHAiOjE3NzcwMzc1MDcsImlhdCI6MTc3Njk1MTEwN30.t2l44CrCmGYeF3NAg_F5O6pBMQtX1GlRkEa4MO0Ggq4",
+            "refresh_token": "rt_HeNZvz3JuwYg3EI9xXDfCRU_K8GnmQCqCVwp8AyUNFc"
+          },
+          "message": null
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/refresh
+    method: POST
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      content-type: application/json
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:32:15 GMT
+      content-length: 111
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid or Expired Token
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/refresh
+    method: POST
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      content-type: application/json
+      vary: Origin, Accept-Encoding
+      date: Thu, 23 Apr 2026 13:33:32 GMT
+      content-length: 125
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "session has been expired or revoked",
+            "details": null,
+            "code": "AUTH_INVALID_SESSION"
+          }
+        }
+      '''
+    }
+  }
+}
+

@@ -1,0 +1,159 @@
+meta {
+  name: List
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{BASE_URL}}/{{userPath}}/?role=admin,user&sort=created_at&order=desc&page=1&limit=10&gender=m,f
+  body: none
+  auth: inherit
+}
+
+params:query {
+  role: admin,user
+  sort: created_at
+  order: desc
+  page: 1
+  limit: 10
+  gender: m,f
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}
+
+example {
+  name: Success
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/?role=admin,user&sort=created_at&order=desc&page=1&limit=10&gender=m,f
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "data": [
+            {
+              "id": "01a0addd-903b-7bc8-8137-04670e10da02",
+              "name": "Prawirdani",
+              "email": "prawirdani@gmail.com",
+              "email_verified_at": "2026-09-24T10:35:02.482913Z",
+              "gender": "m",
+              "phone": "08123123123",
+              "role": "admin",
+              "profile_picture": null,
+              "created_at": "2026-09-24T10:35:02.482913Z",
+              "updated_at": "2026-09-24T10:35:02.482913Z"
+            },
+            {
+              "id": "01a0b000-d7f4-7568-8831-c4f447b80868",
+              "name": "Dewi",
+              "email": "dewi@example.com",
+              "email_verified_at": "2026-09-22T08:11:40.120233Z",
+              "gender": "f",
+              "phone": null,
+              "role": "user",
+              "profile_picture": "https://cdn.example.com/profiles/dewi.webp",
+              "created_at": "2026-09-22T08:11:40.120233Z",
+              "updated_at": "2026-09-23T09:02:11.554001Z"
+            }
+          ],
+          "meta": {
+            "filter": {
+              "gender": [
+                "m",
+                "f"
+              ],
+              "role": [
+                "admin",
+                "user"
+              ]
+            },
+            "sort": {
+              "by": "created_at",
+              "order": "DESC"
+            },
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 2,
+              "total_pages": 1
+            }
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/?role=admin,user&sort=created_at&order=desc&page=1&limit=10&gender=m,f
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Forbidden
+
+  request: {
+    url: {{BASE_URL}}/{{userPath}}/?role=admin,user&sort=created_at&order=desc&page=1&limit=10&gender=m,f
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "unauthorized action",
+            "details": null,
+            "code": "RBAC_UNAUTHORIZED_PERM"
+          }
+        }
+      '''
+    }
+  }
+}

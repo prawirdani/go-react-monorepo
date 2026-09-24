@@ -1,0 +1,61 @@
+meta {
+  name: Metrics
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{METRICS_URL}}/metrics
+  body: none
+  auth: none
+}
+
+docs {
+  Production-only endpoint, served by a sidecar on the API port + 1
+  (METRICS_URL, default http://localhost:8082). It does not answer on
+  BASE_URL, and it is disabled outside production.
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: Prometheus Exposition
+
+  request: {
+    url: {{METRICS_URL}}/metrics
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: text
+      content: '''
+        # HELP go_gc_duration_seconds A summary of the wall-time pause (stop-the-world) duration in garbage collection cycles.
+        # TYPE go_gc_duration_seconds summary
+        go_gc_duration_seconds{quantile="0"} 2.73e-05
+        go_gc_duration_seconds{quantile="0.25"} 3.72e-05
+        go_gc_duration_seconds{quantile="0.5"} 4.49e-05
+        go_gc_duration_seconds{quantile="0.75"} 1.0933e-04
+        go_gc_duration_seconds{quantile="1"} 6.08117e-04
+        go_gc_duration_seconds_sum 0.000329347
+        go_gc_duration_seconds_count 4
+        # HELP go_goroutines Number of goroutines that currently exist.
+        # TYPE go_goroutines gauge
+        go_goroutines 24
+        # HELP http_requests_total Total number of HTTP requests processed.
+        # TYPE http_requests_total counter
+        http_requests_total{method="GET",path="/api/healthz",status="200"} 12
+      '''
+    }
+  }
+}
+

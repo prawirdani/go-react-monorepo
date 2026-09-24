@@ -1,0 +1,215 @@
+meta {
+  name: Revoke Session
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{BASE_URL}}/{{authPath}}/sessions/{{sessionId}}
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  sessionId: 01a0d302-81a9-7027-8655-ba728758a9ed
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}
+
+example {
+  name: Invalid Path Parameter
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/not-a-uuid
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "invalid value 'not-a-uuid' for parameter 'id'",
+            "details": {
+              "parameter": "id",
+              "value": "not-a-uuid"
+            },
+            "code": "INVALID_PARAMETER"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid or Expired
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/{{sessionId}}
+    method: DELETE
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      date: Thu, 24 Sep 2026 10:41:01 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 104
+      cache-control: private, no-cache, must-revalidate
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: kv9N6wH-PTcb0-FTeJ0wykoF0hWkwwSNoRUiTSCLKaU
+      vary: Origin
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "session has been expired or revoked",
+            "details": null,
+            "code": "AUTH_INVALID_SESSION"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/{{sessionId}}
+    method: DELETE
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      date: Thu, 24 Sep 2026 10:55:56 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 30
+      cache-control: private, no-cache, must-revalidate
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: VdoXg4YM6zNGhovCH4sEQkhPFE0zGda5owClPUigZpc
+      vary: Origin, Accept-Encoding
+      etag: W/"30-1413786009"
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "session revoked."
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Forbidden
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/{{sessionId}}
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "unauthorized action",
+            "details": null,
+            "code": "RBAC_UNAUTHORIZED_PERM"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Session Not Found
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/{{sessionId}}
+    method: DELETE
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 404
+      text: Not Found
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "the requested resource was not found",
+            "details": null,
+            "code": "RESOURCE_NOT_FOUND"
+          }
+        }
+      '''
+    }
+  }
+}

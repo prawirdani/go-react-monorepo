@@ -1,0 +1,190 @@
+meta {
+  name: List User Session
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{BASE_URL}}/{{authPath}}/sessions/users/{{userID}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}
+
+example {
+  name: Success
+  
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/users/{{userID}}
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      date: Thu, 24 Sep 2026 10:40:29 GMT
+      content-type: application/json; charset=utf-8
+      content-length: 387
+      cache-control: private, no-cache, must-revalidate
+      x-xss-protection: 0
+      x-content-type-options: nosniff
+      x-frame-options: DENY
+      cross-origin-embedder-policy: require-corp
+      cross-origin-opener-policy: same-origin
+      cross-origin-resource-policy: same-origin
+      origin-agent-cluster: ?1
+      referrer-policy: strict-origin-when-cross-origin
+      x-dns-prefetch-control: off
+      x-download-options: noopen
+      x-permitted-cross-domain-policies: none
+      content-security-policy: default-src 'none'; frame-ancestors 'none'
+      permissions-policy: geolocation=(), microphone=(), camera=()
+      x-request-id: nI9ojDLGzpNlhE6MPHoMemxGEPtr8c6prrXiWDxb790
+      vary: Origin,Accept-Encoding
+      etag: W/"992-2970104964"
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": [
+            {
+              "id": "01a0d300-4f53-74ec-996e-db3b4a53b5d6",
+              "user_id": "01a0addd-903b-7bc8-8137-04670e10da02",
+              "ip_addr": "127.0.0.1",
+              "user_agent": "bruno-runtime/4.2.0",
+              "accessed_at": "2026-09-24T10:40:08.019334Z",
+              "created_at": "2026-09-24T10:40:08.019596Z",
+              "expires_at": "2026-10-01T10:40:08.019334Z",
+              "revoked_at": null
+            },
+            {
+              "id": "01a0d2c8-5064-70f3-9303-89de1eb69760",
+              "user_id": "01a0addd-903b-7bc8-8137-04670e10da02",
+              "ip_addr": "127.0.0.1",
+              "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+              "accessed_at": "2026-09-24T09:54:00.821398Z",
+              "created_at": "2026-09-24T09:38:58.276273Z",
+              "expires_at": "2026-10-01T09:38:58.276072Z",
+              "revoked_at": null
+            },
+            {
+              "id": "01a0c76d-3de3-7f02-96d5-d1e908c30228",
+              "user_id": "01a0addd-903b-7bc8-8137-04670e10da02",
+              "ip_addr": "127.0.0.1",
+              "user_agent": "bruno-runtime/4.1.0",
+              "accessed_at": "2026-09-22T04:43:40.387997Z",
+              "created_at": "2026-09-22T04:43:40.388272Z",
+              "expires_at": "2026-09-29T04:43:40.387997Z",
+              "revoked_at": null
+            }
+          ]
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Invalid Path Parameter
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/users/not-a-uuid
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 400
+      text: Bad Request
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "invalid value 'not-a-uuid' for parameter 'userID'",
+            "details": {
+              "parameter": "userID",
+              "value": "not-a-uuid"
+            },
+            "code": "INVALID_PARAMETER"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/users/{{userID}}
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Forbidden
+
+  request: {
+    url: {{BASE_URL}}/{{authPath}}/sessions/users/{{userID}}
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "unauthorized action",
+            "details": null,
+            "code": "RBAC_UNAUTHORIZED_PERM"
+          }
+        }
+      '''
+    }
+  }
+}

@@ -1,0 +1,199 @@
+meta {
+  name: List
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17T07:00:00Z&to=2026-09-21T11:02:33Z&entity=session,user,registration_token&actor={{userID}}
+  body: none
+  auth: inherit
+}
+
+params:query {
+  sort: created_at
+  order: DESC
+  page: 1
+  limit: 3
+  from: 2026-09-17T07:00:00Z
+  to: 2026-09-21T11:02:33Z
+  entity: session,user,registration_token
+  actor: {{userID}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+  forwardAuthorizationHeader: false
+}
+
+example {
+  name: Success
+
+  request: {
+    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17T07:00:00Z&to=2026-09-21T11:02:33Z&entity=session,user,registration_token&actor={{userID}}
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "data": [
+            {
+              "id": 128,
+              "actor": {
+                "id": "01a0b000-d7f4-7568-8831-c4f447b80868",
+                "name": "Prawirdani"
+              },
+              "action": "auth.login",
+              "entity": "user",
+              "entity_id": "01a0b000-d7f4-7568-8831-c4f447b80868",
+              "prev": null,
+              "next": null,
+              "meta": {
+                "actor_role": "admin",
+                "ip_addr": "127.0.0.1",
+                "request_id": "nI9ojDLGzpNlhE6MPHoMemxGEPtr8c6prrXiWDxb790",
+                "session_id": "01a0d300-4f53-74ec-996e-db3b4a53b5d6",
+                "user_agent": "bruno-runtime/4.2.0"
+              },
+              "created_at": "2026-09-21T11:02:33Z"
+            },
+            {
+              "id": 127,
+              "actor": {
+                "id": "01a0b000-d7f4-7568-8831-c4f447b80868",
+                "name": "Prawirdani"
+              },
+              "action": "user.update",
+              "entity": "user",
+              "entity_id": "01a0addd-903b-7bc8-8137-04670e10da02",
+              "prev": {
+                "id": "01a0addd-903b-7bc8-8137-04670e10da02",
+                "name": "Prawirdani",
+                "email": "prawirdani@gmail.com",
+                "email_verified_at": "2026-09-24T10:35:02.482913Z",
+                "gender": "m",
+                "phone": "08123123123",
+                "role": "admin",
+                "profile_picture": null,
+                "created_at": "2026-09-24T10:35:02.482913Z",
+                "updated_at": "2026-09-24T10:35:02.482913Z"
+              },
+              "next": {
+                "id": "01a0addd-903b-7bc8-8137-04670e10da02",
+                "name": "Prawirdono",
+                "email": "prawirdani@gmail.com",
+                "email_verified_at": "2026-09-24T10:35:02.482913Z",
+                "gender": "m",
+                "phone": "08123123123",
+                "role": "admin",
+                "profile_picture": null,
+                "created_at": "2026-09-24T10:35:02.482913Z",
+                "updated_at": "2026-09-21T10:58:10Z"
+              },
+              "meta": {
+                "actor_role": "admin",
+                "ip_addr": "127.0.0.1",
+                "request_id": "VdoXg4YM6zNGhovCH4sEQkhPFE0zGda5owClPUigZpc",
+                "session_id": "01a0d300-4f53-74ec-996e-db3b4a53b5d6",
+                "user_agent": "bruno-runtime/4.2.0"
+              },
+              "created_at": "2026-09-21T10:58:10Z"
+            }
+          ],
+          "meta": {
+            "filter": {
+              "entity": [
+                "session",
+                "user",
+                "registration_token"
+              ],
+              "actor": "01a0b000-d7f4-7568-8831-c4f447b80868",
+              "from": "2026-09-17T07:00:00Z",
+              "to": "2026-09-21T11:02:33Z"
+            },
+            "sort": {
+              "by": "created_at",
+              "order": "DESC"
+            },
+            "pagination": {
+              "page": 1,
+              "limit": 3,
+              "total": 2,
+              "total_pages": 1
+            }
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Unauthenticated
+
+  request: {
+    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17T07:00:00Z&to=2026-09-21T11:02:33Z&entity=session,user,registration_token&actor={{userID}}
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "authentication required",
+            "details": null,
+            "code": "REQ_UNAUTHORIZED"
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: Forbidden
+
+  request: {
+    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17T07:00:00Z&to=2026-09-21T11:02:33Z&entity=session,user,registration_token&actor={{userID}}
+    method: GET
+    mode: none
+  }
+
+  response: {
+    status: {
+      code: 403
+      text: Forbidden
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": {
+            "message": "unauthorized action",
+            "details": null,
+            "code": "RBAC_UNAUTHORIZED_PERM"
+          }
+        }
+      '''
+    }
+  }
+}
