@@ -40,12 +40,7 @@ tests that never touch a real database, Redis, or SMTP server.
   - [Throttling](#throttling)
   - [Passwords and token entropy](#passwords-and-token-entropy)
 - [Authorization (RBAC)](#authorization-rbac)
-- [API reference](#api-reference)
-  - [Public routes](#public-routes)
-  - [Authenticated routes](#authenticated-routes)
-  - [List query DSL](#list-query-dsl)
-  - [Response envelope](#response-envelope)
-  - [curl examples](#curl-examples)
+- [API documentation](#api-documentation)
 - [Error handling](#error-handling)
 - [Audit logging](#audit-logging)
 - [Messaging and the worker](#messaging-and-the-worker)
@@ -613,147 +608,17 @@ make permissions
 # or: go run ./cmd/cli permissions
 ```
 
-## API reference
+## API documentation
+
+Route reference, request/response shapes and examples are not duplicated here:
+an OpenAPI spec is planned. Until it lands, `cmd/api/server.go` is the source of
+truth for the mounted routes and `internal/transport/http/` for the handler
+contracts.
 
 All application routes are mounted under the `/api` prefix. Authenticated
 routes accept the access token from the `access_token` cookie or the
-`Authorization: Bearer <token>` header. Errors are returned by the service; the
-handler never writes an error body itself.
-
-### Public routes
-
-| Method | Path | Rate limit | Notes |
-| --- | --- | --- | --- |
-| `POST` | `/api/auth/login` | 5/min | Returns token pair and sets cookies |
-| `POST` | `/api/auth/register` | — | Public, **unless** `APP_INTERNAL_MODE=true` (then authenticated + `auth.register-user`) |
-| `POST` | `/api/auth/register/complete` | 5/min | Consumes invite token, creates the account |
-| `GET` | `/api/auth/register/:token` | — | Inspect invite token status |
-| `POST` | `/api/auth/refresh` | — | Rotates refresh token, returns a new pair |
-| `POST` | `/api/auth/password/recover` | 5/min | Starts recovery; Redis per-email throttle 30 s |
-| `GET` | `/api/auth/password/recover/:token` | — | Inspect reset token status |
-| `PUT` | `/api/auth/password/reset` | — | Consumes reset token, sets a new password |
-| `GET` | `/api/healthz` | — | Liveness + dependency (Postgres/Redis) check |
-
-### Authenticated routes
-
-| Method | Path | Required | Notes |
-| --- | --- | --- | --- |
-| `DELETE` | `/api/auth/logout` | session | Revokes the current session; always returns 200 |
-| `GET` | `/api/auth/me` | self (`user.read`) | Current user |
-| `PUT` | `/api/auth/password/change` | self or `auth.change-password` | Verifies current password; revokes all sessions |
-| `GET` | `/api/auth/permissions` | authenticated | Lists the caller's permission codes (sorted) |
-| `GET` | `/api/auth/sessions/users/:userID` | self or `auth.view-user-sessions` | List a user's active (unexpired, unrevoked) sessions |
-| `DELETE` | `/api/auth/sessions/users/:userID` | `auth.revoke-user-sessions` | Bulk revoke all sessions/tokens for a user |
-| `DELETE` | `/api/auth/sessions/:id` | session owner or `auth.revoke-user-sessions` | Revoke a single session |
-| `GET` | `/api/users/` | `user.read` | List users (paginated, filterable, sortable) |
-| `PUT` | `/api/users/:id` | self or `user.update` | Update `name`, `phone`, `gender` |
-| `DELETE` | `/api/users/:id` | `user.delete` | Soft-delete; revokes sessions and access tokens |
-| `PUT` | `/api/users/profile-picture` | self (`user.update`) | Multipart image upload (field `image`, ≤ 2 MB, jpeg/png/webp) |
-| `DELETE` | `/api/users/profile-picture` | self (`user.update`) | Remove the caller's avatar |
-| `GET` | `/api/audit/` | `audit.read` | List audit entries; `entity`, `actor` and date filters, paginated and sortable |
-
-Notes:
-
-- `/api/users/` is registered with a trailing slash.
-- Static `/profile-picture` routes are declared before the `/:id` routes so they
-  take precedence in Fiber's router.
-- `PUT /api/users/:id` is self-service when the id is the caller's own; admin and
-  system may update anyone. There is no separate "update my profile" path.
-- `DELETE /api/users/:id` requires `user.delete`, so only admin/system can use it.
-- Request bodies are limited to 5 MB globally (`MaxBodySize`).
-
-### List query DSL
-
-`GET /api/users/` accepts:
-
-| Query param | Meaning | Notes |
-| --- | --- | --- |
-| `page` | 1-based page | `< 1` normalizes to `1` |
-| `limit` | Page size | `< 1` → `DefaultLimit` (20); `> MaxLimit` → `MaxLimit` (100) |
-| `sort` | Sort field | Allow-list: `id`, `created_at`, `updated_at`; unknown fields are dropped |
-| `order` | `asc` / `desc` (case-insensitive) | Invalid/missing → `ASC`; only applied with a valid `sort` |
-| `gender` | Filter by gender | Values validated against `M`/`F`/`O` (case-insensitive); unknown dropped |
-| `role` | Filter by role | Values validated against `admin`/`user`/`system`; unknown dropped |
-
-`EnableSplittingOnParsers` is on, so repeated/comma-separated values are
-accepted for enum filters. Soft-deleted users are always excluded
-(`deleted_at IS NULL`). The count query shares the filters and drops
-`ORDER BY`/`LIMIT`.
-
-The response `meta` echoes exactly what was applied (the filter, the
-canonicalized sort, and the clamped pagination), so a client can render an
-accurate "showing X of Y" state without duplicating validation:
-
-```json
-{
-  "data": [ { "id": "…", "name": "Jane" } ],
-  "meta": {
-    "filter": { "role": ["admin"], "gender": ["F"] },
-    "sort": { "by": "created_at", "order": "DESC" },
-    "pagination": { "page": 1, "limit": 20, "total": 3, "total_pages": 1 }
-  }
-}
-```
-
-### Response envelope
-
-Every successful response uses the sparse `Body` envelope (`internal/transport/http/body.go`),
-passed by value:
-
-```json
-{ "data": {}, "message": "", "meta": {} }
-```
-
-- `data` and `message` use `omitempty`, `meta` uses `omitzero`; only populated
-  fields are emitted and an empty envelope is `{}`.
-- `data` is `any`, so `omitempty` drops it only while unset. A typed nil (nil
-  slice/map/pointer) still marshals as `"data": null`.
-
-### curl examples
-
-Login (stores cookies in `cookies.txt`):
-
-```bash
-curl -sS -c cookies.txt -X POST http://localhost:8080/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"jane@example.com","password":"correct-horse-battery"}'
-```
-
-Authenticated call using the cookie jar (or `-H 'Authorization: Bearer <token>'`):
-
-```bash
-curl -sS -b cookies.txt http://localhost:8080/api/auth/me
-```
-
-List users with filters, sorting, and pagination:
-
-```bash
-curl -sS -b cookies.txt \
-  'http://localhost:8080/api/users/?role=admin&gender=f&sort=created_at&order=desc&page=1&limit=20'
-```
-
-List a user's active sessions (its owner, or a role with
-`auth.view-user-sessions`):
-
-```bash
-curl -sS -b cookies.txt \
-  http://localhost:8080/api/auth/sessions/users/00000000-0000-0000-0000-000000000000
-```
-
-Revoke every session and access token for one user (admin/system):
-
-```bash
-curl -sS -b cookies.txt -X DELETE \
-  http://localhost:8080/api/auth/sessions/users/00000000-0000-0000-0000-000000000000
-```
-
-Revoke a single session (its owner, or a role with
-`auth.revoke-user-sessions`):
-
-```bash
-curl -sS -b cookies.txt -X DELETE \
-  http://localhost:8080/api/auth/sessions/00000000-0000-0000-0000-000000000000
-```
+`Authorization: Bearer <token>` header. Request bodies are limited to 5 MB
+globally (`MaxBodySize`).
 
 ## Error handling
 
