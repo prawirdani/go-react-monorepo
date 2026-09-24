@@ -24,6 +24,15 @@ func TestMetricsMiddleware_ResolvesDomainErrorStatus(t *testing.T) {
 			prometheus.HistogramOpts{Name: "test_duration"}, []string{"path", "method", "status_code"}),
 		ReqCounter: prometheus.NewCounterVec(
 			prometheus.CounterOpts{Name: "test_total"}, []string{"path", "method", "status_code"}),
+		ReqInFlight: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{Name: "test_in_flight"}, []string{"method"}),
+		ReqSize: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{Name: "test_req_size"}, []string{"route", "method"}),
+		RespSize: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{Name: "test_resp_size"}, []string{"route", "method"}),
+		Errors: prometheus.NewCounterVec(
+			prometheus.CounterOpts{Name: "test_errors"}, []string{"code"}),
+		Panics: prometheus.NewCounter(prometheus.CounterOpts{Name: "test_panics"}),
 	}
 
 	app := fiber.New(fiber.Config{
@@ -32,7 +41,10 @@ func TestMetricsMiddleware_ResolvesDomainErrorStatus(t *testing.T) {
 			return c.Status(e.Status()).JSON(map[string]any{"error": e})
 		},
 	})
-	app.Use(m.InstrumentHandler(func(err error) int { return ParseError(err).Status() }))
+	app.Use(m.InstrumentHandler(func(err error) (int, string) {
+		e := ParseError(err)
+		return e.Status(), e.Code
+	}))
 	app.Get("/secure", func(c fiber.Ctx) error { return ErrReqUnauthorized })
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/secure", nil)

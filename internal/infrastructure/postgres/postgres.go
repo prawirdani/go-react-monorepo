@@ -144,6 +144,9 @@ func (db *DB) Ping(ctx context.Context) error {
 	return db.pool.Ping(ctx)
 }
 
+// Stat returns a snapshot of the connection pool counters.
+func (db *DB) Stat() *pgxpool.Stat { return db.pool.Stat() }
+
 // Close shuts down the underlying PostgreSQL connection pool.
 func (db *DB) Close() {
 	db.pool.Close()

@@ -16,6 +16,7 @@ import (
 	"github.com/prawirdani/golang-restapi/internal/transport/http"
 	"github.com/prawirdani/golang-restapi/pkg/log"
 	"github.com/prawirdani/golang-restapi/pkg/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Server struct {
@@ -34,15 +35,29 @@ func NewServer(container *Container, onPostShutdown func(error) error) (*Server,
 
 	m := metrics.Init(container.Config.App.Version, string(container.Config.App.Environment))
 
+	prometheus.MustRegister(metrics.NewDBPoolCollector(func() metrics.PoolStat {
+		s := container.pg.Stat()
+		return metrics.PoolStat{
+			Acquired:        s.AcquiredConns(),
+			Idle:            s.IdleConns(),
+			Total:           s.TotalConns(),
+			Max:             s.MaxConns(),
+			NewConns:        s.NewConnsCount(),
+			CanceledAcquire: s.CanceledAcquireCount(),
+		}
+	}))
+
 	if container.Config.IsProduction() {
 		app.Use(http.RateLimit(20, 1*time.Minute))
 	}
 
 	app.Use(recoverer.New())
-	// Resolve the status from the error exactly as the app ErrorHandler will,
-	// since Fiber assigns it only after the middleware chain unwinds.
-	app.Use(m.InstrumentHandler(func(err error) int {
-		return http.ParseError(err).Status()
+	// Resolve the status and stable error code from the error exactly as the app
+	// ErrorHandler will, since Fiber assigns it only after the middleware chain
+	// unwinds.
+	app.Use(m.InstrumentHandler(func(err error) (int, string) {
+		e := http.ParseError(err)
+		return e.Status(), e.Code
 	}))
 	app.Use(http.NoCache())
 	app.Use(http.SecurityHeaders(container.Config.IsProduction()))
@@ -69,7 +84,7 @@ func NewServer(container *Container, onPostShutdown func(error) error) (*Server,
 	}))
 
 	var metricsApp *fiber.App
-	if container.Config.IsProduction() {
+	if container.Config.App.MetricsEnabled {
 		metricsApp = fiber.New()
 		metricsApp.Get("/metrics", adaptor.HTTPHandler(m.ExporterHandler()))
 	}
@@ -108,7 +123,7 @@ func (s *Server) Start() error {
 		}()
 	}
 
-	return s.app.Listen(fmt.Sprintf("127.0.0.1:%v", port))
+	return s.app.Listen(fmt.Sprintf("%s:%v", s.container.Config.App.BindAddr, port))
 }
 
 // Shutdown gracefully drains the API server until ctx is done. The deadline is

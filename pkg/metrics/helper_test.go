@@ -10,12 +10,38 @@ func newTestMetrics() *Metrics {
 			prometheus.HistogramOpts{
 				Namespace: "app",
 				Name:      "request_duration",
-				Buckets:   prometheus.DefBuckets,
+				Buckets:   durationBuckets,
 			}, []string{"path", "method", "status_code"}),
 		ReqCounter: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: "app",
 				Name:      "request_total",
 			}, []string{"path", "method", "status_code"}),
+		ReqInFlight: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: "app",
+				Name:      "requests_in_flight",
+			}, []string{"method"}),
+		ReqSize: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Namespace: "app",
+				Name:      "request_size_bytes",
+				Buckets:   sizeBuckets,
+			}, []string{"route", "method"}),
+		RespSize: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Namespace: "app",
+				Name:      "response_size_bytes",
+				Buckets:   sizeBuckets,
+			}, []string{"route", "method"}),
+		Errors: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: "app",
+				Name:      "errors_total",
+			}, []string{"code"}),
+		Panics: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "app",
+			Name:      "panics_total",
+		}),
 	}
 }
