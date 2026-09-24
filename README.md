@@ -239,22 +239,32 @@ Makefile               dev/build/test/lint/migration/cli targets
 ### Prerequisites
 
 - Go `1.26.5` or newer (matching `go.mod`).
-- PostgreSQL and Redis reachable from the process.
+- PostgreSQL and Redis. `compose.yml` provides both (nothing on the host is
+  required); for bare-metal `make dev` you run them yourself.
 - The [goose](https://github.com/pressly/goose) CLI on your `PATH` for the
   `make migration:*` targets.
 - Optional: [Air](https://github.com/cosmtrek/air) for `make dev` /
   `make dev:worker`, and `golangci-lint` v2 for `make lint`.
 
-### 1. Start supporting services
+### 1. Start the stack
 
-`compose.yml` runs the API image plus nginx, Prometheus, and Grafana. Postgres
-and Redis are expected to be reachable from the API container (the compose file
-adds `host.docker.internal:host-gateway` so a host-run Postgres works). If you
-prefer to run only the datastores, start Postgres and Redis directly.
+`compose.yml` is self-contained: Postgres, Redis, the API, the worker, nginx,
+Prometheus and Grafana all run in the project on one bridge network. There is no
+`host.docker.internal` and no host service to start.
 
 ```bash
 docker compose up -d
 ```
+
+The `api` and `worker` services override `DB_HOST=postgres` and
+`REDIS_HOST=redis` (plus `APP_BIND_ADDR=0.0.0.0` and `METRICS_ENABLED=true`), so
+the `DB_HOST=localhost` values in `.env` keep working for bare-metal `make dev`.
+nginx proxies `http://localhost:8080` to the API, Grafana is on
+`http://localhost:3000` (admin/admin unless `GRAFANA_ADMIN_PASSWORD` is set), and
+Prometheus and the datastores stay internal to the network.
+
+Postgres and Redis data live in named volumes (`postgres-data`, `redis-data`);
+`docker compose down -v` resets them.
 
 ### 2. Configure the environment
 
@@ -312,9 +322,11 @@ section and then calls `Config.Validate()`.
 | --- | --- | --- | --- |
 | `APP_NAME` | Service name | empty | Informational |
 | `APP_VERSION` | Version string | empty | Label on `app_info` metric |
-| `APP_PORT` | API listen port | empty (0) | Non-integer aborts startup. API binds `127.0.0.1:<port>` |
+| `APP_PORT` | API listen port | empty (0) | Non-integer aborts startup |
+| `APP_BIND_ADDR` | API bind address | `127.0.0.1` | Loopback by default so a bare-metal dev server is not exposed on the LAN. Compose sets `0.0.0.0` so nginx and Prometheus can reach it |
 | `APP_ENV` | Environment | empty | Must be `dev` or `prod`; anything else fails validation |
 | `APP_INTERNAL_MODE` | Registration becomes admin-only | `false` | Parsed with `strconv.ParseBool` |
+| `METRICS_ENABLED` | Serve the `/metrics` sidecar | `APP_ENV=prod` | Unset follows the environment; an explicit `true`/`false` wins. Compose sets it so the local stack is scrapable |
 
 **PostgreSQL**
 
@@ -322,7 +334,7 @@ section and then calls `Config.Validate()`.
 | --- | --- | --- | --- |
 | `DB_USER` | DB user | empty | |
 | `DB_PASSWORD` | DB password | empty | |
-| `DB_HOST` | DB host | empty | |
+| `DB_HOST` | DB host | empty | Compose overrides this to `postgres` |
 | `DB_PORT` | DB port | empty (0) | |
 | `DB_NAME` | DB name | empty | |
 | `DB_MINCONNS` | Pool minimum connections | `0` | Must be `>= 0` and `<= DB_MAXCONNS` |
@@ -337,7 +349,7 @@ these are not configurable.
 
 | Variable | Purpose | Code default | Notes |
 | --- | --- | --- | --- |
-| `REDIS_HOST` | Redis host | empty | |
+| `REDIS_HOST` | Redis host | empty | Compose overrides this to `redis` |
 | `REDIS_PORT` | Redis port | empty (0) | |
 | `REDIS_PASSWORD` | Redis password | empty | |
 
@@ -729,15 +741,32 @@ Run the worker separately from the API: `make dev:worker`.
 
 ## Observability and health
 
-- **Metrics** (`pkg/metrics`): `app_info` (labels `version`, `environment`),
-  `app_request_duration` (labels `path`, `method`, `status_code`) and
-  `app_request_total` (same labels). `path` uses the matched route template to
-  keep label cardinality bounded. Instrumentation is a Fiber middleware that
-  resolves the status from a returned error because Fiber assigns the final
-  status only after the chain unwinds.
-- **Exporter**: in production only, a separate Fiber app serves `/metrics` on
-  `APP_PORT + 1`; the API itself listens on `127.0.0.1:APP_PORT`. The metrics
-  sidecar is intentionally excluded from graceful shutdown.
+- **Metrics** (`pkg/metrics`), all under the `app_` namespace:
+  - `app_info{version,environment}` — build identity.
+  - `app_request_total{path,method,status_code}` and
+    `app_request_duration{path,method,status_code}` (HTTP-tuned buckets) — the
+    RED pair.
+  - `app_requests_in_flight{method}` — concurrency.
+  - `app_request_size_bytes{route,method}` / `app_response_size_bytes{route,method}`
+    — payload shape.
+  - `app_errors_total{code}` — error responses by **stable application error
+    code** (`AUTH_CREDENTIALS`, `RBAC_UNAUTHORIZED_PERM`, `VALIDATION`, ...),
+    which is far more actionable than a flat 4xx/5xx rate.
+  - `app_panics_total` — recovered panics.
+  - `app_db_pool_{acquired,idle,total,max}_conns`, plus
+    `app_db_pool_new_conns_total` and `app_db_pool_canceled_acquire_total` for
+    churn, emitted by a `pgxpool.Stat` collector.
+
+  `path`/`route` use the matched route template, never the raw path, so label
+  cardinality stays bounded; the Go runtime and process collectors come from
+  `promhttp`. The instrumentation middleware resolves status **and** error code
+  from a returned error (Fiber assigns the final status only after the chain
+  unwinds), and recovers panics to count them, record the implied 500, and then
+  re-panic to the outer recoverer.
+- **Exporter**: gated by `METRICS_ENABLED` (default: production), a separate
+  Fiber app serves `/metrics` on `APP_PORT + 1`. The API itself binds
+  `APP_BIND_ADDR:APP_PORT` — loopback by default, `0.0.0.0` in compose. The
+  metrics sidecar is intentionally excluded from graceful shutdown.
 - **Health**: `GET /api/healthz` pings Postgres and Redis with a 2 s timeout.
   Any failure returns **503** with a `dependencies` map of the failing services;
   success returns `{"status":"ok","internal_mode":<bool>}`. Because it doubles
