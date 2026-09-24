@@ -26,8 +26,9 @@ FROM gcr.io/distroless/base-debian12
 
 WORKDIR /app
 
-# Copy the binary from the builder stage
+# Copy the binaries from the builder stage
 COPY --from=builder /app/bin/api .
+COPY --from=builder /app/bin/worker .
 
-# Run the binary
+# Run the API by default; the compose `worker` service overrides this command
 CMD ["./api"]

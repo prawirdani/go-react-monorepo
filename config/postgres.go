@@ -16,6 +16,7 @@ type Postgres struct {
 	Name            string
 	MinConns        int
 	MaxConns        int
+	WorkerMaxConns  int
 	MaxConnLifetime time.Duration
 }
 
@@ -40,6 +41,13 @@ func (p *Postgres) Parse() error {
 			p.MaxConns = i
 		}
 	}
+	// Optional dedicated worker pool size. Unset (0) means the worker shares
+	// DB_MAXCONNS with the API, which can double total server connections.
+	if val := os.Getenv("DB_WORKER_MAXCONNS"); val != "" {
+		if i, err := strconv.Atoi(val); err == nil {
+			p.WorkerMaxConns = i
+		}
+	}
 	if val := os.Getenv("DB_MAXCONN_LIFETIME"); val != "" {
 		if d, err := time.ParseDuration(val); err == nil {
 			p.MaxConnLifetime = d
@@ -60,6 +68,12 @@ func (p *Postgres) Parse() error {
 	}
 	if p.MinConns < 0 || p.MinConns > p.MaxConns {
 		return fmt.Errorf("DB_MINCONNS must be between 0 and DB_MAXCONNS (got %d)", p.MinConns)
+	}
+	if p.WorkerMaxConns < 0 {
+		return fmt.Errorf("DB_WORKER_MAXCONNS must be >= 0 (got %d)", p.WorkerMaxConns)
+	}
+	if p.WorkerMaxConns > 0 && p.WorkerMaxConns > p.MaxConns {
+		return fmt.Errorf("DB_WORKER_MAXCONNS must be <= DB_MAXCONNS (got %d)", p.WorkerMaxConns)
 	}
 	return nil
 }

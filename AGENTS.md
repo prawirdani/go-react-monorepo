@@ -1,13 +1,13 @@
 # AGENTS.md
 
-Go RESTful API template. Clean architecture (Handler -> Service -> Repository) with JWT auth, PostgreSQL, Redis Streams, Cloudflare R2, and Prometheus.
+Go RESTful API template. Clean architecture (Handler -> Service -> Repository) with JWT auth, PostgreSQL, a transactional outbox, Cloudflare R2, and Prometheus.
 
 ## Stack
 
 - **Module**: `github.com/prawirdani/golang-restapi` (Go 1.26.5)
 - **Router**: go-chi/chi v5
 - **DB**: PostgreSQL via pgx v5 — raw SQL, no ORM (goose migrations)
-- **MQ/Cache**: Redis Streams (async email events)
+- **MQ/Cache**: PostgreSQL transactional outbox (async email) + Redis (throttle/revocation)
 - **Storage**: Cloudflare R2 (S3-compatible)
 - **Testing**: testify + mockery (unit tests only)
 
@@ -16,7 +16,7 @@ Go RESTful API template. Clean architecture (Handler -> Service -> Repository) w
 ```bash
 make dev            # API server, hot-reload (Air)
 make dev:worker     # Worker, hot-reload
-make build          # Build binary (CGO_ENABLED=0, linux)
+make build          # Build binaries (api + worker, CGO_ENABLED=0, linux)
 make test           # go test -race -count=1 ./... -cover
 make lint           # golangci-lint run
 make migration:create  # Scaffold a goose migration
@@ -30,7 +30,7 @@ mockery             # Regenerate mocks (reads .mockery.yml)
 
 ```
 cmd/api/                 # API entrypoint: main.go, server.go (routes), container.go (DI)
-cmd/worker/              # Background worker entrypoint
+cmd/worker/              # Background entrypoint: outbox poll worker
 cmd/cli/                 # Developer CLI (subcommands: permissions, ...)
 config/                  # Env-based config (App, Postgres, Redis, Auth, CORS, SMTP, R2)
 internal/
@@ -40,16 +40,16 @@ internal/
   rbac/                  # Role/permission authorization (code-defined, in-memory)
   audit/                 # Audit recording (prev/next JSONB + request metadata)
   ports/                 # Interfaces (ports) that infrastructure implements
-    messaging/           #   message envelope + handler
+    outbox/              #   transactional outbox (Message, Writer, Store)
     repository/          #   Transactor (atomic multi-repository writes)
     storage/             #   object storage (file, storage)
     throttle/            #   request throttling (Throttler, Result)
   infrastructure/
-    postgres/            # pgx repository implementations
+    postgres/            # pgx repository implementations (incl. outbox repo + auth event producer)
     r2/                  # R2 storage
-    redis/               # Redis Streams producer/consumer, throttle
+    redis/               # throttle + revocation store
   transport/http/        # Fiber handlers, middleware, error normalization, router
-  worker/                # Email event consumer (Redis -> SMTP)
+  worker/                # outbox poll worker + auth email rendering/sending
 pkg/                     # log, mailer, metrics, nullable, strings, validator
 migrations/              # Goose SQL migrations
 ```
@@ -97,7 +97,7 @@ err := s.transactor.Transact(ctx, func(ctx context.Context) error {
 - Passwords: bcrypt cost 12, `min=8,max=72` validation (bcrypt truncates >72 bytes).
 - Cookies: `HttpOnly` always on; `Secure` production-only.
 
-**Worker/messaging** — consumer handlers must never panic: `handle` has a deferred recover that routes to the DLQ. Envelopes carry an `ID` consumed by the SetNX dedup key (`dedup:<stream>:<id>`) — never bypass it when adding message types. Ack/DLQ writes use `context.WithoutCancel`. SMTP send bounded at 10s; keep any new blocking op bounded too.
+**Worker/outbox** — events go through the transactional outbox: `Produce*` writes `outbox_messages` on the caller's connection (called inside `Transact`, so it commits with the business state). `cmd/worker` polls the table (`outbox.Store.FetchBatch`, oldest first, up to `outbox.MaxAttempts` = 5), dispatches by topic to a `worker.Handler`, and deletes the row with `MarkDone` after a successful send; a handler error records `attempts + 1` and `last_error` via `MarkFailed` and retries on a later tick. Delivery is at-least-once, so handlers must be idempotent (a duplicate email is fine, a lost one is not). `MarkDone`/`MarkFailed` use `context.WithoutCancel`. SMTP send bounded at 10s; keep any new blocking op bounded too.
 
 **Testing** — table-driven with `t.Run` subtests. `setupTestFixture(t)` wires mocks + service and registers `t.Cleanup()`. Mocks: entity-scoped in `internal/<entity>/mocks/`, reusable in `internal/testing/mocks/`.
 

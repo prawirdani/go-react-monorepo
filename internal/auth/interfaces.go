@@ -97,8 +97,9 @@ type UserRepository interface {
 
 // EventProducer defines the contract for publishing notification events.
 //
-// Implementations are responsible only for publishing the event.
-// Email delivery is handled asynchronously by downstream consumers.
+// Implementations persist the event to the transactional outbox on the caller's
+// context, so it commits with the business state. Delivery is handled
+// asynchronously by the worker.
 type EventProducer interface {
 	ProducePasswordRecoveryEvent(ctx context.Context, msg PasswordRecoveryMessage) error
 	ProduceRegistrationCompletionEvent(ctx context.Context, msg CompleteRegistrationMessage) error

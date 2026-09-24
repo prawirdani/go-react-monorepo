@@ -116,7 +116,7 @@ func (s *Service) Register(ctx context.Context, inp RegisterInput) error {
 	var token *RegistrationToken
 	var rawToken string
 
-	err := s.transactor.Transact(ctx, func(ctx context.Context) error {
+	return s.transactor.Transact(ctx, func(ctx context.Context) error {
 		u, err := s.userRepo.GetByEmail(ctx, inp.Email)
 		if err != nil && !errors.Is(err, apperr.ErrNotFound) {
 			return fmt.Errorf("looking up user by email: %w", err)
@@ -140,29 +140,26 @@ func (s *Service) Register(ctx context.Context, inp RegisterInput) error {
 			return fmt.Errorf("storing registration token: %w", err)
 		}
 
-		return s.audit.Record(ctx, audit.Entry{
+		if err := s.audit.Record(ctx, audit.Entry{
 			Action:   ActionRegister,
 			Entity:   "registration_token",
 			EntityID: strconv.Itoa(token.ID),
 			Prev:     nil,
 			Next:     token,
 			Meta:     nil,
+		}); err != nil {
+			return err
+		}
+
+		// Enqueued in the same transaction as the token: the invitation and its
+		// email can no longer diverge, so a publish failure rolls both back.
+		return s.eventProducer.ProduceRegistrationCompletionEvent(ctx, CompleteRegistrationMessage{
+			To:     inp.Email,
+			Name:   inp.Name,
+			URL:    fmt.Sprintf("%s?token=%s", s.cfg.Auth.CompleteRegistrationFormEndpoint, rawToken),
+			Expiry: s.cfg.Auth.RegistrationTokenTTL,
 		})
 	})
-	if err != nil {
-		return err
-	}
-
-	if err := s.eventProducer.ProduceRegistrationCompletionEvent(ctx, CompleteRegistrationMessage{
-		To:     inp.Email,
-		Name:   inp.Name,
-		URL:    fmt.Sprintf("%s?token=%s", s.cfg.Auth.CompleteRegistrationFormEndpoint, rawToken),
-		Expiry: s.cfg.Auth.RegistrationTokenTTL,
-	}); err != nil {
-		return fmt.Errorf("registration succeeded but failed to send completion email: %w", err)
-	}
-
-	return nil
 }
 
 // CompleteRegistration consumes a valid registration token and creates the
@@ -386,7 +383,9 @@ func (s *Service) Logout(ctx context.Context, sessID uuid.UUID) error {
 
 // RecoverPassword initiates the password recovery process by sending a reset link or token to the user's email.
 func (s *Service) RecoverPassword(ctx context.Context, inp RecoverPasswordInput) (throttle.Result, error) {
-	th, err := s.throttler.TryAcquire(ctx, fmt.Sprintf("recover-password:%s", inp.Email), PasswordRecoveryThrottledTTL)
+	key := fmt.Sprintf("recover-password:%s", inp.Email)
+
+	th, err := s.throttler.TryAcquire(ctx, key, PasswordRecoveryThrottledTTL)
 	if err != nil {
 		return th, err
 	}
@@ -395,7 +394,6 @@ func (s *Service) RecoverPassword(ctx context.Context, inp RecoverPasswordInput)
 		return th, ErrPasswordRecoveryThrottled.WithDetails(th)
 	}
 
-	var msg PasswordRecoveryMessage
 	err = s.transactor.Transact(ctx, func(ctx context.Context) error {
 		usr, err := s.userRepo.GetByEmail(ctx, inp.Email)
 		if err != nil {
@@ -413,26 +411,32 @@ func (s *Service) RecoverPassword(ctx context.Context, inp RecoverPasswordInput)
 			return err
 		}
 
-		msg = PasswordRecoveryMessage{
+		// Token, its audit record, and the email event commit together; the
+		// event is enqueued in the same transaction.
+		if err := s.audit.Record(ctx, audit.Entry{
+			Action:   ActionRecoverPassword,
+			Entity:   "user",
+			EntityID: usr.ID.String(),
+		}); err != nil {
+			return err
+		}
+
+		return s.eventProducer.ProducePasswordRecoveryEvent(ctx, PasswordRecoveryMessage{
 			To:       usr.Email,
 			Name:     usr.Name,
 			ResetURL: s.cfg.Auth.ResetPasswordFormEndpoint + "?token=" + tokenRaw,
 			Expiry:   s.cfg.Auth.PasswordRecoveryTokenTTL,
-		}
-
-		// Token and its audit record commit together.
-		return s.audit.Record(ctx, audit.Entry{
-			Action:   ActionRecoverPassword,
-			Entity:   "user",
-			EntityID: usr.ID.String(),
 		})
 	})
 	if err != nil {
-		return th, err
-	}
-
-	if err := s.eventProducer.ProducePasswordRecoveryEvent(ctx, msg); err != nil {
-		log.ErrorCtx(ctx, "Failed to enqueue password recovery email", err)
+		// Release the slot on internal failures so a transient error does not
+		// lock the user out for the full TTL. An unknown email stays throttled:
+		// releasing it would re-open enumeration probing (see README).
+		if !errors.Is(err, apperr.ErrNotFound) {
+			if rerr := s.throttler.Release(ctx, key); rerr != nil {
+				log.WarnCtx(ctx, "failed to release recovery throttle", rerr)
+			}
+		}
 		return th, err
 	}
 

@@ -56,13 +56,16 @@ func NewContainer(
 	userRepo := postgres.NewUserRepository(pg)
 	authRepo := postgres.NewAuthRepository(pg)
 	auditRepo := postgres.NewAuditRepository(pg)
+	outboxRepo := postgres.NewOutboxRepository(pg)
 
 	authorizer := rbac.NewAuthorizer()
 
 	// Setup Services
 	userSvc := user.NewService(pg, userRepo, r2Storage, authorizer, auditRepo, authRepo, revocationStore)
 
-	authEventProducer := redisInfra.NewAuthEventProducer(rdb)
+	// Auth events are written to the transactional outbox on the service's
+	// transaction; the worker polls and delivers them.
+	authEventProducer := postgres.NewAuthEventProducer(outboxRepo)
 	authSvc := auth.NewService(
 		cfg,
 		pg,

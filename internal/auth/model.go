@@ -47,7 +47,7 @@ type TokenPair struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-// PasswordRecoveryMessage is payload shape for PasswordRecovery messaging/queue job
+// PasswordRecoveryMessage is payload shape for the password recovery outbox job
 type PasswordRecoveryMessage struct {
 	To       string        `json:"to"`         // Recipient's email address
 	Name     string        `json:"name"`       // Recipient's name
@@ -55,7 +55,7 @@ type PasswordRecoveryMessage struct {
 	Expiry   time.Duration `json:"expiry_min"` // Expiration time of the reset token in minutes
 }
 
-// CompleteRegistrationMessage is payload shape for registration completion messaging/queue job
+// CompleteRegistrationMessage is payload shape for the registration completion outbox job
 type CompleteRegistrationMessage struct {
 	To     string        `json:"to"`         // Recipient's email address
 	Name   string        `json:"name"`       // Recipient's name

@@ -2,12 +2,26 @@ services:
   api:
     build:
       context: .
+    image: golang-restapi:local
     expose:
       - "${APP_PORT:-8080}"
     restart: always
     env_file:
       - .env
     # Remove this if rolling up postgres inside this compose, its only for bridging container to host because my postgres run on host level
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Polls the transactional outbox table and delivers due messages (SMTP).
+  # Same image as the API; only the entrypoint differs.
+  worker:
+    build:
+      context: .
+    image: golang-restapi:local
+    command: ["./worker"]
+    restart: always
+    env_file:
+      - .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

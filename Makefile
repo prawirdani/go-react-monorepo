@@ -23,8 +23,9 @@ test:
 	@go test -race -v -count=1 ./... -cover
 
 build:
-	@echo "Building binary..."
+	@echo "Building binaries..."
 	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -a -installsuffix cgo -o ./bin/api ./cmd/api/
+	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -a -installsuffix cgo -o ./bin/worker ./cmd/worker/
 	@echo "Build completed successfully..."
 
 run:

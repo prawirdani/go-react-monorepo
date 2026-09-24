@@ -149,9 +149,24 @@ func (db *DB) Close() {
 	db.pool.Close()
 }
 
-// New initializes a PostgreSQL connection pool using the provided configuration.
-// It verifies connectivity by performing an initial Ping.
+// New initializes the API's PostgreSQL pool (sized to cfg.MaxConns) and verifies
+// connectivity with an initial Ping.
 func New(cfg config.Postgres) (*DB, error) {
+	return newDB(cfg, cfg.MaxConns, true)
+}
+
+// NewWorker initializes the worker's pool without a startup Ping, so a database
+// outage does not stop the worker from starting: only its outbox reads fail and
+// retry. It uses DB_WORKER_MAXCONNS when set, otherwise cfg.MaxConns.
+func NewWorker(cfg config.Postgres) (*DB, error) {
+	maxConns := cfg.WorkerMaxConns
+	if maxConns <= 0 {
+		maxConns = cfg.MaxConns
+	}
+	return newDB(cfg, maxConns, false)
+}
+
+func newDB(cfg config.Postgres, maxConns int, ping bool) (*DB, error) {
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%v/%s",
 		cfg.User,
@@ -166,8 +181,12 @@ func New(cfg config.Postgres) (*DB, error) {
 		return nil, err
 	}
 
-	pgConf.MinConns = int32(cfg.MinConns) //nolint:gosec // G115: bounded by config validation
-	pgConf.MaxConns = int32(cfg.MaxConns) //nolint:gosec // G115: bounded by config validation
+	minConns := cfg.MinConns
+	if minConns > maxConns {
+		minConns = maxConns
+	}
+	pgConf.MinConns = int32(minConns) //nolint:gosec // G115: bounded by maxConns, itself validated <= MaxInt32
+	pgConf.MaxConns = int32(maxConns) //nolint:gosec // G115: bounded by config validation
 	pgConf.MaxConnLifetime = cfg.MaxConnLifetime
 	pgConf.MaxConnIdleTime = 5 * time.Minute
 	pgConf.HealthCheckPeriod = 1 * time.Minute
@@ -177,8 +196,10 @@ func New(cfg config.Postgres) (*DB, error) {
 		return nil, err
 	}
 
-	if err := pool.Ping(context.Background()); err != nil {
-		return nil, err
+	if ping {
+		if err := pool.Ping(context.Background()); err != nil {
+			return nil, err
+		}
 	}
 
 	return &DB{pool: pool}, nil

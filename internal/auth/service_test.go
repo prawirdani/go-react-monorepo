@@ -70,6 +70,35 @@ func TestService_Register(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("Event enqueue fails: transaction rolls back", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		input := auth.RegisterInput{
+			Name:  "John Doe",
+			Email: "john@example.com",
+		}
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(ctx context.Context) error) error {
+				f.userRepo.EXPECT().GetByEmail(ctx, input.Email).Return(nil, apperr.ErrNotFound)
+				f.authRepo.EXPECT().RevokeRegistrationTokens(ctx, input.Email).Return(nil)
+				f.authRepo.EXPECT().
+					StoreRegistrationToken(ctx, mock.AnythingOfType("*auth.RegistrationToken")).
+					Return(nil)
+				return fn(ctx)
+			})
+
+		f.eventProducer.EXPECT().
+			ProduceRegistrationCompletionEvent(ctx, mock.AnythingOfType("auth.CompleteRegistrationMessage")).
+			Return(assert.AnError)
+
+		err := f.service.Register(ctx, input)
+
+		assert.ErrorIs(t, err, assert.AnError)
+	})
+
 	t.Run("Email already exists", func(t *testing.T) {
 		ctx := context.Background()
 		f := setupTestFixture(t)
@@ -410,8 +439,8 @@ func TestService_RecoverPassword(t *testing.T) {
 			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: true}, nil)
 
-		// Token persistence happens inside the transaction; the event is enqueued
-		// AFTER the transaction commits (outside the closure).
+		// Token persistence and the event enqueue both happen inside the
+		// transaction: the outbox write joins it.
 		f.transactor.EXPECT().
 			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
 			Run(func(ctx context.Context, fn func(context.Context) error) {
@@ -434,7 +463,7 @@ func TestService_RecoverPassword(t *testing.T) {
 		require.True(t, result.Allowed)
 	})
 
-	t.Run("Event enqueue fails after commit", func(t *testing.T) {
+	t.Run("Event enqueue fails: transaction rolls back", func(t *testing.T) {
 		ctx := context.Background()
 		f := setupTestFixture(t)
 
@@ -467,6 +496,11 @@ func TestService_RecoverPassword(t *testing.T) {
 		f.throttler.EXPECT().
 			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: true}, nil)
+		// A transient internal failure releases the slot instead of locking the
+		// user out for the full TTL.
+		f.throttler.EXPECT().
+			Release(ctx, "recover-password:"+input.Email).
+			Return(nil)
 
 		_, err := f.service.RecoverPassword(ctx, input)
 		assert.ErrorIs(t, err, assert.AnError)
@@ -503,9 +537,35 @@ func TestService_RecoverPassword(t *testing.T) {
 		f.throttler.EXPECT().
 			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: true}, nil)
+		f.throttler.EXPECT().
+			Release(ctx, "recover-password:"+input.Email).
+			Return(nil)
 
 		_, err := f.service.RecoverPassword(ctx, input)
 		assert.ErrorIs(t, err, assert.AnError)
+	})
+
+	t.Run("Unknown email keeps the throttle slot", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		input := auth.RecoverPasswordInput{Email: "missing@example.com"}
+
+		f.throttler.EXPECT().
+			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
+			Return(throttle.Result{Allowed: true}, nil)
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(ctx context.Context) error) error {
+				f.userRepo.EXPECT().GetByEmail(ctx, input.Email).Return(nil, apperr.ErrNotFound)
+				return fn(ctx)
+			})
+
+		// No Release expectation: the not-found path must stay throttled so it
+		// cannot be used as an enumeration oracle.
+		_, err := f.service.RecoverPassword(ctx, input)
+		assert.ErrorIs(t, err, apperr.ErrNotFound)
 	})
 
 	t.Run("Throttled", func(t *testing.T) {

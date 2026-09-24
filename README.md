@@ -2,8 +2,9 @@
 
 A production-shaped REST API template in Go. It ships an opinionated clean/onion
 architecture (Handler → Service → Repository), stateless JWT access tokens with
-server-side sessions, Redis Streams for asynchronous email delivery, PostgreSQL
-via `pgx` with raw SQL, Cloudflare R2 object storage, and Prometheus metrics.
+server-side sessions, a transactional outbox for asynchronous email delivery,
+PostgreSQL via `pgx` with raw SQL, Cloudflare R2 object storage, and Prometheus
+metrics.
 
 The goal is a reference implementation you can rename and extend: strict layer
 boundaries, interface-driven dependencies, manual dependency injection, and
@@ -69,8 +70,9 @@ tests that never touch a real database, Redis, or SMTP server.
   change/reset, admin wipe, and user deletion.
 - **Invitation-based registration**: no account row exists until the invitee
   consumes the emailed, single-use token and sets a password.
-- **Async email delivery** over Redis Streams with consumer groups, a pending
-  entries list (PEL), idempotent dedup, dead-letter queue, and panic isolation.
+- **Async email delivery** via a transactional outbox polled by the worker:
+  at-least-once delivery with bounded retries and a dead-letter row for the
+  operator to inspect.
 - **Audit trail** written inside the same transaction as the change it records.
 - **Typed error kernel** (`apperr`) mapped to HTTP status codes in one place.
 - **Generic list query DSL**: pagination, allow-listed sorting, enum-validated
@@ -85,7 +87,7 @@ tests that never touch a real database, Redis, or SMTP server.
 | HTTP | [Fiber v3](https://github.com/gofiber/fiber) (`github.com/gofiber/fiber/v3` v3.5.0) |
 | Database | PostgreSQL via [pgx v5](https://github.com/jackc/pgx) (raw SQL, no ORM) + [scany/v2](https://github.com/georgysavva/scany) for struct scanning |
 | Migrations | [goose](https://github.com/pressly/goose) (SQL files in `migrations/`) |
-| Cache / queue / throttle | Redis via [go-redis v9](https://github.com/redis/go-redis): Streams, `SET NX` throttle, revocation markers |
+| Cache / throttle | Redis via [go-redis v9](https://github.com/redis/go-redis): `SET NX` throttle, revocation markers |
 | Object storage | Cloudflare R2 through the AWS SDK v2 S3 client |
 | Auth | [golang-jwt/jwt v5](https://github.com/golang-jwt/jwt), `golang.org/x/crypto/bcrypt` |
 | Validation | [go-playground/validator v10](https://github.com/go-playground/validator) |
@@ -118,7 +120,7 @@ responsibility and may only depend on the layer beneath it.
 | --- | --- | --- | --- |
 | Transport | `internal/transport/http` | Parse/validate requests, call services, serialize responses, cookies, middleware | Domain packages, `pkg/` |
 | Domain (entities) | `internal/auth`, `internal/user`, `internal/audit`, `internal/rbac` | Models, business rules, service implementations, consumer-side interfaces, errors | Other domain packages and `internal/ports/*`; **never** `internal/infrastructure/*` or Fiber |
-| Ports | `internal/ports/*` | Interfaces the domain and infrastructure agree on (transactor, storage, throttle, messaging, revocation) | Stdlib and small value types only |
+| Ports | `internal/ports/*` | Interfaces the domain and infrastructure agree on (transactor, storage, throttle, outbox, revocation) | Stdlib and small value types only |
 | Infrastructure | `internal/infrastructure/*` | Concrete implementations: `postgres`, `redis`, `r2` | Domain/ports |
 | Shared | `pkg/*` | Framework-agnostic helpers (`log`, `mailer`, `metrics`, `nullable`, `strings`, `validator`) | Stdlib and third-party libs |
 | Composition roots | `cmd/api`, `cmd/worker`, `cmd/cli` | Wire everything, start processes, expose routes | Everything |
@@ -144,7 +146,7 @@ wide interface:
 - `internal/ports/storage` — `Storage`, `File` (implemented by R2 and by the
   multipart upload adapter).
 - `internal/ports/throttle` — `Throttler`, `Result`.
-- `internal/ports/messaging` — `Envelope[T]`, `Handler[T]`.
+- `internal/ports/outbox` — `Message`, `Writer`, `Store` (transactional outbox).
 - `internal/ports/revocation` — `Checker`, `Revoker`, and their composition
   `Store`, implemented by the Redis revocation store.
 
@@ -188,7 +190,7 @@ cmd/
     main.go            config, postgres, redis, graceful shutdown
     container.go       manual DI wiring
     server.go          middleware chain, routes, health, metrics exporter
-  worker/              background worker entrypoint (consumes Redis Streams)
+  worker/              background entrypoint (polls the outbox and delivers due messages)
   cli/                 developer CLI (`permissions` subcommand, extensible)
 
 config/                env-based config structs, parsed and validated at startup
@@ -204,18 +206,18 @@ internal/
     mocks/             entity-scoped user mocks
   rbac/                roles, permissions, authorizer, actor context
   ports/               interfaces implemented by infrastructure
-    messaging/         message envelope + handler
+    outbox/            transactional outbox port (Message, Writer, Store)
     repository/        Transactor, Query, Sorting, Pagination
     revocation/        access-token revocation ports (Checker/Revoker/Store)
     storage/           object storage (Storage, File)
     throttle/          request throttling (Throttler, Result)
   infrastructure/
-    postgres/          pgx pool, transaction wrapper, query builder, repositories
-    redis/             Streams producer/consumer, throttle, revocation store
+    postgres/          pgx pool, transaction wrapper, query builder, repositories (incl. outbox repo + auth event producer)
+    redis/             throttle + revocation store
     r2/                Cloudflare R2 storage (S3 API)
   transport/
     http/              Fiber handlers, middleware, error normalization, router
-  worker/              AuthWorker: renders and sends auth emails
+  worker/              outbox poll worker + AuthWorker (renders and sends auth emails)
   testing/mocks/       shared infrastructure mocks (Transactor, Storage, ...)
 
 pkg/                   framework-agnostic helpers
@@ -232,7 +234,7 @@ deployment/
   prometheus/          scrape config
   grafana/             datasource/dashboard provisioning + api-metrics.json
 
-compose.yml            api + nginx + prometheus + grafana
+compose.yml            api + worker + nginx + prometheus + grafana
 Dockerfile             multi-stage build (distroless runtime)
 Makefile               dev/build/test/lint/migration/cli targets
 ```
@@ -284,18 +286,22 @@ They are separate processes:
 
 ```bash
 make dev          # API server with hot reload (Air)
-make dev:worker   # stream consumer with hot reload (Air)
+make dev:worker   # outbox poll worker, hot reload (Air)
 ```
+
+The worker opens its own PostgreSQL pool and does not block startup on Postgres:
+the poll loop retries its reads until the database is reachable.
 
 ### 5. Build a binary
 
 ```bash
-make build        # CGO_ENABLED=0 GOOS=linux -> ./bin/api
+make build        # CGO_ENABLED=0 GOOS=linux -> ./bin/api and ./bin/worker
 make run          # run ./bin/api
 ```
 
-`make build` produces a static Linux binary at `./bin/api`; the `Dockerfile`
-copies that binary into a distroless runtime image and runs it.
+`make build` produces static Linux binaries at `./bin/api` and `./bin/worker`;
+the `Dockerfile` copies both into a distroless runtime image. The API is the
+default `CMD`; the `worker` compose service overrides it with `./worker`.
 
 ## Configuration
 
@@ -326,6 +332,7 @@ section and then calls `Config.Validate()`.
 | `DB_NAME` | DB name | empty | |
 | `DB_MINCONNS` | Pool minimum connections | `0` | Must be `>= 0` and `<= DB_MAXCONNS` |
 | `DB_MAXCONNS` | Pool maximum connections | **required** | Must be `> 0` and `<= 2147483647` |
+| `DB_WORKER_MAXCONNS` | Worker pool maximum connections | empty (0) | `0` shares `DB_MAXCONNS`; must be `<= DB_MAXCONNS`. The worker pool is created without a startup ping |
 | `DB_MAXCONN_LIFETIME` | Max connection lifetime | empty (0) | Go duration (e.g. `60m`); zero keeps the pgx default |
 
 The pool also hardcodes `MaxConnIdleTime = 5m` and `HealthCheckPeriod = 1m`;
@@ -505,8 +512,9 @@ password.
      `revoked_at` is distinct from `used_at`).
    - A single-use token is created (256-bit, `regt_` prefix, SHA-256 stored,
      `AUTH_REGISTRATION_TOKEN_TTL`) and committed with an audit row.
-2. After commit, a `email.user_registration` event is published to Redis
-   Streams; the worker renders and sends the completion link.
+2. The event is enqueued to the transactional outbox in the same transaction
+   (it commits or rolls back with the token). The worker polls the outbox under
+   the `email.user_registration` topic and renders and sends the completion link.
 3. `GET /api/auth/register/:token` lets the completion form inspect expiry,
    `used_at`, and `revoked_at`.
 4. `POST /api/auth/register/complete` with `token` + `password` validates the
@@ -528,8 +536,8 @@ default `user` role and `email_verified_at` set.
 2. A 256-bit opaque token is generated, its SHA-256 hash stored in
    `password_recovery_tokens` with a TTL (`AUTH_PASSWORD_RECOVERY_TOKEN_TTL`),
    and an audit row is written in the same transaction.
-3. An `email.password_recovery` event is published; the worker sends the reset
-   email.
+3. An `email.password_recovery` event is enqueued to the outbox in the same
+   transaction; the worker polls it and sends the reset email.
 4. `GET /api/auth/password/recover/:token` exposes status.
 5. `PUT /api/auth/password/reset` with `token` + `new_password` consumes the
    token, updates the password, revokes all sessions, writes an audit row, and
@@ -811,44 +819,46 @@ sentinels (invalid path param, multipart, upload errors, rate limit) live in
 
 ## Messaging and the worker
 
-Email delivery is decoupled from HTTP response time using Redis Streams.
+Email delivery is decoupled from HTTP response time with a **transactional
+outbox**. The service writes the event row inside the same transaction as the
+business state; the worker polls the table and delivers it later, so a crash
+between commit and delivery cannot lose the email.
 
 ```text
 HTTP request
-  └─ service commits DB change
-       └─ producer XADD ──▶ Stream ──▶ consumer group ──▶ PEL ──▶ handler ──▶ ACK
-                                                              └─ retries ──▶ DLQ stream
+  └─ service Transact { business state + audit + INSERT outbox_messages }   (one commit)
+                          │
+                          ▼
+     worker (~1s): FetchBatch (attempts < 5, ORDER BY seq) ─▶ handler ─▶ SMTP
+                          │                                      └─ MarkDone (DELETE)
+                          └─ failure ─▶ MarkFailed (attempts + 1, last_error)
 ```
 
-Streams and payloads:
+Topics and payloads:
 
-| Stream | Payload | Published by |
+| Topic | Payload | Enqueued by |
 | --- | --- | --- |
 | `email.password_recovery` | `auth.PasswordRecoveryMessage` | `RecoverPassword` |
 | `email.user_registration` | `auth.CompleteRegistrationMessage` | `Register` |
 
-The producer wraps each payload in a `messaging.Envelope[T]` carrying a random
-`ID` (idempotency key) and a production timestamp, then `XADD`s the JSON under
-the `payload` field. Consumers run with group `mailing` and consumer `c1m`,
-concurrency 5, batch size 5, block 5 s, `MinIdle` 15 s, max retries 3, and DLQ
-enabled (failed messages are written to `<stream>.dlq` with `_original_id`,
-`_reason`, `_error`, `_failed_at`).
+The producer marshals the domain message as JSON into `outbox_messages.payload`
+(`internal/infrastructure/postgres/outbox_repository.go`); the worker unmarshals
+it per topic in `cmd/worker` and hands it to `worker.AuthWorker`. Delivery is
+**at-least-once**: a crash after the SMTP send and before `MarkDone` resends that
+one message, so handlers must be idempotent (a duplicate email is acceptable,
+losing one is not).
 
-Reliability features (all in `internal/infrastructure/redis/stream_consumer.go`):
+Reliability features (`internal/worker/outbox_worker.go`):
 
-- **Idempotency**: before handling, `SET dedup:<stream>:<id> NX` with a 7-day
-  TTL prevents duplicate emails on redelivery; the claim is released if handling
-  fails so the retry re-processes.
-- **Panic isolation**: a panic in a handler is recovered with a stack log, the
-  dedup claim is released, and the message is routed to the DLQ — one poison
-  message cannot crash the worker.
-- **PEL and reclaim**: unacknowledged messages stay in the pending entries list;
-  `XAUTOCLAIM` reclaims them on a 30 s cadence (not every poll) and the native
-  delivery counter drives the retry/DLQ decision.
-- **Bounded operations**: SMTP send is capped at 10 s (`pkg/mailer`), and
-  ACK/DLQ writes use `context.WithoutCancel` so work completed during graceful
-  shutdown is still acknowledged.
-- **Graceful shutdown**: `cmd/worker` waits up to 10 s for consumers to drain.
+- **Retries**: a handler error increments `attempts` and writes `last_error`; the
+  row is retried on later ticks until `outbox.MaxAttempts` (5), after which it is
+  skipped but left in the table as a dead-letter record to inspect with SQL.
+- **Ordering**: batches are read oldest-first by the identity `seq`.
+- **Bounded operations**: the SMTP send is capped at 10 s (`pkg/mailer`);
+  `MarkDone`/`MarkFailed` run on `context.WithoutCancel` so bookkeeping survives
+  graceful shutdown.
+- **Crash isolation**: `cmd/worker` runs the poll loop under the process signal
+  context; stopping the process simply pauses delivery until it restarts.
 
 Run the worker separately from the API: `make dev:worker`.
 
@@ -890,7 +900,12 @@ Run the worker separately from the API: `make dev:worker`.
   | `00003_create_sessions_table.sql` | `sessions` |
   | `00004_create_password_recovery_tokens_table.sql` | `password_recovery_tokens` |
   | `00005_create_audit_logs_table.sql` | `audit_logs` |
+  | `00006_create_outbox_messages_table.sql` | `outbox_messages` |
 
+- **Rollout order**: the outbox `INSERT` is on the auth critical path, so apply
+  `00006` → deploy the worker → deploy the API. `00006` is additive, so the old
+  binary is unaffected. The worker polls any rows already in the table on its
+  first tick, so no reconciliation step is needed.
 - `users` has a partial unique index on `email` (`WHERE deleted_at IS NULL`) so a
   soft-deleted email can be reused; `role` and `gender` are `CHECK`-constrained.
 - `sessions.user_id` and `audit_logs.actor_id` reference `users(id)` with
@@ -953,7 +968,7 @@ Unit tests only; they never touch a real database, Redis, or SMTP server.
 | `make tidy` | `go mod tidy` | Tidy modules |
 | `make lint` | `golangci-lint run` | Lint (v2 config in `.golangci.yml`) |
 | `make test` | `go test -race -v -count=1 ./... -cover` | Full test suite |
-| `make build` | `CGO_ENABLED=0 GOOS=linux go build …` | Static Linux binary at `./bin/api` |
+| `make build` | `CGO_ENABLED=0 GOOS=linux go build …` | Static Linux binaries at `./bin/api` and `./bin/worker` |
 | `make run` | `./bin/api` | Run the built binary |
 | `make cli` | `go run ./cmd/cli $(ARGS)` | Developer CLI (currently `permissions`) |
 | `make permissions` | `go run ./cmd/cli permissions` | Dump all permission codes as a JS array |
@@ -989,8 +1004,10 @@ go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
   tests.
 - **Errors bubble up unchanged**; only add logging where it adds context, and
   avoid log-and-return pairs.
-- **Multi-step writes** use `Transactor.Transact`; post-commit side effects
-  (events, storage cleanup, access-token revocation) run outside the closure.
+- **Multi-step writes** use `Transactor.Transact`. Events are written to the
+  transactional outbox **inside** the closure (so they commit with the state);
+  post-commit side effects such as storage cleanup and access-token revocation
+  run outside the closure.
 
 Project-specific skills under `.agents/skills/` (architecture, errors, handlers,
 repositories, services, testing) encode these rules in more detail.
