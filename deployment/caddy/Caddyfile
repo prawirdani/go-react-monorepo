@@ -1,0 +1,45 @@
+# Caddy reverse proxy for the API, used by the compose stack.
+#
+# For Cloudflare in front of the proxy, use Caddyfile.cloudflare instead
+# (set CADDYFILE=Caddyfile.cloudflare and run update-cloudflare-ips.sh first).
+#
+# SITE_ADDRESS selects the public address:
+#   :80                plain HTTP on the container's port 80 (dev default)
+#   api.example.com    automatic HTTPS on 80 + 443, HTTP redirected to HTTPS
+#
+# With a domain, publish the host's 80 and 443 (CADDY_HTTP_PORT /
+# CADDY_HTTPS_PORT) — otherwise the ACME challenge cannot be answered and
+# issuance silently fails while HTTP keeps serving.
+{
+	# The admin API (localhost:2019) is not needed in a container.
+	admin off
+
+	# Optional ACME account email, for certificate-expiry notices. Uncomment
+	# before pointing SITE_ADDRESS at a real domain. It cannot be driven by an
+	# env var with a default: an unset substitution is a parse error.
+	# email you@example.com
+}
+
+{$SITE_ADDRESS::80} {
+	# Compress responses. Caddy skips encoding when the upstream already set
+	# Content-Encoding, so this does not double-compress Fiber's output.
+	encode zstd gzip
+
+	log {
+		output stdout
+		format json
+	}
+
+	# Caddy sets X-Forwarded-For / -Proto / -Host automatically. The API only
+	# honours them from the CIDRs listed in TRUSTED_PROXIES (the compose
+	# network subnet by default), so the real client IP reaches the audit log.
+	#
+	# The upstream port is the container-side APP_PORT, not a host port; the
+	# API is never published directly. Caddy fills in :80 when the port is
+	# omitted, which is why it has to be stated explicitly here.
+	reverse_proxy api:{$APP_PORT:8080} {
+		health_uri /api/healthz
+		health_interval 15s
+		health_timeout 3s
+	}
+}

@@ -1,0 +1,53 @@
+# Caddy reverse proxy for the API when Cloudflare fronts the proxy.
+#
+# Mount this instead of Caddyfile by setting CADDYFILE=Caddyfile.cloudflare in
+# .env, then run ./update-cloudflare-ips.sh to refresh the CF ranges below.
+#
+# SITE_ADDRESS selects the public address:
+#   :80                plain HTTP on the container's port 80 (dev default)
+#   api.example.com    automatic HTTPS on 80 + 443, HTTP redirected to HTTPS
+#
+# With a domain, publish the host's 80 and 443 (CADDY_HTTP_PORT /
+# CADDY_HTTPS_PORT) — otherwise the ACME challenge cannot be answered and
+# issuance silently fails while HTTP keeps serving.
+{
+	# The admin API (localhost:2019) is not needed in a container.
+	admin off
+
+	# trusted_proxies / client_ip_headers are server-level options, so they MUST
+	# live inside this servers { } block — at the top level Caddy rejects them
+	# with "unrecognized global option".
+	servers {
+		# Only adopt forwarding headers when the peer really is Cloudflare.
+		# Replace this list with `./update-cloudflare-ips.sh` output — CF changes it.
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		client_ip_headers CF-Connecting-IP
+	}
+
+	# Optional ACME account email, for certificate-expiry notices. Uncomment
+	# before pointing SITE_ADDRESS at a real domain. It cannot be driven by an
+	# env var with a default: an unset substitution is a parse error.
+	# email you@example.com
+}
+
+{$SITE_ADDRESS::80} {
+	# Compress responses. Caddy skips encoding when the upstream already set
+	# Content-Encoding, so this does not double-compress Fiber's output.
+	encode zstd gzip
+
+	log {
+		output stdout
+		format json
+	}
+
+	# The upstream port is the container-side APP_PORT, not a host port; the
+	# API is never published directly.
+	reverse_proxy api:{$APP_PORT:8080} {
+		# Replace the incoming chain with the single verified client IP. Without
+		# this, Caddy appends the CF edge address and the API records that.
+		header_up X-Forwarded-For {client_ip}
+		health_uri /api/healthz
+		health_interval 15s
+		health_timeout 3s
+	}
+}

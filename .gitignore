@@ -3,5 +3,7 @@ tmp
 /cmd/app/main
 /logs
 /bin
+# Local Postgres backup dumps (host-mounted volume for the backup sidecar).
+backups/
 .env
 note.md

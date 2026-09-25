@@ -1,0 +1,4 @@
+# min hour dom mon dow  command
+# busybox crond throws away job output, so redirect to PID 1's stdout to make
+# the run (and any failure) visible in `docker logs backup`.
+15 3 * * *  sh /backup-postgres.sh > /proc/1/fd/1 2>&1

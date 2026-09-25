@@ -1,7 +1,7 @@
 # =========================
 # Stage 1: Build
 # =========================
-FROM golang:1.25 AS builder
+FROM golang:1.26.5 AS builder
 
 RUN apt-get install -y make
 

@@ -2,7 +2,9 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
+  # The API exports on its own METRICS_PORT (a fixed 9091 in compose), so this
+  # target never has to track APP_PORT.
   - job_name: app
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["api:8081"]
+      - targets: ["api:9091"]
