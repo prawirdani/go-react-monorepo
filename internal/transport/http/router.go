@@ -19,6 +19,12 @@ func NewRouter(cfg *config.Config) *fiber.App {
 		TrustProxyConfig: fiber.TrustProxyConfig{
 			Proxies: trustedProxies,
 		},
+		// TrustProxy + Proxies alone is NOT enough: Fiber reads the forwarded
+		// header only when ProxyHeader is non-empty, and its default is "". With
+		// it unset, c.IP() silently falls back to the peer address — the proxy
+		// container — so every audit row recorded the proxy instead of the client.
+		// TODO: This broke dev
+		// ProxyHeader: fiber.HeaderXForwardedFor,
 		BodyLimit: MaxBodySize,
 		ErrorHandler: func(c fiber.Ctx, err error) error {
 			e := ParseError(err)
