@@ -115,7 +115,7 @@ func (s *Server) Start() error {
 	port := s.container.Config.App.Port
 	if s.metricsApp != nil {
 		go func() {
-			addr := fmt.Sprintf(":%d", port+1)
+			addr := fmt.Sprintf(":%d", s.container.Config.App.MetricsPort)
 			log.Info(fmt.Sprintf("Metrics serving on %s/metrics", addr))
 			if err := s.metricsApp.Listen(addr); err != nil {
 				log.Error("Metrics server stopped unexpectedly", err)
@@ -123,7 +123,9 @@ func (s *Server) Start() error {
 		}()
 	}
 
-	return s.app.Listen(fmt.Sprintf("%s:%v", s.container.Config.App.BindAddr, port))
+	// Bind every interface. What is reachable from outside is decided by the
+	// compose `ports:` mapping (only Caddy publishes), not by this address.
+	return s.app.Listen(fmt.Sprintf(":%v", port))
 }
 
 // Shutdown gracefully drains the API server until ctx is done. The deadline is

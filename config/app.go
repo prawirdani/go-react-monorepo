@@ -17,9 +17,10 @@ type App struct {
 	// MetricsEnabled serves the Prometheus /metrics sidecar (METRICS_ENABLED).
 	// Defaults to production when unset.
 	MetricsEnabled bool
-	// BindAddr is the address the API listens on (APP_BIND_ADDR). Defaults to
-	// loopback so a bare-metal dev server is not exposed on the LAN.
-	BindAddr string
+	// MetricsPort is the port the Prometheus /metrics sidecar listens on
+	// (METRICS_PORT). It defaults to Port+1 but is settable independently, so
+	// a scraper never has to track APP_PORT to find the exporter.
+	MetricsPort int
 }
 
 func (a *App) Parse() error {
@@ -35,6 +36,15 @@ func (a *App) Parse() error {
 		a.Port = port
 	}
 
+	a.MetricsPort = a.Port + 1
+	if val := os.Getenv("METRICS_PORT"); val != "" {
+		metricsPort, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
+		a.MetricsPort = metricsPort
+	}
+
 	if val := os.Getenv("APP_INTERNAL_MODE"); val != "" {
 		if b, err := strconv.ParseBool(val); err == nil {
 			a.InternalMode = b
@@ -48,11 +58,6 @@ func (a *App) Parse() error {
 		if b, err := strconv.ParseBool(val); err == nil {
 			a.MetricsEnabled = b
 		}
-	}
-
-	a.BindAddr = "127.0.0.1"
-	if val := os.Getenv("APP_BIND_ADDR"); val != "" {
-		a.BindAddr = val
 	}
 
 	return nil
