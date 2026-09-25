@@ -27,6 +27,7 @@ tests that never touch a real database, Redis, or SMTP server.
   - [Request flow](#request-flow)
 - [Project layout](#project-layout)
 - [Getting started](#getting-started)
+- [Deployment](#deployment)
 - [Configuration](#configuration)
   - [Startup validation](#startup-validation)
 - [Authentication and sessions](#authentication-and-sessions)
@@ -46,6 +47,7 @@ tests that never touch a real database, Redis, or SMTP server.
 - [Messaging and the worker](#messaging-and-the-worker)
 - [Observability and health](#observability-and-health)
 - [Database and migrations](#database-and-migrations)
+- [Backups](#backups)
 - [Testing](#testing)
 - [Development tooling](#development-tooling)
 - [Conventions](#conventions)
@@ -225,11 +227,11 @@ pkg/                   framework-agnostic helpers
 
 migrations/            goose SQL migrations (additive only)
 deployment/
-  nginx/               nginx reverse-proxy config used by compose
+  caddy/               Caddy reverse-proxy config used by compose
   prometheus/          scrape config
   grafana/             datasource/dashboard provisioning + api-metrics.json
 
-compose.yml            api + worker + nginx + prometheus + grafana
+compose.yml            api + worker + migrate + postgres + redis + caddy + prometheus + grafana
 Dockerfile             multi-stage build (distroless runtime)
 Makefile               dev/build/test/lint/migration/cli targets
 ```
@@ -248,7 +250,7 @@ Makefile               dev/build/test/lint/migration/cli targets
 
 ### 1. Start the stack
 
-`compose.yml` is self-contained: Postgres, Redis, the API, the worker, nginx,
+`compose.yml` is self-contained: Postgres, Redis, the API, the worker, Caddy,
 Prometheus and Grafana all run in the project on one bridge network. There is no
 `host.docker.internal` and no host service to start.
 
@@ -256,11 +258,19 @@ Prometheus and Grafana all run in the project on one bridge network. There is no
 docker compose up -d
 ```
 
-The `api` and `worker` services override `DB_HOST=postgres` and
-`REDIS_HOST=redis` (plus `APP_BIND_ADDR=0.0.0.0` and `METRICS_ENABLED=true`), so
-the `DB_HOST=localhost` values in `.env` keep working for bare-metal `make dev`.
-nginx proxies `http://localhost:8080` to the API, Grafana is on
-`http://localhost:3000` (admin/admin unless `GRAFANA_ADMIN_PASSWORD` is set), and
+Every service loads `.env` via `env_file:`, so credentials are defined once. A
+service's own `environment:` block still wins where a value must differ — `api`
+and `worker` override `DB_HOST=postgres` and `REDIS_HOST=redis`, so the
+`DB_HOST=localhost` values in `.env` keep working for bare-metal `make dev`.
+
+Because `env_file:` injects the whole file, **every container — Caddy included —
+receives all of it, secrets included**. That is the deliberate trade-off for a
+single source of credentials. To narrow it, drop `env_file:` from a service and
+list only what it needs under `environment:`; Caddy, for instance, needs just
+`SITE_ADDRESS` and `APP_PORT`, and Prometheus needs nothing.
+Caddy proxies `http://localhost:8080` to the API, Grafana is on
+`http://localhost:3000` (`GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD`, both
+`admin` by default), and
 Prometheus and the datastores stay internal to the network.
 
 Postgres and Redis data live in named volumes (`postgres-data`, `redis-data`);
@@ -278,6 +288,14 @@ automatically in development. `AUTH_JWT_SECRET` is required and must be at
 least 32 characters; startup fails otherwise.
 
 ### 3. Apply migrations
+
+With compose there is nothing to run by hand: the one-shot `migrate` service
+applies goose migrations once Postgres is healthy, and both the API and the
+worker wait for it to complete (`service_completed_successfully`). A failed
+migration therefore blocks the app tier instead of letting it serve against a
+half-built schema.
+
+For bare-metal development, run goose directly:
 
 ```bash
 make migration:up
@@ -308,6 +326,139 @@ make run          # run ./bin/api
 the `Dockerfile` copies both into a distroless runtime image. The API is the
 default `CMD`; the `worker` compose service overrides it with `./worker`.
 
+## Deployment
+
+`deployment/DEPLOYMENT.md` is the step-by-step preparation checklist (prerequisites,
+credentials, network prep, TLS, first boot, verification, backups, rollback, and the
+known gaps to read before go-live). This section is the reference material it links to.
+
+The compose stack is deployment-ready as-is. What changes in production is the
+Caddy site address, the published ports, and `APP_ENV`.
+
+### 1. Point Caddy at a domain
+
+```bash
+SITE_ADDRESS=api.example.com
+CADDY_HTTP_PORT=80
+CADDY_HTTPS_PORT=443
+```
+
+Caddy then obtains and renews a Let's Encrypt certificate itself, serves 80 and
+443, and redirects HTTP to HTTPS. There is no certificate configuration to
+write. Requirements:
+
+- An `A`/`AAAA` record for the domain pointing at the host's public IP. Check it
+  before deploying: `dig +short api.example.com @1.1.1.1` must return that IP.
+- Host ports 80 and 443 reachable from the internet — `CADDY_HTTP_PORT` and
+  `CADDY_HTTPS_PORT` must be exactly `80`/`443`, because the ACME challenge
+  depends on them.
+- Outbound access to `acme-v02.api.letsencrypt.org`; and nothing else already
+  bound to 80/443 on the host.
+
+If DNS is not ready yet, leave `SITE_ADDRESS=` empty: Caddy serves plain HTTP on
+the mapped port and does not attempt issuance. Do not point it at a domain that
+does not resolve — Let's Encrypt permits only 5 failed validations per hostname
+per hour, so an early mistake can lock you out for an hour.
+
+To add an ACME account email (certificate-expiry notices), uncomment the `email`
+line in `deployment/caddy/Caddyfile`. It cannot come from an environment
+variable: an unset substitution is a Caddyfile parse error.
+
+### 2. Flip the app to production
+
+```bash
+APP_ENV=prod
+```
+
+`APP_ENV=prod` enables the app's production behaviour — `Secure` cookies and
+HSTS — which is correct once TLS terminates at Caddy. Also repoint the settings
+that still reference localhost:
+
+- `CORS_ORIGINS` → your real web origin, e.g. `https://app.example.com`
+- `AUTH_RESET_PASSWORD_FORM_ENDPOINT` /
+  `AUTH_COMPLETE_REGISTRATION_FORM_ENDPOINT` → your real web UI URLs
+
+The API sits behind Caddy, so it receives plain HTTP and trusts
+`X-Forwarded-For` only from `TRUSTED_PROXIES`. Compose sets that to the project's
+own pinned subnet (`APP_NET_SUBNET`, default `172.28.0.0/24`) — deliberately not
+Docker's whole address pool, because Caddy is the only hop that should be
+trusted — so the audit log still records the real client IP.
+
+### 3. Public surface
+
+| Service | Public | Notes |
+| --- | --- | --- |
+| `caddy` | 80, 443 | the only internet-facing entry point |
+| `grafana` | no | bound to `127.0.0.1:${GRAFANA_PORT}`; reach it with `ssh -L 3000:127.0.0.1:3000 user@host` |
+| `api`, `worker` | no | reached only by Caddy |
+| `postgres`, `redis` | no | not published; see below to reach them for administration |
+| `migrate` | no | one-shot goose job; exits before the app tier starts |
+| `prometheus` | no | scrapes `api:9091` |
+
+Every service shares the pinned `app-net` bridge (`APP_NET_SUBNET`). That also
+means Caddy, Prometheus and Grafana can reach the datastores — a deliberate
+simplification. To restore that segmentation, give Postgres and Redis their own
+`internal: true` network; note Docker then suppresses any `ports:` mapping on
+them, so you cannot publish them from there.
+
+**Reaching the database for administration.** Postgres is not published. Either
+run a client inside the network, or uncomment the loopback mapping in
+`compose.yml` and tunnel it:
+
+```bash
+# no exposure at all
+docker compose exec postgres psql -U postgres -d golang-restapi
+
+# with the loopback mapping uncommented in compose.yml
+ssh -L 5432:127.0.0.1:5432 user@host
+```
+
+Never publish it on `0.0.0.0` — Docker publishes bypass ufw, so that puts the
+database directly on the internet, and the container runs without TLS.
+
+Docker publishes ports by writing its own iptables rules, which are evaluated
+before ufw's — **ufw does not filter published container ports**. Keep the
+publish list minimal (as above) and use your provider's firewall for
+network-level filtering (Hetzner Firewall, Security Group); reach for
+`ufw-docker` only if you specifically need ufw to apply to containers. Set a
+real `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` before exposing Grafana at
+all.
+
+### 4. Behind Cloudflare
+
+When Cloudflare sits in front of Caddy, Caddy is no longer the first hop, so the
+incoming `X-Forwarded-For` can be attacker-controlled. Use the Cloudflare
+Caddyfile, which trusts only Cloudflare's published edge ranges and collapses the
+chain into a single verified client IP:
+
+```bash
+# 1. Refresh the CF ranges: rewrites only the `trusted_proxies static` line.
+./deployment/caddy/update-cloudflare-ips.sh
+
+# 2. Mount it.
+CADDYFILE=Caddyfile.cloudflare
+```
+
+- The script rewrites only the `trusted_proxies static ...` line in
+  `deployment/caddy/Caddyfile.cloudflare`, refusing to write an empty or
+  malformed list. Re-run it whenever Cloudflare announces new ranges.
+- `trusted_proxies static <CF ranges>` + `client_ip_headers CF-Connecting-IP`
+  make Caddy accept Cloudflare's forwarding headers **only** from CF peers. Both
+  are server-level options and must sit inside the Caddyfile's `servers { }`
+  block — Caddy rejects them at the top level.
+- The `header_up X-Forwarded-For {client_ip}` on `reverse_proxy` is **required**:
+  without it Caddy forwards the raw connection peer (the CF edge), so the audit
+  log would record Cloudflare instead of the visitor. `{client_ip}` resolves to
+  the verified client IP, so a spoofed `CF-Connecting-IP` from an untrusted peer
+  is ignored.
+- `TRUSTED_PROXIES` stays the project subnet (`APP_NET_SUBNET`): the API still
+  trusts exactly one hop (Caddy), and Caddy has already done all the edge
+  reasoning. Do not widen it to the Cloudflare ranges.
+- Restrict the origin's 80/443 in your provider's firewall to Cloudflare's
+  published IP ranges so the origin cannot be reached directly, bypassing CF.
+- Terminate TLS with a **Cloudflare Origin Certificate** on Caddy and set the CF
+  SSL/TLS mode to **Full (strict)**.
+
 ## Configuration
 
 All configuration comes from environment variables, optionally loaded from
@@ -323,7 +474,6 @@ section and then calls `Config.Validate()`.
 | `APP_NAME` | Service name | empty | Informational |
 | `APP_VERSION` | Version string | empty | Label on `app_info` metric |
 | `APP_PORT` | API listen port | empty (0) | Non-integer aborts startup |
-| `APP_BIND_ADDR` | API bind address | `127.0.0.1` | Loopback by default so a bare-metal dev server is not exposed on the LAN. Compose sets `0.0.0.0` so nginx and Prometheus can reach it |
 | `APP_ENV` | Environment | empty | Must be `dev` or `prod`; anything else fails validation |
 | `APP_INTERNAL_MODE` | Registration becomes admin-only | `false` | Parsed with `strconv.ParseBool` |
 | `METRICS_ENABLED` | Serve the `/metrics` sidecar | `APP_ENV=prod` | Unset follows the environment; an explicit `true`/`false` wins. Compose sets it so the local stack is scrapable |
@@ -764,8 +914,10 @@ Run the worker separately from the API: `make dev:worker`.
   unwinds), and recovers panics to count them, record the implied 500, and then
   re-panic to the outer recoverer.
 - **Exporter**: gated by `METRICS_ENABLED` (default: production), a separate
-  Fiber app serves `/metrics` on `APP_PORT + 1`. The API itself binds
-  `APP_BIND_ADDR:APP_PORT` — loopback by default, `0.0.0.0` in compose. The
+  Fiber app serves `/metrics` on `METRICS_PORT` (default `APP_PORT + 1`; compose
+  pins `9091` so the scrape target is stable and never tracks `APP_PORT`). The
+  API binds every interface on `APP_PORT`; what is reachable from outside is
+  decided solely by the compose `ports:` mapping — only Caddy publishes. The
   metrics sidecar is intentionally excluded from graceful shutdown.
 - **Health**: `GET /api/healthz` pings Postgres and Redis with a 2 s timeout.
   Any failure returns **503** with a `dependencies` map of the failing services;
@@ -822,6 +974,108 @@ make migration:clear    # roll back all (down-to 0)
 
 The `make migration:*` targets require the `goose` CLI and read `DB_*` from
 `.env`.
+
+## Backups
+
+Postgres is backed up by the `backup` sidecar (`deployment/backup/`): a nightly
+`pg_dump -Fc` logical dump with local GFS retention and an optional offsite copy
+to a **private** R2 bucket. Busybox `crond` runs
+`deployment/backup/backup-postgres.sh` at 03:15 wall-clock (container UTC), and
+its output is redirected to PID 1 so it appears in `docker logs backup`.
+
+| Stage | What | Cadence | Retention | Where |
+| --- | --- | --- | --- | --- |
+| 1. Dump | `pg_dump -Fc` (custom format), written `.partial` then renamed | Nightly 03:15 UTC | — | `backups/daily/<UTC-stamp>.dump` |
+| 2. Verify | `pg_restore --list` must succeed or the file is deleted and the run fails | Every run | — | in place |
+| 3. Local GFS | Copies promoted by date | Sunday → `weekly`, day 01 → `monthly` | `BACKUP_RETENTION_DAILY` (7) / `_WEEKLY` (4) / `_MONTHLY` (6), newest N kept | `backups/{daily,weekly,monthly}/` |
+| 4. Offsite | `rclone copy` to private R2, then age prune (`rclone delete --min-age`) | Every run, when `BACKUP_R2_BUCKET` is set | `BACKUP_R2_RETAIN_DAYS` (30) | `BACKUP_R2_BUCKET`/`BACKUP_PREFIX`/`<tier>/` |
+| 5. Guard | Refuses to run if `BACKUP_R2_BUCKET` equals the public `R2_BUCKET` | Every run with offsite enabled | — | — |
+
+- **RPO up to 24 h.** Dumps run nightly, so a host loss can drop everything
+  written since the last 03:15 run. With offsite enabled, the newest dump is
+  copied to a separate private bucket, so a total host loss still recovers.
+- **RTO in minutes.** A recovery is "restore one custom-format dump into a
+  fresh database" — minutes for this dataset size, plus the time to point the
+  API at it.
+- **Same-host dumps are not offsite.** `backups/` lives on the same host (and
+  volume) as Postgres, so it survives a bad migration but not a lost host. The
+  R2 copy is what makes it a real backup; leave `BACKUP_R2_BUCKET` empty only if
+  you accept local-only.
+- **Offsite must be a separate, private bucket.** The app's `R2_BUCKET` is
+  served from a public `pub-*.r2.dev`-style URL, so uploading dumps there would
+  publish the whole database. The script hard-refuses (non-zero exit) when
+  `BACKUP_R2_BUCKET` equals `R2_BUCKET`, before any upload. Use `rclone copy`,
+  never `sync`: mirroring would delete every remote copy if the local
+  `backups/` dir is ever lost.
+- **Deliberately not backed up:**
+  - **Redis** — covered by AOF persistence on the `redis-data` volume. It holds
+    throttle counters and access-token revocation markers; if the volume is
+    lost, the worst case is up to `AUTH_JWT_TTL` (15 min) of revoked-but-still
+    valid access tokens, then normal operation resumes.
+  - **Grafana** — provisioning and dashboards are checked into
+    `deployment/grafana/`, so datasources and dashboards are rebuilt from git on
+    boot; only ad-hoc local edits are lost.
+  - **Prometheus** — the TSDB is operational metrics, not business data, and is
+    itself capped by `--storage.tsdb.retention.time=15d`.
+
+**Known limits of this approach:**
+
+- **Scope: one database, no globals.** `pg_dump` covers `$DB_NAME` only. A second
+  database in the same cluster would be silently missed — move to `pg_dumpall`
+  if that ever happens. Roles/globals are not included either, so a restore into
+  a *fresh* cluster needs `pg_dumpall --globals-only` first; restoring into this
+  cluster is unaffected.
+- **Logical, not point-in-time.** You can roll back to last night, not to one
+  minute before a bad deploy: a corrupting migration or query costs everything
+  written since the last dump. Minutes-level RPO needs WAL archiving
+  (`pg_basebackup` plus pgBackRest/Barman) and is deliberately out of scope for
+  now. Revisit when RPO must be under a few hours, when a full restore starts
+  approaching your RTO budget, or when there is a staging box to rehearse PITR
+  restores on.
+- **No physical/whole-cluster copy.** This protects against corruption and a bad
+  migration, and (with offsite enabled) a lost host. It does not give you
+  byte-identical cluster restore or provider-level snapshots; add volume
+  snapshots at the provider if you want that coarse second layer.
+
+### Manual one-off backup
+
+```bash
+docker compose run --rm --entrypoint sh backup /backup-postgres.sh
+```
+
+### Restore runbook
+
+```bash
+# 0. Write the chosen dump somewhere you can keep (never overwrite the only copy).
+ls -1t backups/daily/          # newest first; pick a file
+DUMP=backups/daily/<stamp>.dump
+
+# 1. Stop writers so nothing mutates the DB mid-restore.
+docker compose stop api worker
+
+# 2. Restore over the existing database (drops objects that are in the dump).
+docker compose exec -T postgres \
+  pg_restore --clean --if-exists --no-owner -U "$DB_USER" -d "$DB_NAME" < "$DUMP"
+
+# 3. Verify, then bring the app back.
+docker compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -c '\dt'
+docker compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" -c 'select count(*) from users'
+docker compose start api worker
+```
+
+### Restore drill (prove a dump is restorable, without touching the live DB)
+
+```bash
+# Restore into a scratch database, list tables, check a row count, drop it.
+docker compose exec -T postgres createdb -U "$DB_USER" restoretest
+docker compose exec -T postgres pg_restore --no-owner -U "$DB_USER" -d restoretest < "$DUMP"
+docker compose exec -T postgres psql -U "$DB_USER" -d restoretest -c '\dt'
+docker compose exec -T postgres psql -U "$DB_USER" -d restoretest -c 'select count(*) from users'
+docker compose exec -T postgres dropdb -U "$DB_USER" restoretest
+```
+
+Run this after any schema change or before you rely on a dump. A backup that has
+never been restored is a hope, not a backup.
 
 ## Testing
 
