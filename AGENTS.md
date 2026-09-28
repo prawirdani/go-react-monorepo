@@ -11,7 +11,7 @@ client/                  # JS monorepo: apps/dashboard + packages/{api,schemas,q
 cmd/ internal/ pkg/ ...  # the Go module
 ```
 
-Turborepo only orchestrates packages that have a `package.json`, so the API is *not* a turbo package and Go is *not* a turbo task. The `client:` targets in the Makefile are the bridge, and CI runs the two toolchains as separate jobs.
+Turborepo only orchestrates packages that have a `package.json`, so the API is *not* a turbo package and Go is *not* a turbo task. The `client:` targets in the Makefile are the bridge, and CI runs the two toolchains as separate jobs. Run the API and the dashboard in **separate terminals** (`make dev`, `make client:dev`) — a combined `make` recipe survives neither Ctrl-C nor a rebuild loop cleanly, and each tool already watches its own tree.
 
 The client is a consumer of this API's contract. When a request/response shape, a JSON field name, or an error code changes, update `client/packages/schemas` and `client/packages/api` **in the same commit** — that atomicity is the point of the merge.
 
@@ -41,7 +41,6 @@ make client:dev        # Dashboard dev server (proxies /api to the API)
 make client:lint       # biome
 make client:build      # turbo build (vite build && tsc)
 make client:test       # vitest
-make stack             # API and dashboard together
 mockery             # Regenerate mocks (reads .mockery.yml)
 ```
 

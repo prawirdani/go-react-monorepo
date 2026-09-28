@@ -61,12 +61,6 @@ client\:build:
 client\:test:
 	@cd client && pnpm test
 
-# API + dashboard together, for working on both halves at once. The dashboard
-# proxies `/api` to the API (client/apps/dashboard/.env -> VITE_PROXY_TARGET).
-# `trap` kills the whole process group on Ctrl-C; air owns its own child.
-stack:
-	@trap 'kill 0' EXIT; ( cd client && pnpm dev ) & air -c .air.toml
-
 # Developer CLI. Run `make cli` (or `go run ./cmd/cli help`) for subcommands.
 cli:
 	@go run ./cmd/cli $(ARGS)
