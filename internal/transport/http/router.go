@@ -23,9 +23,8 @@ func NewRouter(cfg *config.Config) *fiber.App {
 		// header only when ProxyHeader is non-empty, and its default is "". With
 		// it unset, c.IP() silently falls back to the peer address — the proxy
 		// container — so every audit row recorded the proxy instead of the client.
-		// TODO: This broke dev
-		// ProxyHeader: fiber.HeaderXForwardedFor,
-		BodyLimit: MaxBodySize,
+		ProxyHeader: fiber.HeaderXForwardedFor,
+		BodyLimit:   MaxBodySize,
 		ErrorHandler: func(c fiber.Ctx, err error) error {
 			e := ParseError(err)
 			err = c.Status(e.status).JSON(map[string]any{"error": e})
