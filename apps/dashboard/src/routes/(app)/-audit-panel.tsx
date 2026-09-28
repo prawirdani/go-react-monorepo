@@ -66,8 +66,9 @@ const SKELETON_ROWS = [0, 1, 2, 3, 4] as const
 const SKELETON_ATTRS = ["actor", "entity"]
 
 /**
- * Live audit log. Owns its own query and loading state — the home route has no
- * loader for it, so the dashboard never blocks on the audit request.
+ * Live audit log. Owns its own query and loading state — the home route's
+ * prefetch is fire-and-forget and gated on `audit.read`, so the dashboard never
+ * blocks on the audit request and a non-admin never issues one.
  */
 export function AuditPanel({ className }: { className?: string }) {
   const t = useTranslations("app")
