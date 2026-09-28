@@ -21,7 +21,8 @@ export class AuditAPI {
 	 * requires audit.read permission
 	 *
 	 * Query params: sort, order, page, limit, entity (comma-joined multi-select),
-	 * actor (name or exact id), and date/from/to — `date` wins over `from`/`to`.
+	 * actor (name or exact id), and date/from/to read in the `tz` zone — the
+	 * bounds are bare calendar days, and `date` wins over `from`/`to`.
 	 */
 	async listAuditEntry(
 		params: AuditSearchQuery,
@@ -42,6 +43,12 @@ export class AuditAPI {
 		} else {
 			if (params.from) query.set("from", params.from);
 			if (params.to) query.set("to", params.to);
+		}
+
+		// `tz` names the zone the bare dates are read in. The backend falls back to UTC
+		// when it is absent or unknown, so only send it alongside a bound.
+		if (params.tz && (params.date || params.from || params.to)) {
+			query.set("tz", params.tz);
 		}
 
 		return await this.client.Queryable<AuditEntry, AuditListMeta>(

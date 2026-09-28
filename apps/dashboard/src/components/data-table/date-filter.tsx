@@ -21,16 +21,6 @@ const DATE_FNS_LOCALES = {
   id: idLocale,
 } satisfies Record<AppLocale, DayPickerLocale>
 
-/** ISO datetime -> the local calendar day, for seeding the picker. */
-function isoToDay(iso: string): string {
-  if (!iso) return ""
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ""
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${date.getFullYear()}-${month}-${day}`
-}
-
 /** "YYYY-MM-DD" -> a local-midnight Date (what react-day-picker selects). */
 function dayToDate(day: string): Date | undefined {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day)
@@ -70,13 +60,13 @@ export function DateFilter({
     if (next) {
       // Seed from the applied filter so reopening shows what is in effect.
       if (value.date) {
-        setRange({ from: dayToDate(isoToDay(value.date)) })
+        setRange({ from: dayToDate(value.date) })
       } else if (value.from || value.to) {
         // `dayToDate("")` is undefined, so a from-only or to-only filter seeds
         // as the open end of the range instead of being dropped.
         setRange({
-          from: dayToDate(isoToDay(value.from)),
-          to: dayToDate(isoToDay(value.to)),
+          from: dayToDate(value.from),
+          to: dayToDate(value.to),
         })
       } else {
         setRange(undefined)
@@ -92,8 +82,8 @@ export function DateFilter({
     if (from && to) {
       onSetRange({ from: dateToDay(from), to: dateToDay(to) })
     } else if (from) {
-      // A single picked day goes out as the `date` param — a UTC datetime of
-      // that local day (see use-date-filtering).
+      // A single picked day goes out as the `date` param — a bare calendar day
+      // (see use-date-filtering).
       onSetDate(dateToDay(from))
     }
 
