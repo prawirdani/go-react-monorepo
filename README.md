@@ -837,12 +837,15 @@ sentinels (invalid path param, multipart, upload errors, rate limit) live in
   security *events*, not state changes. They are emitted as structured WARN logs
   so the table stays clean and the unauthenticated login path takes no write.
 - `GET /api/audit/` lists entries (requires `audit.read`). It accepts
-  `entity`, `actor`, `date`/`from`/`to`, `sort`/`order` and `page`/`limit`, and
-  reports the applied query in `meta`. `actor` matches `actor_id` exactly when it
-  is a full UUID and otherwise matches the actor's name with `ILIKE`. A bare
-  `date` is that UTC day; a full timestamp starts a 24-hour window at the instant
-  sent, so a client can express its own day boundaries without the server knowing
-  its timezone.
+  `entity`, `actor`, `date`/`from`/`to`, `tz`, `sort`/`order` and `page`/`limit`,
+  and reports the applied query in `meta`. `actor` matches `actor_id` exactly when
+  it is a full UUID and otherwise matches the actor's name with `ILIKE`. The date
+  bounds are bare calendar dates (`2006-01-02`) read in `tz`; `from` is inclusive
+  and `to` covers its whole day, so
+  `from=2026-09-01&to=2026-09-28&tz=Asia/Jakarta` selects through the end of the
+  28th in Jakarta. An absent or unknown zone falls back to UTC, and `meta` reports
+  the zone actually used. `date` is the single-day shortcut and wins over
+  `from`/`to`.
 
 ## Messaging and the worker
 

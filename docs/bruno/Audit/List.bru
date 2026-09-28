@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17T07:00:00Z&to=2026-09-21T11:02:33Z&entity=session,user,registration_token&actor={{userID}}
+  url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&entity=session,user,registration_token&actor={{userID}}&date=2026-09-28&tz=Asia/Jakarta
   body: none
   auth: inherit
 }
@@ -15,10 +15,12 @@ params:query {
   order: DESC
   page: 1
   limit: 3
-  from: 2026-09-17T07:00:00Z
-  to: 2026-09-21T11:02:33Z
   entity: session,user,registration_token
   actor: {{userID}}
+  date: 2026-09-28
+  tz: Asia/Jakarta
+  ~from: 2026-09-17T07:00:00Z
+  ~to: 2026-09-21T11:02:33Z
 }
 
 settings {
@@ -29,19 +31,19 @@ settings {
 
 example {
   name: Success
-
+  
   request: {
-    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17T07:00:00Z&to=2026-09-21T11:02:33Z&entity=session,user,registration_token&actor={{userID}}
+    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17&to=2026-09-21&tz=Asia/Jakarta&entity=session,user,registration_token&actor={{userID}}
     method: GET
     mode: none
   }
-
+  
   response: {
     status: {
       code: 200
       text: OK
     }
-
+  
     body: {
       type: json
       content: '''
@@ -118,8 +120,9 @@ example {
                 "registration_token"
               ],
               "actor": "01a0b000-d7f4-7568-8831-c4f447b80868",
-              "from": "2026-09-17T07:00:00Z",
-              "to": "2026-09-21T11:02:33Z"
+              "from": "2026-09-17",
+              "to": "2026-09-21",
+              "tz": "Asia/Jakarta"
             },
             "sort": {
               "by": "created_at",
@@ -140,19 +143,19 @@ example {
 
 example {
   name: Unauthenticated
-
+  
   request: {
-    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17T07:00:00Z&to=2026-09-21T11:02:33Z&entity=session,user,registration_token&actor={{userID}}
+    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17&to=2026-09-21&tz=Asia/Jakarta&entity=session,user,registration_token&actor={{userID}}
     method: GET
     mode: none
   }
-
+  
   response: {
     status: {
       code: 401
       text: Unauthorized
     }
-
+  
     body: {
       type: json
       content: '''
@@ -170,19 +173,19 @@ example {
 
 example {
   name: Forbidden
-
+  
   request: {
-    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17T07:00:00Z&to=2026-09-21T11:02:33Z&entity=session,user,registration_token&actor={{userID}}
+    url: {{BASE_URL}}/{{auditPath}}/?sort=created_at&order=DESC&page=1&limit=3&from=2026-09-17&to=2026-09-21&tz=Asia/Jakarta&entity=session,user,registration_token&actor={{userID}}
     method: GET
     mode: none
   }
-
+  
   response: {
     status: {
       code: 403
       text: Forbidden
     }
-
+  
     body: {
       type: json
       content: '''

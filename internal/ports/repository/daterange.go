@@ -5,17 +5,16 @@ import "time"
 // DateRange filters a timestamp column by a half-open interval [From, To).
 // It binds from the query string and sanitises itself in place, so the response
 // metadata echoes exactly what was applied, like Sorting and Pagination.
+//
+// The bounds are calendar dates read in TZ, not instants: the caller says which
+// day it means and which zone it is thinking in, and the server works out the
+// offsets. An absent or unknown TZ falls back to UTC, and the echo reports the
+// zone the query actually ran in.
 type DateRange struct {
 	Date string `query:"date" json:"date,omitempty"`
 	From string `query:"from" json:"from,omitempty"`
 	To   string `query:"to"   json:"to,omitempty"`
-}
-
-// ParseDate reads a calendar date (2006-01-02) as UTC, or an RFC3339 timestamp
-// that carries its own offset for a precise instant.
-func ParseDate(value string) (time.Time, error) {
-	t, _, err := parseBound(value)
-	return t, err
+	TZ   string `query:"tz"   json:"tz,omitempty"`
 }
 
 // Bounds returns the half-open interval the filter asks for and rewrites the
@@ -24,71 +23,79 @@ func ParseDate(value string) (time.Time, error) {
 // values the domain does not recognise. (Surfacing 422 for a malformed date needs
 // a Validate method the handler calls; deliberately not added here.)
 //
-// A bare calendar date means that whole UTC day. A full timestamp is taken as
-// the start of a 24-hour window: the caller works out its own day boundaries and
-// sends the exact instant — its offset travels in the value — so the server
-// never needs to know a timezone. from/to are used as the instants themselves.
+// Every bound is a bare calendar date (2006-01-02) read in TZ; a timestamp is
+// malformed rather than an instant, because with a zone supplied separately there
+// is only one way to name a day. `from` is inclusive and `to` covers its whole
+// day, so from=2026-09-01&to=2026-09-28 selects through the end of the 28th.
+// Days are stepped with AddDate rather than 24h so a DST transition cannot
+// shorten or lengthen the window.
 func (d *DateRange) Bounds() (from, to time.Time, ok bool) {
+	loc := d.location()
+
 	// date wins over from/to; a malformed date falls through to them.
 	if d.Date != "" {
-		if t, dateOnly, err := parseBound(d.Date); err == nil {
-			d.Date = canonicalDate(t, dateOnly)
+		if t, err := parseBound(d.Date, loc); err == nil {
+			d.Date = t.Format(time.DateOnly)
 			d.From, d.To = "", ""
+			d.TZ = loc.String()
 
 			// The window starts at the instant the caller sent, so `from` is
 			// exactly that value and the echoed metadata describes what the
 			// query bound to.
-			return t, t.Add(24 * time.Hour), true
+			return t, t.AddDate(0, 0, 1), true
 		}
 		d.Date = ""
 	}
 
 	if d.From != "" {
-		if t, dateOnly, err := parseBound(d.From); err == nil {
+		if t, err := parseBound(d.From, loc); err == nil {
 			from = t
 			ok = true
-			d.From = canonicalDate(t, dateOnly)
+			d.From = t.Format(time.DateOnly)
 		} else {
 			d.From = ""
 		}
 	}
 
 	if d.To != "" {
-		if t, dateOnly, err := parseBound(d.To); err == nil {
-			to = t
-			if dateOnly {
-				// A bare `to` date includes that whole day.
-				to = t.AddDate(0, 0, 1)
-			}
+		if t, err := parseBound(d.To, loc); err == nil {
+			// A `to` date includes that whole day.
+			to = t.AddDate(0, 0, 1)
 			ok = true
-			d.To = canonicalDate(t, dateOnly)
+			d.To = t.Format(time.DateOnly)
 		} else {
 			d.To = ""
 		}
 	}
 
-	return from, to, ok
-}
-
-// parseBound parses a bound as a bare calendar date (UTC) or an RFC3339 instant
-// that carries its own offset. dateOnly reports which form matched, so the
-// canonical echo can keep the user's input form.
-func parseBound(value string) (t time.Time, dateOnly bool, err error) {
-	if t, err = time.Parse(time.DateOnly, value); err == nil {
-		return t, true, nil
+	if !ok {
+		// Nothing was applied, so there is no zone to report either.
+		d.TZ = ""
+		return from, to, false
 	}
 
-	t, err = time.Parse(time.RFC3339, value)
-	return t, false, err
+	d.TZ = loc.String()
+
+	return from, to, true
 }
 
-// canonicalDate renders a parsed bound in the form the input used: a bare date
-// stays a bare date, and a timestamp keeps its offset and any fractional second,
-// so the echoed metadata describes the same instant the caller sent.
-func canonicalDate(t time.Time, dateOnly bool) string {
-	if dateOnly {
-		return t.Format(time.DateOnly)
+// location resolves the tz parameter, falling back to UTC when it is absent or
+// not a known IANA name. The unusable value is never echoed back: the metadata
+// describes the zone the query ran in.
+func (d *DateRange) location() *time.Location {
+	if d.TZ == "" {
+		return time.UTC
 	}
 
-	return t.Format(time.RFC3339Nano)
+	loc, err := time.LoadLocation(d.TZ)
+	if err != nil {
+		return time.UTC
+	}
+
+	return loc
+}
+
+// parseBound reads a bare calendar date as midnight in loc.
+func parseBound(value string, loc *time.Location) (time.Time, error) {
+	return time.ParseInLocation(time.DateOnly, value, loc)
 }
