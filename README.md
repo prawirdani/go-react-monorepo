@@ -10,14 +10,14 @@ The goal is a reference implementation you can rename and extend: strict layer
 boundaries, interface-driven dependencies, manual dependency injection, and
 tests that never touch a real database, Redis, or SMTP server.
 
+The dashboard this API serves lives in the same repository, under [`client/`](./client/README.md): a
+self-contained pnpm + Turborepo monorepo holding `apps/dashboard` and the packages it shares. One
+commit therefore changes both halves, and when a request/response shape, a JSON field name, or an
+error code moves, the client's zod schemas move with it — see [Client](#client).
+
 - Module: `github.com/prawirdani/golang-restapi`
 - Go: `1.26.5` (see `go.mod`)
 - License: MIT (see `LICENSE`)
-
-The dashboard this API serves lives in the same repository: a pnpm + Turborepo
-JS monorepo in [`client/`](./client/README.md) (`apps/dashboard` plus shared
-packages). One commit changes both halves, and the client's zod schemas mirror
-this API's DTOs — see [`client/AGENTS.md`](./client/AGENTS.md).
 
 ---
 
@@ -31,6 +31,7 @@ this API's DTOs — see [`client/AGENTS.md`](./client/AGENTS.md).
   - [Dependency injection](#dependency-injection)
   - [Request flow](#request-flow)
 - [Project layout](#project-layout)
+- [Client](#client)
 - [Getting started](#getting-started)
 - [Deployment](#deployment)
 - [Configuration](#configuration)
@@ -108,6 +109,10 @@ Direct dependencies (from `go.mod`) include `github.com/aws/aws-sdk-go-v2`
 `github.com/redis/go-redis/v9`, `github.com/stretchr/testify`, `golang.org/x/crypto`,
 `golang.org/x/sync`, `golang.org/x/text`, `gopkg.in/gomail.v2`, and
 `github.com/rs/zerolog`.
+
+The dashboard under `client/` carries its own stack and toolchain — React 19, Vite, TanStack
+Router/Query/Form, Tailwind with a small design system, and Biome — described in
+[`client/README.md`](./client/README.md). Nothing in this API's tooling depends on it.
 
 ## Architecture
 
@@ -238,8 +243,33 @@ deployment/
 
 compose.yml            api + worker + migrate + postgres + redis + caddy + prometheus + grafana
 Dockerfile             multi-stage build (distroless runtime)
-Makefile               dev/build/test/lint/migration/cli targets
+Makefile               dev/build/test/lint/migration/cli/client targets
+.air.toml              Air config for the API (excludes client/, which HMR rewrites constantly)
+.air.worker.toml       Air config for the worker, same exclusion
+.golangci.yml          golangci-lint v2 config; `make lint` scopes its package paths
+
+client/                the dashboard: a self-contained pnpm + Turborepo monorepo
+  apps/dashboard/      Vite + React 19 app (TanStack Router/Query/Form, Biome)
+  packages/            api (fetch client), schemas (zod), queries, ui, utils, i18n, config
+  package.json pnpm-workspace.yaml turbo.json pnpm-lock.yaml
+  AGENTS.md            conventions for working in the client half
 ```
+
+## Client
+
+`client/` is a pnpm 10 + Turborepo workspace, independent of the Go module: it has its own
+`package.json` and lockfile, and Turborepo only ever orchestrates packages that have a
+`package.json`, so the API is not a Turbo task and Go is not a Turbo package. The `make client:*`
+targets are the bridge.
+
+The client consumes this API's contract. A change to a request/response shape, a JSON field name
+(`access_token`, `entity_id`, …), or an error code is not finished until the zod schemas in
+`client/packages/schemas` and the client in `client/packages/api` agree with it — that is the whole
+reason the two live in one repository. Error codes and the response envelope are described in
+[Error handling](#error-handling).
+
+Start there with [`client/README.md`](./client/README.md) for the frontend stack and
+[`client/AGENTS.md`](./client/AGENTS.md) for its conventions.
 
 ## Getting started
 
@@ -252,6 +282,8 @@ Makefile               dev/build/test/lint/migration/cli targets
   `make migration:*` targets.
 - Optional: [Air](https://github.com/cosmtrek/air) for `make dev` /
   `make dev:worker`, and `golangci-lint` v2 for `make lint`.
+- For the dashboard: Node 24 and pnpm 10 (`corepack enable`). Only needed if you
+  work on `client/`.
 
 ### 1. Start the stack
 
@@ -331,6 +363,24 @@ make run          # run ./bin/api
 the `Dockerfile` copies both into a distroless runtime image. The API is the
 default `CMD`; the `worker` compose service overrides it with `./worker`.
 
+### 6. Run the dashboard (optional)
+
+The dashboard is a separate process with its own toolchain, so it gets its own terminal:
+
+```bash
+make client:install                                      # pnpm install, once
+cp client/apps/dashboard/example.env client/apps/dashboard/.env
+make client:dev                                          # Vite on :$VITE_PORT, default 3001
+```
+
+It talks to the API at a relative `/api`, and in development Vite proxies that to
+`VITE_PROXY_TARGET` from `client/apps/dashboard/.env` (default `http://localhost:8080`). That is why
+`VITE_API_URL` stays empty locally — same origin, no CORS to configure. Set it to an absolute
+origin only when the API is deployed on a different domain; `example.env` documents both cases.
+
+Nothing serves the built dashboard in production yet: `deployment/caddy/Caddyfile` only
+reverse-proxies to the API, so `client/apps/dashboard/dist` is not deployed by anything.
+
 ## Deployment
 
 `deployment/DEPLOYMENT.md` is the step-by-step preparation checklist (prerequisites,
@@ -339,6 +389,11 @@ known gaps to read before go-live). This section is the reference material it li
 
 The compose stack is deployment-ready as-is. What changes in production is the
 Caddy site address, the published ports, and `APP_ENV`.
+
+This stack deploys the API. Nothing here serves the built dashboard —
+`deployment/caddy/Caddyfile` only reverse-proxies to the API — so shipping
+`client/apps/dashboard/dist` (a static host, or embedding it in the Go binary) is a separate
+decision that has not been made yet.
 
 ### 1. Point Caddy at a domain
 
@@ -782,6 +837,12 @@ an OpenAPI spec is planned. Until it lands, `cmd/api/server.go` is the source of
 truth for the mounted routes and `internal/transport/http/` for the handler
 contracts.
 
+The dashboard in `client/` mirrors those contracts by hand — zod schemas in
+`client/packages/schemas`, the fetch client in `client/packages/api`. That mirror is the reason both
+halves live in one repository, and the reason a shape, field-name or error-code change is only
+finished once the client agrees with it. Nothing checks the two sides against each other yet; a
+generated contract test is the intended next step.
+
 All application routes are mounted under the `/api` prefix. Authenticated
 routes accept the access token from the `access_token` cookie or the
 `Authorization: Bearer <token>` header. Request bodies are limited to 5 MB
@@ -1112,8 +1173,11 @@ Unit tests only; they never touch a real database, Redis, or SMTP server.
 - Run the suite:
 
   ```bash
-  make test   # go test -race -v -count=1 ./... -cover
+  make test   # go test -race -v -count=1 <the Go source roots> -cover
   ```
+
+The dashboard has its own suite — `make client:test` (vitest) — and neither toolchain runs the
+other's tests.
 
 ## Development tooling
 
@@ -1122,17 +1186,22 @@ Unit tests only; they never touch a real database, Redis, or SMTP server.
 | `make dev` | `air -c .air.toml` | API server with hot reload |
 | `make dev:worker` | `air -c .air.worker.toml` | worker with hot reload |
 | `make tidy` | `go mod tidy` | Tidy modules |
-| `make lint` | `golangci-lint run` | Lint (v2 config in `.golangci.yml`) |
-| `make test` | `go test -race -v -count=1 ./... -cover` | Full test suite |
+| `make lint` | `golangci-lint run <the Go source roots>` | Lint (v2 config in `.golangci.yml`) |
+| `make test` | `go test -race -v -count=1 <the Go source roots> -cover` | Full test suite |
 | `make build` | `CGO_ENABLED=0 GOOS=linux go build …` | Static Linux binaries at `./bin/api` and `./bin/worker` |
 | `make run` | `./bin/api` | Run the built binary |
 | `make cli` | `go run ./cmd/cli $(ARGS)` | Developer CLI (currently `permissions`) |
-| `make permissions` | `go run ./cmd/cli permissions` | Dump all permission codes as a JS array |
+| `make permissions` | `go run ./cmd/cli permissions` | Dump all permission codes as a JS array (stdout; the client's registry at `client/packages/schemas/src/permission.ts` is still hand-maintained) |
 | `make migration:status` | `goose … status` | Migration status |
 | `make migration:up` | `goose … up` | Apply migrations |
 | `make migration:down` | `goose … down` | Roll back one migration |
 | `make migration:clear` | `goose … down-to 0` | Roll back everything |
 | `make migration:create` | `goose … create <name> sql` | Scaffold a migration |
+
+`make lint` and `make test` take their package paths from `GO_PACKAGES` in the Makefile
+(`./cmd/... ./internal/... ./pkg/... ./config/...`) rather than `./...`, because the module root now
+also holds `client/`: `./...` walks it, and pnpm's symlinked `node_modules` would be walked too.
+Add a new top-level Go directory to that variable.
 
 `golangci-lint` must be **v2.x**; the config header recommends:
 
@@ -1140,8 +1209,22 @@ Unit tests only; they never touch a real database, Redis, or SMTP server.
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 ```
 
+### Client targets
+
+| Target | Purpose |
+| --- | --- |
+| `make client:install` | `pnpm install` in `client/` |
+| `make client:dev` | dashboard dev server (Vite, proxies `/api` to the API) |
+| `make client:lint` | Biome |
+| `make client:build` | Turborepo build (`vite build` + `tsc` per app) |
+| `make client:test` | vitest |
+```
+
 ## Conventions
 
+- **Contract changes ship with the client.** A request/response shape, a JSON field name, or an
+  error code is half a change until `client/packages/schemas` and `client/packages/api` match it.
+  Both halves are in this repository so that happens in one commit.
 - **Import aliases are fixed**: `redisInfra` for
   `internal/infrastructure/redis`, `strs` for `pkg/strings`, and `sharedMocks`
   for `internal/testing/mocks`. `internal/transport/http` is `package http` and
