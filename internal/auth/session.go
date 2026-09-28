@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/apperr"
-	"github.com/prawirdani/golang-restapi/internal/audit"
-	"github.com/prawirdani/golang-restapi/pkg/nullable"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
+	"github.com/prawirdani/go-react-monorepo/pkg/nullable"
 )
 
 var (

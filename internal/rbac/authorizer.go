@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
 )
 
 var ErrUnauthorizedPermission = apperr.ForbiddenErr("unauthorized action", "RBAC_UNAUTHORIZED_PERM")

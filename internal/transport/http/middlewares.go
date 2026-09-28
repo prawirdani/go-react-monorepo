@@ -10,11 +10,11 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/helmet"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
-	"github.com/prawirdani/golang-restapi/internal/audit"
-	"github.com/prawirdani/golang-restapi/internal/auth"
-	"github.com/prawirdani/golang-restapi/internal/ports/revocation"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
-	"github.com/prawirdani/golang-restapi/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
+	"github.com/prawirdani/go-react-monorepo/internal/auth"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/revocation"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
 )
 
 // revocationCheckTimeout bounds the access-token revocation lookup so a slow or

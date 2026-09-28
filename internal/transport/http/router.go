@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/prawirdani/golang-restapi/config"
+	"github.com/prawirdani/go-react-monorepo/config"
 )
 
 func NewRouter(cfg *config.Config) *fiber.App {

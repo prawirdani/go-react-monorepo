@@ -1,8 +1,8 @@
 package user
 
 import (
-	"github.com/prawirdani/golang-restapi/internal/ports/repository"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/repository"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
 )
 
 type Filter struct {

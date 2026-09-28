@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/prawirdani/golang-restapi/internal/rbac"
-	"github.com/prawirdani/golang-restapi/pkg/nullable"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/pkg/nullable"
 )
 
 // Action names a recorded event using the shared authorization grammar:

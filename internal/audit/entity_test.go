@@ -3,7 +3,7 @@ package audit_test
 import (
 	"testing"
 
-	"github.com/prawirdani/golang-restapi/internal/audit"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
 	"github.com/stretchr/testify/assert"
 )
 

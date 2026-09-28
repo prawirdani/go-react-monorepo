@@ -11,16 +11,16 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/prawirdani/golang-restapi/config"
-	"github.com/prawirdani/golang-restapi/internal/apperr"
-	"github.com/prawirdani/golang-restapi/internal/audit"
-	"github.com/prawirdani/golang-restapi/internal/auth"
-	"github.com/prawirdani/golang-restapi/internal/auth/mocks"
-	"github.com/prawirdani/golang-restapi/internal/ports/throttle"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
-	sharedMocks "github.com/prawirdani/golang-restapi/internal/testing/mocks"
-	"github.com/prawirdani/golang-restapi/internal/user"
-	"github.com/prawirdani/golang-restapi/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/config"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
+	"github.com/prawirdani/go-react-monorepo/internal/auth"
+	"github.com/prawirdani/go-react-monorepo/internal/auth/mocks"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/throttle"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
+	sharedMocks "github.com/prawirdani/go-react-monorepo/internal/testing/mocks"
+	"github.com/prawirdani/go-react-monorepo/internal/user"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
 )
 
 func init() {

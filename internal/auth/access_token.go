@@ -12,8 +12,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/apperr"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
 )
 
 var (

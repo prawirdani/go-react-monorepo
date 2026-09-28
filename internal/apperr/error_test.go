@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/prawirdani/golang-restapi/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
 	"github.com/stretchr/testify/assert"
 )
 

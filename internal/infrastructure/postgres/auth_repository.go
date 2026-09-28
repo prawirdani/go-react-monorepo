@@ -8,8 +8,8 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/prawirdani/golang-restapi/internal/apperr"
-	"github.com/prawirdani/golang-restapi/internal/auth"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/auth"
 )
 
 type authRepository struct {

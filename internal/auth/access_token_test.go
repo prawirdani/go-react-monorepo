@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

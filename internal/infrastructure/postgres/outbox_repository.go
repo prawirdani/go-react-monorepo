@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/prawirdani/golang-restapi/internal/ports/outbox"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/outbox"
 )
 
 type outboxRepository struct {

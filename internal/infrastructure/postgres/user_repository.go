@@ -8,10 +8,10 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/prawirdani/golang-restapi/internal/apperr"
-	"github.com/prawirdani/golang-restapi/internal/ports/repository"
-	"github.com/prawirdani/golang-restapi/internal/user"
-	strs "github.com/prawirdani/golang-restapi/pkg/strings"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/repository"
+	"github.com/prawirdani/go-react-monorepo/internal/user"
+	strs "github.com/prawirdani/go-react-monorepo/pkg/strings"
 )
 
 type userRepository struct {

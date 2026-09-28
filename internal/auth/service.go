@@ -13,15 +13,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/config"
-	"github.com/prawirdani/golang-restapi/internal/apperr"
-	"github.com/prawirdani/golang-restapi/internal/audit"
-	"github.com/prawirdani/golang-restapi/internal/ports/repository"
-	"github.com/prawirdani/golang-restapi/internal/ports/revocation"
-	"github.com/prawirdani/golang-restapi/internal/ports/throttle"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
-	"github.com/prawirdani/golang-restapi/internal/user"
-	"github.com/prawirdani/golang-restapi/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/config"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/repository"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/revocation"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/throttle"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/internal/user"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/prawirdani/golang-restapi/internal/ports/repository"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

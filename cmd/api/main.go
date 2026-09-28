@@ -10,9 +10,9 @@ import (
 
 	stdlog "log"
 
-	"github.com/prawirdani/golang-restapi/config"
-	"github.com/prawirdani/golang-restapi/internal/infrastructure/postgres"
-	"github.com/prawirdani/golang-restapi/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/config"
+	"github.com/prawirdani/go-react-monorepo/internal/infrastructure/postgres"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
 	"github.com/redis/go-redis/v9"
 )
 

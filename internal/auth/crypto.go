@@ -11,7 +11,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/prawirdani/golang-restapi/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
 	"golang.org/x/crypto/bcrypt"
 )
 

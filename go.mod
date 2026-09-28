@@ -1,4 +1,4 @@
-module github.com/prawirdani/golang-restapi
+module github.com/prawirdani/go-react-monorepo
 
 go 1.26.5
 

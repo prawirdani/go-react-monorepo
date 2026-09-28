@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/prawirdani/golang-restapi/pkg/validator"
+	"github.com/prawirdani/go-react-monorepo/pkg/validator"
 )
 
 // MaxBodySize maximum read size from request body

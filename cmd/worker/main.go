@@ -8,13 +8,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/prawirdani/golang-restapi/config"
-	"github.com/prawirdani/golang-restapi/internal/auth"
-	"github.com/prawirdani/golang-restapi/internal/infrastructure/postgres"
-	"github.com/prawirdani/golang-restapi/internal/ports/outbox"
-	"github.com/prawirdani/golang-restapi/internal/worker"
-	"github.com/prawirdani/golang-restapi/pkg/log"
-	"github.com/prawirdani/golang-restapi/pkg/mailer"
+	"github.com/prawirdani/go-react-monorepo/config"
+	"github.com/prawirdani/go-react-monorepo/internal/auth"
+	"github.com/prawirdani/go-react-monorepo/internal/infrastructure/postgres"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/outbox"
+	"github.com/prawirdani/go-react-monorepo/internal/worker"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/pkg/mailer"
 )
 
 func main() {

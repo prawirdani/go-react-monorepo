@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prawirdani/golang-restapi/config"
+	"github.com/prawirdani/go-react-monorepo/config"
 	"gopkg.in/gomail.v2"
 )
 

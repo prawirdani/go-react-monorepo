@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
-	"github.com/prawirdani/golang-restapi/pkg/nullable"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/pkg/nullable"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

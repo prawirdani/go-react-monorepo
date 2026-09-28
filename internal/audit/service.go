@@ -3,7 +3,7 @@ package audit
 import (
 	"context"
 
-	"github.com/prawirdani/golang-restapi/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
 )
 
 const (

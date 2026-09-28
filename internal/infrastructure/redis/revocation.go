@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/ports/revocation"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/revocation"
 	"github.com/redis/go-redis/v9"
 )
 

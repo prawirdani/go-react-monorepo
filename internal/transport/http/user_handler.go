@@ -3,9 +3,9 @@ package http
 import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
-	"github.com/prawirdani/golang-restapi/internal/user"
-	"github.com/prawirdani/golang-restapi/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/internal/user"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
 )
 
 type UserHandler struct {

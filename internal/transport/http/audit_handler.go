@@ -2,8 +2,8 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/prawirdani/golang-restapi/internal/audit"
-	"github.com/prawirdani/golang-restapi/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
 )
 
 type AuditHandler struct {

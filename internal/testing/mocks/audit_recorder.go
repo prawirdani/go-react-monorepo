@@ -7,7 +7,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/prawirdani/golang-restapi/internal/audit"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
 	mock "github.com/stretchr/testify/mock"
 )
 

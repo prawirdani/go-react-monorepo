@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prawirdani/golang-restapi/internal/apperr"
-	"github.com/prawirdani/golang-restapi/pkg/nullable"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/pkg/nullable"
 )
 
 // ErrInvalidRegistrationToken covers unknown, expired, revoked, and

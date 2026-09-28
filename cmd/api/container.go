@@ -1,15 +1,15 @@
 package main
 
 import (
-	"github.com/prawirdani/golang-restapi/config"
-	"github.com/prawirdani/golang-restapi/internal/audit"
-	"github.com/prawirdani/golang-restapi/internal/auth"
-	"github.com/prawirdani/golang-restapi/internal/infrastructure/postgres"
-	"github.com/prawirdani/golang-restapi/internal/infrastructure/r2"
-	redisInfra "github.com/prawirdani/golang-restapi/internal/infrastructure/redis"
-	"github.com/prawirdani/golang-restapi/internal/ports/revocation"
-	"github.com/prawirdani/golang-restapi/internal/rbac"
-	"github.com/prawirdani/golang-restapi/internal/user"
+	"github.com/prawirdani/go-react-monorepo/config"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
+	"github.com/prawirdani/go-react-monorepo/internal/auth"
+	"github.com/prawirdani/go-react-monorepo/internal/infrastructure/postgres"
+	"github.com/prawirdani/go-react-monorepo/internal/infrastructure/r2"
+	redisInfra "github.com/prawirdani/go-react-monorepo/internal/infrastructure/redis"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/revocation"
+	"github.com/prawirdani/go-react-monorepo/internal/rbac"
+	"github.com/prawirdani/go-react-monorepo/internal/user"
 	"github.com/redis/go-redis/v9"
 )
 

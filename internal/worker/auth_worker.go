@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prawirdani/golang-restapi/internal/auth"
-	"github.com/prawirdani/golang-restapi/pkg/mailer"
+	"github.com/prawirdani/go-react-monorepo/internal/auth"
+	"github.com/prawirdani/go-react-monorepo/pkg/mailer"
 )
 
 type AuthWorker struct {

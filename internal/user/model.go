@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/prawirdani/golang-restapi/pkg/strings"
+	"github.com/prawirdani/go-react-monorepo/pkg/strings"
 )
 
 type UpdateUserInput struct {

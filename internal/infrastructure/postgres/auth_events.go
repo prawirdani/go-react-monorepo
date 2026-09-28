@@ -3,8 +3,8 @@ package postgres
 import (
 	"context"
 
-	"github.com/prawirdani/golang-restapi/internal/auth"
-	"github.com/prawirdani/golang-restapi/internal/ports/outbox"
+	"github.com/prawirdani/go-react-monorepo/internal/auth"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/outbox"
 )
 
 // authEventProducer enqueues auth notification events into the transactional

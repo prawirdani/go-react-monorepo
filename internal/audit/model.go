@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/ports/repository"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/repository"
 )
 
 // auth.register

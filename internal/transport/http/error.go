@@ -12,8 +12,8 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/schema"
-	"github.com/prawirdani/golang-restapi/internal/apperr"
-	"github.com/prawirdani/golang-restapi/pkg/validator"
+	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/pkg/validator"
 )
 
 var (

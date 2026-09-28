@@ -13,9 +13,9 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
-	"github.com/prawirdani/golang-restapi/internal/transport/http"
-	"github.com/prawirdani/golang-restapi/pkg/log"
-	"github.com/prawirdani/golang-restapi/pkg/metrics"
+	"github.com/prawirdani/go-react-monorepo/internal/transport/http"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/pkg/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

@@ -3,7 +3,7 @@ package user
 import (
 	"testing"
 
-	vld "github.com/prawirdani/golang-restapi/pkg/validator"
+	vld "github.com/prawirdani/go-react-monorepo/pkg/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

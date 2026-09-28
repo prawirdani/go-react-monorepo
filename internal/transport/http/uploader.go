@@ -11,7 +11,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/prawirdani/golang-restapi/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
 )
 
 var (

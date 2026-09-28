@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/prawirdani/golang-restapi/internal/user"
+	"github.com/prawirdani/go-react-monorepo/internal/user"
 	mock "github.com/stretchr/testify/mock"
 )
 

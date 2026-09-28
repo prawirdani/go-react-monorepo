@@ -8,7 +8,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/prawirdani/golang-restapi/internal/ports/throttle"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/throttle"
 	mock "github.com/stretchr/testify/mock"
 )
 

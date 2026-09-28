@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/prawirdani/golang-restapi/internal/ports/outbox"
-	"github.com/prawirdani/golang-restapi/pkg/log"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/outbox"
+	"github.com/prawirdani/go-react-monorepo/pkg/log"
 )
 
 // Handler turns a stored payload into a delivery. Returning an error records the
