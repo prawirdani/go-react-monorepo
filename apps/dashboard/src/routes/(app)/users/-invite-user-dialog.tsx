@@ -44,6 +44,9 @@ export function InviteUserDialog() {
       } catch (error) {
         handleError(error, {
           VALIDATION: (e) => setFormErrors(formApi, e.details),
+          USER_EMAIL_CONFLICT: () => {
+            setFormErrors(formApi, { email: t("auth.register.emailConflict") })
+          },
         })
       }
     },
@@ -79,12 +82,10 @@ export function InviteUserDialog() {
                 children={(field) => (
                   <field.Container>
                     <field.Label text={t("profile.identity.name")} required />
-                    <div>
-                      <field.TextField
-                        placeholder={t("users.invite.namePlaceholder")}
-                      />
-                      <field.Errors />
-                    </div>
+                    <field.TextField
+                      placeholder={t("users.invite.namePlaceholder")}
+                    />
+                    <field.Errors />
                   </field.Container>
                 )}
               />
@@ -94,13 +95,11 @@ export function InviteUserDialog() {
                 children={(field) => (
                   <field.Container>
                     <field.Label text={t("auth.fields.email")} required />
-                    <div>
-                      <field.TextField
-                        type="email"
-                        placeholder={t("users.invite.emailPlaceholder")}
-                      />
-                      <field.Errors />
-                    </div>
+                    <field.TextField
+                      type="email"
+                      placeholder={t("users.invite.emailPlaceholder")}
+                    />
+                    <field.Errors />
                   </field.Container>
                 )}
               />
