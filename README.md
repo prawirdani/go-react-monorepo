@@ -14,6 +14,11 @@ tests that never touch a real database, Redis, or SMTP server.
 - Go: `1.26.5` (see `go.mod`)
 - License: MIT (see `LICENSE`)
 
+The dashboard this API serves lives in the same repository: a pnpm + Turborepo
+JS monorepo in [`client/`](./client/README.md) (`apps/dashboard` plus shared
+packages). One commit changes both halves, and the client's zod schemas mirror
+this API's DTOs — see [`client/AGENTS.md`](./client/AGENTS.md).
+
 ---
 
 ## Table of contents

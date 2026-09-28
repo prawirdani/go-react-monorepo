@@ -38,3 +38,10 @@ Thumbs.db
 # Temporary files
 tmp/
 *.tmp
+
+# Client (JS monorepo): dependencies, build output and local env
+client/node_modules
+client/**/dist
+client/.turbo
+client/**/.env
+client/**/.env.*

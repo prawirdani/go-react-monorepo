@@ -2,6 +2,19 @@
 
 Go RESTful API template. Clean architecture (Handler -> Service -> Repository) with JWT auth, PostgreSQL, a transactional outbox, Cloudflare R2, and Prometheus.
 
+## Repository layout
+
+One repo, two toolchains: the API is the Go module at the root, and the dashboard it serves is a pnpm + Turborepo JS monorepo in `client/`.
+
+```
+client/                  # JS monorepo: apps/dashboard + packages/{api,schemas,queries,ui,utils,i18n,config}
+cmd/ internal/ pkg/ ...  # the Go module
+```
+
+Turborepo only orchestrates packages that have a `package.json`, so the API is *not* a turbo package and Go is *not* a turbo task. The `client:` targets in the Makefile are the bridge, and CI runs the two toolchains as separate jobs.
+
+The client is a consumer of this API's contract. When a request/response shape, a JSON field name, or an error code changes, update `client/packages/schemas` and `client/packages/api` **in the same commit** — that atomicity is the point of the merge.
+
 ## Stack
 
 - **Module**: `github.com/prawirdani/golang-restapi` (Go 1.26.5)
@@ -23,6 +36,12 @@ make migration:create  # Scaffold a goose migration
 make migration:up      # Apply migrations
 make cli               # Developer CLI, e.g. `make cli ARGS="permissions"`
 make permissions       # Dump registered permission codes as a JS array
+make client:install    # Install the dashboard's dependencies (pnpm 10)
+make client:dev        # Dashboard dev server (proxies /api to the API)
+make client:lint       # biome
+make client:build      # turbo build (vite build && tsc)
+make client:test       # vitest
+make stack             # API and dashboard together
 mockery             # Regenerate mocks (reads .mockery.yml)
 ```
 

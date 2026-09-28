@@ -1,5 +1,10 @@
 # AGENTS.md
 
+> The **client half** of a merged repo. The API it talks to is the Go module at
+> the repository root — see the root `AGENTS.md` for layout, the `make client:*`
+> targets, and the contract rule (shape or error-code changes ship client and API
+> in one commit).
+
 Guidance for AI agents and humans working in this repo.
 
 ## Commands

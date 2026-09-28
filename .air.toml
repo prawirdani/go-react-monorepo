@@ -7,7 +7,9 @@ tmp_dir = "tmp"
   bin = "./tmp/api/main"
   cmd = "go build -o ./tmp/api/main ./cmd/api/"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "docker"]
+  # "client" is the JS monorepo: HMR rewrites its files constantly, and watching
+  # it here would rebuild the API on every save.
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "docker", "client"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
