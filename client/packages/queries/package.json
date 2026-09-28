@@ -1,0 +1,26 @@
+{
+	"name": "@repo/queries",
+	"version": "0.1.0",
+	"description": "",
+	"scripts": {
+		"format": "biome format",
+		"lint": "biome lint",
+		"check:write": "biome check --write"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@repo/config": "workspace:*",
+		"@types/node": "^26.1.1",
+		"typescript": "^7.0.2"
+	},
+	"dependencies": {
+		"@repo/api": "workspace:^",
+		"@repo/schemas": "workspace:^",
+		"@tanstack/react-query": "^5.101.2"
+	},
+	"exports": {
+		".": "./src/index.ts"
+	}
+}

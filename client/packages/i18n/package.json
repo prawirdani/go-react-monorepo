@@ -1,0 +1,30 @@
+{
+	"name": "@repo/i18n",
+	"version": "0.1.0",
+	"description": "",
+	"type": "module",
+	"scripts": {
+		"format": "biome format",
+		"lint": "biome lint",
+		"check:write": "biome check --write",
+		"check:messages": "node scripts/check-messages.mjs",
+		"audit:messages": "node scripts/audit-messages.mjs"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@repo/config": "workspace:*",
+		"@types/node": "^26.1.1",
+		"@types/react": "19.2.17",
+		"intl-messageformat": "^11.2.15",
+		"typescript": "^7.0.2"
+	},
+	"dependencies": {
+		"react": "^19.2.7",
+		"use-intl": "^4.14.4"
+	},
+	"exports": {
+		".": "./src/index.ts"
+	}
+}

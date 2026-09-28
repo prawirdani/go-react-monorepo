@@ -1,0 +1,332 @@
+// NOTE: keep every leaf free of ICU arguments and tags. `fields.tsx` calls
+// `t(key)` with a union key and a single argument; a message that requires
+// `values` would make that call a type error.
+export default {
+	brand: {
+		name: "Dashboard",
+		subtitle: "template/admin",
+	},
+	shared: {
+		avatarAlt: "Profile picture",
+		yes: "Yes",
+	},
+	nav: {
+		groupLabel: "Navigation",
+		dashboard: "Dashboard",
+		users: "Users",
+		example: "Example",
+		settings: "Settings",
+		exampleChild1: "Child 1",
+		exampleChild2: "Child 2",
+		exampleChild3: "Child 3",
+		versionLabel: "Version",
+	},
+	form: {
+		unsaved: {
+			title: "Unsaved Changes",
+			description:
+				"You have unsaved changes. Are you sure you want to leave this page?",
+		},
+	},
+	header: {
+		toggleNav: "Open or close navigation",
+		accountMenu: "Account menu",
+		profile: "Profile",
+		logout: "Log out",
+		logoutDescription:
+			"You will be signed out of this account. You will need to sign in again to access the application.",
+	},
+	auth: {
+		rail: {
+			intro: "One console to monitor operations and manage your account.",
+			access1: "Summary and latest activity",
+			access2: "Appearance settings, profile, and account security",
+			contact: "No access yet? Contact your internal admin.",
+			environment: "Environment",
+			environmentDev: "Development",
+			environmentProd: "Production",
+		},
+		fields: {
+			email: "Email",
+			password: "Password",
+			emailPlaceholder: "Enter your email address",
+			passwordPlaceholder: "Enter your password",
+		},
+		login: {
+			title: "Sign in",
+			description: "Use your internal account to continue to the console.",
+			forgot: "Forgot password?",
+			submit: "Sign in",
+			credentialsError: "Your email or password is incorrect",
+			noAccount: "Don't have an account yet?",
+			registerLink: "Create account",
+		},
+		forgot: {
+			title: "Forgot Password",
+			description:
+				"Enter your registered email address. We will send a link to reset your password.",
+			sentDescription: "The recovery link has been sent to your email.",
+			submit: "Send",
+			retryIn: "Try again in",
+			secondsUnit: "seconds",
+			sentMessage:
+				"We have sent a link to reset your password to your email address. Please check your inbox and spam folder.",
+			noEmail: "Didn't receive the email?",
+			tryAgain: "Try again",
+			emailNotFound: "The email you entered is not registered",
+		},
+		reset: {
+			title: "Reset Password",
+			description: "Create a new password for your account.",
+			invalidDescription: "This link can no longer be used.",
+			expired: "The link has expired or is invalid.",
+			requestAgainLead: "Please",
+			requestAgainLink: "submit a new request",
+			requestAgainTail: "for a password reset link that still works.",
+			newPasswordLabel: "New password",
+			newPasswordPlaceholder: "Enter your new password",
+			confirmLabel: "Confirm new password",
+			confirmPlaceholder: "Enter your new password again",
+			success: "Your password was updated successfully,",
+			successLink: "sign in",
+		},
+		register: {
+			title: "Create account",
+			description:
+				"Register an internal account. We will email you a link to finish setting it up.",
+			nameLabel: "Name",
+			namePlaceholder: "Enter your name",
+			submit: "Create account",
+			emailConflict: "An account already uses this email address",
+			sentMessage:
+				"We sent a confirmation link to your email address. Open it to choose your password and finish setting up your account.",
+			sentBack: "Already set a password?",
+		},
+		registerComplete: {
+			title: "Complete Registration",
+			description: "Choose a password to activate your account.",
+			invalidDescription: "This link can no longer be used.",
+			invalidExpired: "This link has expired or is no longer valid.",
+			invalidLead: "Return to the",
+			invalidLink: "sign-in page",
+			invalidTail: "to start over.",
+			confirmLabel: "Confirm password",
+			confirmPlaceholder: "Enter your password again",
+			submit: "Activate account",
+			success: "Your account is ready.",
+		},
+	},
+	dashboard: {
+		title: "Console",
+		description:
+			"An operational structure you can replace with real data. Summary figures are samples; the audit log is live.",
+		sampleTag: "Sample",
+		panels: {
+			summary: "Summary",
+			services: "Service Status",
+			actions: "Actions",
+			audit: "Audit Log",
+		},
+		summaryNote: "Sample data — connect it to your own data source.",
+		summary: {
+			entriesToday: "Entries today",
+			awaitingReview: "Awaiting review",
+			failedProcessing: "Failed to process",
+			lastSync: "Last sync",
+		},
+		service: {
+			api: "API",
+			auth: "Authentication",
+			storage: "Storage",
+			taskQueue: "Task queue",
+			backup: "Backup",
+		},
+		serviceState: {
+			normal: "Normal",
+			slow: "Slow",
+			disrupted: "Disrupted",
+			scheduled: "Scheduled",
+		},
+		audit: {
+			loading: "Loading audit entries…",
+			empty: "No audit entries yet.",
+			error: "Could not load the audit log.",
+			system: "System",
+			payload: "Payload",
+			context: "Context",
+			actorSearch: "Actor",
+			actorPlaceholder: "Name or ID",
+			entityOptions: {
+				session: "Session",
+				user: "User",
+				registrationToken: "Registration token",
+			},
+		},
+		actionsNote:
+			"The example page holds a table with its loading state. Use it as a starting point for the list and filters you need.",
+		openExample: "Open sample data",
+		openSettings: "Settings",
+		table: {
+			time: "Time",
+			actor: "Actor",
+			action: "Action",
+			entity: "Entity",
+		},
+	},
+	users: {
+		title: "Users",
+		description: "Every account in this console.",
+		breadcrumb: "Users",
+		table: {
+			user: "User",
+			role: "Role",
+			status: "Status",
+			phone: "Phone",
+			gender: "Gender",
+			created: "Created",
+			actions: "Actions",
+		},
+		delete: {
+			action: "Delete user",
+			title: "Delete user",
+			description: "This account will be permanently removed.",
+			confirm: "Delete",
+			success: "User deleted",
+		},
+		edit: {
+			action: "Edit user",
+			title: "Edit user",
+			description: "Update this account's name, phone, and gender.",
+			namePlaceholder: "Enter the user's full name",
+			phonePlaceholder: "Enter the user's phone number",
+			success: "User updated.",
+		},
+		invite: {
+			action: "Invite user",
+			title: "Invite user",
+			description:
+				"Sends this person an invitation to finish setting up their account.",
+			namePlaceholder: "Enter the user's full name",
+			emailPlaceholder: "Enter the user's email address",
+			success: "Invitation sent.",
+		},
+		sessions: {
+			toggle: "Sessions",
+			panel: "Active sessions",
+		},
+		empty: "No users on this page.",
+		error: "Could not load users.",
+		loading: "Loading users…",
+	},
+	profile: {
+		title: "Profile",
+		description: "Account identity and its security settings.",
+		identity: {
+			panel: "Identity",
+			editLabel: "Edit identity",
+			name: "Name",
+			phone: "Phone Number",
+			gender: "Gender",
+			role: "Role",
+		},
+		security: {
+			panel: "Account Security",
+			description:
+				"Manage the password and email address that keep your account secure.",
+			changeEmail: "Change email",
+			verifyEmail: "Verify",
+			verified: "Verified",
+			unverified: "Not verified",
+			password: "Password",
+			changePassword: "Change password",
+		},
+		sessions: {
+			panel: "Active sessions",
+			description: "Devices currently signed into this account.",
+		},
+		changePassword: {
+			success: "Password updated. Please sign in again with your new password.",
+			mismatch: "Your password does not match",
+			currentLabel: "Current password",
+			newLabel: "New password",
+			confirmLabel: "Confirm new password",
+			currentPlaceholder: "Enter your current password",
+			newPlaceholder: "Enter a new password",
+			confirmPlaceholder: "Enter the new password again",
+		},
+		updateUser: {
+			success: "Profile updated successfully",
+			namePlaceholder: "Enter your name",
+			phonePlaceholder: "Enter your phone number",
+		},
+		picture: {
+			invalid: "Invalid profile picture",
+			upload: "Upload",
+			delete: "Delete",
+			deleteTitle: "Delete profile picture",
+			deleteDescription:
+				"Are you sure you want to delete the current profile picture?",
+		},
+	},
+	settings: {
+		title: "Settings",
+		description: "Choose how the console looks.",
+		appearance: {
+			panel: "Appearance",
+			label: "Theme and mode",
+			hint: "Preferences are stored in this browser and follow the system until you choose.",
+		},
+	},
+	example: {
+		title: "Sample",
+		description:
+			"A table skeleton with its loading state. Replace it with the list and filters you need.",
+		tablePanel: "Sample Table",
+		column: "Column",
+		note: "The rows above are loading placeholders, not real data.",
+	},
+	errors: {
+		title: "Something went wrong",
+		generic: "An error occurred. Please try again in a moment.",
+		sessionExpiredTitle: "Session Expired",
+		sessionExpiredMessage:
+			"Your session has ended. Please sign in again to continue.",
+		codes: {
+			validation: "Some fields are not valid. Please check the form again.",
+			credentials: "Your email or password is incorrect.",
+			expired: "Your session has ended. Please sign in again.",
+			invalid:
+				"Your session is no longer valid. Please sign in again to continue.",
+			invalidSession: "Your session is not valid. Please sign in again.",
+			invalidRecoveryToken: "The recovery link is invalid or has expired.",
+			invalidRegistrationToken:
+				"The registration completion link is invalid or has expired.",
+			recoveryThrottled: "Too many attempts. Try again at",
+			notFound: "The requested data was not found.",
+			emailConflict: "This email is already registered.",
+			unauthorized: "You are not signed in. Please sign in again.",
+			forbidden: "You are not allowed to do this.",
+			network:
+				"Could not reach the server. Check your connection and try again.",
+			timeout: "The server is busy. Try again in a moment.",
+			internal: "A server error occurred. Try again in a moment.",
+		},
+		notFound: {
+			heading: "404 / Not found",
+			message: "The page you are looking for does not exist or has moved.",
+			action: "Back to console",
+		},
+		server: {
+			heading: "500 / Server error",
+			message:
+				"Something went wrong while loading the page. Try again in a moment.",
+			action: "Reload",
+		},
+		forbidden: {
+			heading: "Access denied",
+			message:
+				"You don't have permission to view this page. Ask an administrator if you think this is a mistake.",
+			action: "Back to dashboard",
+		},
+	},
+} as const;

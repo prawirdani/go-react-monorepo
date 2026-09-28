@@ -1,0 +1,22 @@
+{
+	"name": "client",
+	"private": true,
+	"scripts": {
+		"build": "turbo run build",
+		"dev": "turbo run dev",
+		"format": "turbo run format",
+		"lint": "turbo run lint",
+		"audit:messages": "turbo run audit:messages",
+		"check:messages": "turbo run check:messages",
+		"check:write": "turbo run check:write"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.4",
+		"turbo": "^2.10.5",
+		"typescript": "7.0.2"
+	},
+	"packageManager": "pnpm@12.5.1",
+	"engines": {
+		"node": ">=18"
+	}
+}

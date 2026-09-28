@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Template konsol internal: autentikasi, formulir, dan lapisan API yang sudah terhubung."
+    />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Dashboard</title>
+    <script>
+      (function () {
+        try {
+          const storageKey = "vite-ui-theme";
+          const paletteStorageKey = "vite-ui-theme-palette";
+          const root = window.document.documentElement;
+
+          root.classList.remove("light", "dark");
+
+          const theme = localStorage.getItem(storageKey) || "system";
+          if (theme === "system") {
+            const systemTheme = window.matchMedia(
+              "(prefers-color-scheme: dark)",
+            ).matches
+              ? "dark"
+              : "light";
+            root.classList.add(systemTheme);
+          } else {
+            root.classList.add(theme);
+          }
+
+          // Theme ids are defined in packages/ui/src/themes.ts — the source of
+          // truth. Apply the stored palette verbatim: an unknown or absent id
+          // falls through to Graphite (:root), so no whitelist is needed.
+          const palette = localStorage.getItem(paletteStorageKey);
+          if (palette) {
+            root.setAttribute("data-theme", palette);
+          }
+
+          // Locale must be correct before first paint. Keep in sync with
+          // LOCALES in packages/i18n/src/config.ts.
+          const locale = localStorage.getItem("vite-ui-locale");
+          if (locale === "id" || locale === "en") {
+            root.lang = locale;
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <!--
+THESIS: An internal-tool console with no card grid and no soft elevation — graphite panels divided by 1px seams, and the only color on screen is data state. Refuses the white-ground, rounded-card, indigo-primary admin default.
+OWN-WORLD: Three measured graphite grounds, 1px hairline seams, 4px corners; Archivo compact grotesk with tracked small-caps panel headers; Spline Sans Mono for IDs and figures; syntax-derived state color — keyword blue, string green, value amber, error red, comment violet.
+STORY: An operator opens the console, reads panel state at a glance, changes one thing, leaves. Structure must be legible before a label is read.
+FIRST VIEWPORT: Sidebar, header, and working surface read as one continuous instrument frame; content tiles into persistent panelled regions with small-caps headers; one accent-filled primary action; destructive actions isolated by deliberate empty space.
+FORM: Grounded candidate #6 was assigned; the user pinned challenger digital-design-canon-dark-first-developer-console instead. Seed key b1481cbd.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

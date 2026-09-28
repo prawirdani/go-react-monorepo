@@ -1,0 +1,336 @@
+import { useFormatter, useTranslations } from "@repo/i18n"
+import type { SessionEntry } from "@repo/schemas/auth"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@repo/ui/components/alert-dialog"
+import { Button } from "@repo/ui/components/button"
+import { Skeleton } from "@repo/ui/components/skeleton"
+import toast from "@repo/ui/components/toast"
+import { AlertTriangle, Inbox, Logout } from "@repo/ui/icons"
+import { cn } from "@repo/ui/lib/utils"
+import { parseUA } from "@repo/utils/parser"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { StateBadge } from "@/components/layout/panel"
+import { StateBlock } from "@/components/state-block"
+import { useErrorHandler } from "@/hooks/use-error-handler"
+import { revokeSession, revokeUserSessions } from "@/lib/data-access/mutations"
+import { listUserSessions } from "@/lib/data-access/queries"
+
+// Stable row keys for the loading skeleton; the values are also their position,
+// so parity stays index-derived like every other striped list.
+const SKELETON_ROWS = [0, 1, 2] as const
+
+interface SessionListProps {
+  userId: string
+  canRevoke: boolean
+  showRevokeAll?: boolean
+  /** The id of the session this browser is authenticated with, if known. */
+  currentSessionId?: string
+  className?: string
+}
+
+/**
+ * Active sessions for one user. Self-contained (no Panel wrapper) so it can be
+ * embedded inside a Panel by its callers. Copy lives under `common.sessions.*`.
+ */
+export function SessionList({
+  userId,
+  canRevoke,
+  showRevokeAll = false,
+  currentSessionId,
+  className,
+}: SessionListProps) {
+  const t = useTranslations("common")
+  const { data, isPending, isError } = useQuery(listUserSessions(userId))
+
+  if (isPending) return <SessionListLoading className={className} />
+
+  if (isError) {
+    return (
+      <StateBlock
+        tone="destructive"
+        icon={AlertTriangle}
+        message={t("sessions.error")}
+        className={cn("px-3 py-6", className)}
+      />
+    )
+  }
+
+  const sessions = data ?? []
+
+  if (sessions.length === 0) {
+    return (
+      <StateBlock
+        icon={Inbox}
+        message={t("sessions.empty")}
+        className={cn("px-3 py-6", className)}
+      />
+    )
+  }
+
+  return (
+    <div className={cn("flex flex-col", className)}>
+      {showRevokeAll && (
+        <div className="flex justify-end border-b border-border px-3 py-2">
+          <RevokeAllDialog userId={userId} />
+        </div>
+      )}
+      <ul className="divide-y divide-border">
+        {sessions.map((session, index) => (
+          <SessionRow
+            key={session.id}
+            session={session}
+            canRevoke={canRevoke}
+            isCurrent={session.id === currentSessionId}
+            striped={index % 2 === 1}
+          />
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/** Browser + OS, with a fallback for UAs bowser cannot name. */
+function describeDevice(raw: string, fallback: string) {
+  const { browser, os } = parseUA(raw)
+  const browserText = [browser.name, browser.version].filter(Boolean).join(" ")
+  const osText = [os.name, os.version].filter(Boolean).join(" ")
+
+  return {
+    title: browserText || osText || fallback,
+    subtitle: browserText && osText ? osText : null,
+  }
+}
+
+function SessionRow({
+  session,
+  canRevoke,
+  isCurrent,
+  striped,
+}: {
+  session: SessionEntry
+  canRevoke: boolean
+  isCurrent: boolean
+  striped: boolean
+}) {
+  const t = useTranslations("common")
+  const format = useFormatter()
+  const device = describeDevice(session.user_agent, t("sessions.unknownDevice"))
+
+  return (
+    <li
+      className={cn(
+        "flex items-start gap-3 px-3 py-2.5",
+        striped && "bg-muted/29",
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm">{device.title}</p>
+          {isCurrent && (
+            <StateBadge tone="info">{t("sessions.thisDevice")}</StateBadge>
+          )}
+        </div>
+        {device.subtitle && (
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {device.subtitle}
+          </p>
+        )}
+        <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+          <span className="text-muted-foreground/60">
+            {t("sessions.ipLabel")}
+          </span>{" "}
+          {session.ip_addr}
+        </p>
+        <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+          <SessionMeta
+            label={t("sessions.signedIn")}
+            value={format.dateTime(new Date(session.created_at), {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+          />
+          <SessionMeta
+            label={t("sessions.lastActive")}
+            value={format.dateTime(new Date(session.accessed_at), {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+          />
+          <SessionMeta
+            label={t("sessions.expires")}
+            value={format.dateTime(new Date(session.expires_at), {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+          />
+        </p>
+      </div>
+      {canRevoke && (
+        <RevokeSessionDialog
+          sessionId={session.id}
+          disabled={isCurrent}
+          disabledReason={
+            isCurrent ? t("sessions.revokeCurrentDisabled") : undefined
+          }
+        />
+      )}
+    </li>
+  )
+}
+
+function SessionMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="whitespace-nowrap">
+      {label}{" "}
+      <span className="font-mono tabular-nums text-foreground/80">{value}</span>
+    </span>
+  )
+}
+
+function RevokeSessionDialog({
+  sessionId,
+  disabled = false,
+  disabledReason,
+}: {
+  sessionId: string
+  disabled?: boolean
+  disabledReason?: string
+}) {
+  const t = useTranslations("common")
+  const handleError = useErrorHandler()
+  const { mutateAsync, isPending } = useMutation(revokeSession)
+
+  const handleRevoke = async () =>
+    mutateAsync(sessionId, {
+      onSuccess: () => toast.success(t("sessions.revoked")),
+      onError: (e) => handleError(e),
+    })
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="destructive"
+            size="icon-sm"
+            disabled={disabled}
+            title={disabledReason ?? t("sessions.revoke")}
+            aria-label={disabledReason ?? t("sessions.revoke")}
+          >
+            <Logout />
+          </Button>
+        }
+      />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {t("sessions.revokeConfirmTitle")}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("sessions.revokeConfirmDescription")}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending} variant="outline">
+            {t("actions.cancel")}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            disabled={isPending}
+            loading={isPending}
+            variant="destructive"
+            onClick={handleRevoke}
+          >
+            {t("sessions.revoke")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+function RevokeAllDialog({ userId }: { userId: string }) {
+  const t = useTranslations("common")
+  const handleError = useErrorHandler()
+  const { mutateAsync, isPending } = useMutation(revokeUserSessions)
+
+  const handleRevokeAll = async () =>
+    mutateAsync(userId, {
+      onSuccess: () => toast.success(t("sessions.revokedAll")),
+      onError: (e) => handleError(e),
+    })
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger
+        render={
+          <Button variant="outline" size="sm">
+            {t("sessions.revokeAll")}
+          </Button>
+        }
+      />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {t("sessions.revokeAllConfirmTitle")}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("sessions.revokeAllConfirmDescription")}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending} variant="outline">
+            {t("actions.cancel")}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            disabled={isPending}
+            loading={isPending}
+            variant="destructive"
+            onClick={handleRevokeAll}
+          >
+            {t("sessions.revokeAll")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+/** Same loading shape as the users table's skeleton rows. */
+function SessionListLoading({ className }: { className?: string }) {
+  const t = useTranslations("common")
+
+  return (
+    <div className={cn("flex flex-col", className)}>
+      <p role="status" className="sr-only">
+        {t("sessions.loading")}
+      </p>
+      <div className="divide-y divide-border">
+        {SKELETON_ROWS.map((row) => (
+          <div
+            key={row}
+            className={cn(
+              "flex items-start gap-3 px-3 py-2.5",
+              row % 2 === 1 && "bg-muted/29",
+            )}
+          >
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-3 w-56" />
+            </div>
+            <Skeleton className="size-8 shrink-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,40 @@
+import {
+  SIDEBAR_COOKIE_NAME,
+  SidebarInset,
+  SidebarProvider,
+} from "@repo/ui/components/sidebar"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
+import { AppHeader } from "@/components/layout/header"
+import { PageContainer } from "@/components/layout/page"
+import { AppSidebar } from "@/components/layout/sidebar"
+import { SessionEndedWatcher } from "@/components/session-ended-watcher"
+import { requireSession } from "@/lib/auth/access"
+import { getCookie } from "@/lib/cookie"
+
+export const Route = createFileRoute("/(app)")({
+  beforeLoad: requireSession,
+  loader: () => {
+    return {
+      openSidebar: getCookie(SIDEBAR_COOKIE_NAME) !== "false",
+    }
+  },
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  const { openSidebar } = Route.useLoaderData()
+  // The instrument frame: rail + header persist across navigation; the routed
+  // screen only swaps the panels inside the work ground.
+  return (
+    <SidebarProvider defaultOpen={openSidebar}>
+      <AppSidebar />
+      <SidebarInset className="bg-background">
+        <AppHeader />
+        <SessionEndedWatcher />
+        <PageContainer>
+          <Outlet />
+        </PageContainer>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
