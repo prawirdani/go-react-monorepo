@@ -51,16 +51,18 @@ DESIGN.md             # the visual system: tokens, named rules, per-component sp
 ```bash
 pnpm install
 cp apps/dashboard/example.env apps/dashboard/.env   # then fill in values
-pnpm dev                                             # dashboard on :3000
+pnpm dev                                             # dashboard on $VITE_PORT (default 3001)
 ```
 
 ### Environment Variables (`apps/dashboard/.env`)
 
-| Variable          | Purpose                                                    |
-| ----------------- | ---------------------------------------------------------- |
-| `VITE_API_URL`    | Backend base URL (e.g. `http://localhost:8080`)            |
-| `VITE_IMAGE_URL`  | Asset server base URL for uploaded files (`/profiles/...`) |
-| `VITE_VERSION`    | App version shown in the sidebar footer (e.g. `v0.1.0`)    |
+| Variable             | Purpose                                                          |
+| -------------------- | ---------------------------------------------------------------- |
+| `VITE_PORT`          | Dev server port (defaults to `3001`)                             |
+| `VITE_PROXY_TARGET`  | Dev-only `/api` proxy target, e.g. `http://localhost:8080`. Unset means no proxy is registered |
+| `VITE_API_URL`       | Client API base URL. Leave **empty** when the API shares the dashboard's domain — the client calls a relative `/api`, proxied in dev and reverse-proxied in production. Set it to the API's absolute origin (e.g. `https://api.example.com`) when the API is on another domain |
+| `VITE_IMAGE_URL`     | Asset server base URL for uploaded files (`/profiles/...`)       |
+| `VITE_VERSION`       | App version shown in the sidebar footer (e.g. `v0.1.0`)          |
 
 ### Scripts
 

@@ -6,7 +6,7 @@ Guidance for AI agents and humans working in this repo.
 
 ```bash
 pnpm install                # workspace install (pnpm 10)
-pnpm dev                    # run dashboard on :3000
+pnpm dev                    # run dashboard on $VITE_PORT (default 3001)
 pnpm build                  # turbo build (vite build && tsc per app)
 pnpm lint / format / check:write   # biome
 pnpm --filter @repo/api exec tsc --noEmit     # typecheck a package
