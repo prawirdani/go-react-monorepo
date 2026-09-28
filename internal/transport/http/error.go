@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/schema"
 	"github.com/prawirdani/golang-restapi/internal/apperr"
 	"github.com/prawirdani/golang-restapi/pkg/validator"
 )
@@ -90,9 +92,8 @@ func (e *Error) SetDetails(details any) *Error {
 }
 
 type QueryParamErrorItem struct {
-	Param  string `json:"param"`
-	Value  string `json:"value"`
-	Reason string `json:"reason"`
+	Key     string `json:"key"`
+	Message string `json:"message"`
 }
 
 func QueryParamErr(items []QueryParamErrorItem) *Error {
@@ -118,8 +119,7 @@ func ErrInvalidParam(name string, value string) *Error {
 
 func ParseError(err error) *Error {
 	// Already normalized
-	var e *Error
-	if errors.As(err, &e) {
+	if e, ok := errors.AsType[*Error](err); ok {
 		return e
 	}
 
@@ -131,6 +131,7 @@ func ParseError(err error) *Error {
 
 	var (
 		fiberErr      *fiber.Error
+		bindErr       *fiber.BindError
 		jsonBindErr   *jsonBindError
 		validationErr *validator.ValidationError
 		appErr        *apperr.Error
@@ -153,6 +154,15 @@ func ParseError(err error) *Error {
 		}
 		return body
 
+	case errors.As(err, &bindErr) && bindErr.Source == fiber.BindSourceQuery:
+		// A malformed query string is bad client input, not a server fault.
+		// Fiber returns *BindError in manual mode, and before this case the
+		// whole class fell through to the 500 default below: only
+		// *jsonBindError and validator.ValidationError were recognised. The
+		// source check matters — body binding fails the same way, and its
+		// errors must not surface as invalid query parameters.
+		return QueryParamErr(queryParamErrorItems(bindErr))
+
 	case errors.As(err, &jsonBindErr):
 		body.status = http.StatusBadRequest
 		body.Message = jsonBindErr.Message
@@ -170,6 +180,43 @@ func ParseError(err error) *Error {
 	}
 
 	return body
+}
+
+// queryParamErrorItems flattens a query binding failure into one item per
+// parameter. The decoder reports every failing parameter at once in a
+// [schema.MultiError]; a lone failure arrives unwrapped, so both shapes are
+// handled.
+//
+// Items are sorted because MultiError is a map and its iteration order is
+// random — without sorting the response array would vary between identical
+// requests.
+func queryParamErrorItems(bindErr *fiber.BindError) []QueryParamErrorItem {
+	var multiErr schema.MultiError
+
+	if !errors.As(bindErr.Err, &multiErr) || len(multiErr) == 0 {
+		return []QueryParamErrorItem{queryParamErrorItem(bindErr.Field, bindErr.Err)}
+	}
+
+	items := make([]QueryParamErrorItem, 0, len(multiErr))
+	for param, err := range multiErr {
+		items = append(items, queryParamErrorItem(param, err))
+	}
+
+	slices.SortFunc(items, func(a, b QueryParamErrorItem) int {
+		return strings.Compare(a.Key, b.Key)
+	})
+
+	return items
+}
+
+func queryParamErrorItem(param string, err error) QueryParamErrorItem {
+	item := QueryParamErrorItem{Key: param, Message: err.Error()}
+
+	if convErr, ok := errors.AsType[schema.ConversionError](err); ok {
+		item.Message = fmt.Sprintf("must be a valid %s", convErr.Type)
+	}
+
+	return item
 }
 
 type jsonBindError struct {
