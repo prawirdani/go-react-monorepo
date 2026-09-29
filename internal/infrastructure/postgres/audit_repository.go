@@ -35,7 +35,6 @@ func (r *auditRepository) List(ctx context.Context, search *audit.Search) ([]aud
 	repository.ApplyQuery(qb, search)
 
 	query, args := qb.SQL()
-	fmt.Println(query, args)
 
 	rows := make([]auditRow, 0)
 	if err := pgxscan.Select(ctx, conn, &rows, query, args...); err != nil {
