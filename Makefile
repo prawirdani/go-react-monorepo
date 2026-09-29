@@ -41,11 +41,10 @@ run:
 # Client (the JS monorepo in ./client)
 #
 # Turborepo only orchestrates packages that have a package.json, so the API is
-# not a turbo package and Go is not a turbo task: these targets are the bridge,
-# and CI keeps the two toolchains in separate jobs.
+# not a turbo package and Go is not a turbo task: these targets are the bridge.
 # ---------------------------------------------------------------------------
 
-# Install client dependencies (pnpm 10).
+# Install client dependencies (pnpm).
 client\:install:
 	@cd client && pnpm install
 

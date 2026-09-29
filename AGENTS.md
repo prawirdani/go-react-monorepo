@@ -11,14 +11,14 @@ client/                  # JS monorepo: apps/dashboard + packages/{api,schemas,q
 cmd/ internal/ pkg/ ...  # the Go module
 ```
 
-Turborepo only orchestrates packages that have a `package.json`, so the API is *not* a turbo package and Go is *not* a turbo task. The `client:` targets in the Makefile are the bridge, and CI runs the two toolchains as separate jobs. Run the API and the dashboard in **separate terminals** (`make dev`, `make client:dev`) — a combined `make` recipe survives neither Ctrl-C nor a rebuild loop cleanly, and each tool already watches its own tree.
+Turborepo only orchestrates packages that have a `package.json`, so the API is *not* a turbo package and Go is *not* a turbo task. The `client:` targets in the Makefile are the bridge. Run the API and the dashboard in **separate terminals** (`make dev`, `make client:dev`) — a combined `make` recipe survives neither Ctrl-C nor a rebuild loop cleanly, and each tool already watches its own tree.
 
 The client is a consumer of this API's contract. When a request/response shape, a JSON field name, or an error code changes, update `client/packages/schemas` and `client/packages/api` **in the same commit** — that atomicity is the point of the merge.
 
 ## Stack
 
-- **Module**: `github.com/prawirdani/golang-restapi` (Go 1.26.5)
-- **Router**: go-chi/chi v5
+- **Module**: `github.com/prawirdani/go-react-monorepo` (Go 1.26.5)
+- **Router**: gofiber/fiber/v3 (v3.5.0)
 - **DB**: PostgreSQL via pgx v5 — raw SQL, no ORM (goose migrations)
 - **MQ/Cache**: PostgreSQL transactional outbox (async email) + Redis (throttle/revocation)
 - **Storage**: Cloudflare R2 (S3-compatible)
@@ -30,17 +30,17 @@ The client is a consumer of this API's contract. When a request/response shape, 
 make dev            # API server, hot-reload (Air)
 make dev:worker     # Worker, hot-reload
 make build          # Build binaries (api + worker, CGO_ENABLED=0, linux)
-make test           # go test -race -count=1 ./... -cover
+make test           # go test -race -count=1 on GO_PACKAGES -cover
 make lint           # golangci-lint run
 make migration:create  # Scaffold a goose migration
 make migration:up      # Apply migrations
 make cli               # Developer CLI, e.g. `make cli ARGS="permissions"`
 make permissions       # Dump registered permission codes as a JS array
-make client:install    # Install the dashboard's dependencies (pnpm 10)
+make client:install    # Install the dashboard's dependencies (pnpm)
 make client:dev        # Dashboard dev server (proxies /api to the API)
 make client:lint       # biome
 make client:build      # turbo build (vite build && tsc)
-make client:test       # vitest
+make client:test       # turbo run test (vitest in the dashboard)
 mockery             # Regenerate mocks (reads .mockery.yml)
 ```
 
@@ -81,31 +81,13 @@ migrations/              # Goose SQL migrations
 
 ## Conventions
 
-**Naming**
-- Packages: short, lowercase, single-word (`auth`, `postgres`, `middleware`)
-- Files: snake_case (`user_repository.go`, `service_test.go`)
-- Constructors: `New<Name>()`; Errors: `Err` prefix; Constants: PascalCase
-- Import aliases: `redisInfra` (infrastructure/redis), `strs` (pkg/strings), `sharedMocks` (internal/testing/mocks). `internal/transport/http` is `package http` and is imported unaliased.
-- Add package-level godoc to every new package/entity.
+**Naming** — Packages short/lowercase/single-word (`auth`, `postgres`); files snake_case; constructors `New<Name>()`; errors `Err`-prefixed; constants PascalCase. Import aliases `redisInfra` (infrastructure/redis), `strs` (pkg/strings), `sharedMocks` (internal/testing/mocks); `internal/transport/http` is `package http` and is imported unaliased. Add package-level godoc to every new package/entity. Detail: `gorest-architecture`.
 
-**Handlers** — signature `func(c fiber.Ctx) error`, mounted through a `Routes` method called from `setupHandlers`. Return errors; never write error responses manually. Respond with the `Body` envelope **by value** — it is sparse (`data`/`message` use `omitempty`, `meta` uses `omitzero`) and has no custom `MarshalJSON`.
+**Handlers** — signature `func(c fiber.Ctx) error`, mounted through a `Routes` method called from `setupHandlers`. Return errors; never write error responses manually. Respond with the `Body` envelope **by value** — it is sparse (`data`/`message` use `omitempty`, `meta` uses `omitzero`) and has no custom `MarshalJSON`. Detail: `gorest-handlers`.
 
-```go
-func (h *AuthHandler) Login(c fiber.Ctx) error {
-    return c.JSON(Body{Data: result})
-}
-```
+**Errors** — `apperr.Error` with `Kind` (`KindValidation`, `KindNotFound`, `KindConflict`, `KindUnauthorized`, `KindForbidden`, `KindThrottled`). Immutable (`WithDetails`/`SetMessage` return copies), supports `errors.Is`. `http.ParseError`, run by the Fiber `ErrorHandler`, maps kinds to HTTP status — and wraps the result in an `{"error": {...}}` envelope. Detail: `gorest-errors`.
 
-**Errors** — `apperr.Error` with `Kind` (`KindValidation`, `KindNotFound`, `KindConflict`, `KindUnauthorized`, `KindForbidden`, `KindThrottled`). Immutable (`WithDetails`/`SetMessage` return copies), supports `errors.Is`. `http.ParseError`, run by the Fiber `ErrorHandler`, maps kinds to HTTP status.
-
-**Transactions** — wrap multi-step writes in `s.transactor.Transact`. Repositories detect the tx via `db.GetConn(ctx)` and reuse the connection (adding `FOR UPDATE`). Rollback/commit run on `context.WithoutCancel(ctx)` with a 5s timeout so a cancelled request ctx doesn't destroy the pooled connection.
-
-```go
-err := s.transactor.Transact(ctx, func(ctx context.Context) error {
-    // repos here automatically join the tx
-    return nil
-})
-```
+**Transactions** — wrap multi-step writes in `s.transactor.Transact`. Repositories detect the tx via `db.GetConn(ctx)` and reuse the connection (adding `FOR UPDATE`). Rollback/commit run on `context.WithoutCancel(ctx)` with a 5s timeout so a cancelled request ctx doesn't destroy the pooled connection. Detail: `gorest-services`.
 
 **Auth invariants**
 - Registration is invitation-based: `Register` stores a single-use hashed token (no user row) and revokes any prior tokens for that email; `CompleteRegistration` consumes the token and creates the user atomically. A used, expired, or revoked token → `ErrInvalidRegistrationToken` (401). Hash the password only after the token validates. Under `APP_INTERNAL_MODE`, `Register` requires `PermRegisterUser`.
@@ -117,7 +99,7 @@ err := s.transactor.Transact(ctx, func(ctx context.Context) error {
 
 **Worker/outbox** — events go through the transactional outbox: `Produce*` writes `outbox_messages` on the caller's connection (called inside `Transact`, so it commits with the business state). `cmd/worker` polls the table (`outbox.Store.FetchBatch`, oldest first, up to `outbox.MaxAttempts` = 5), dispatches by topic to a `worker.Handler`, and deletes the row with `MarkDone` after a successful send; a handler error records `attempts + 1` and `last_error` via `MarkFailed` and retries on a later tick. Delivery is at-least-once, so handlers must be idempotent (a duplicate email is fine, a lost one is not). `MarkDone`/`MarkFailed` use `context.WithoutCancel`. SMTP send bounded at 10s; keep any new blocking op bounded too.
 
-**Testing** — table-driven with `t.Run` subtests. `setupTestFixture(t)` wires mocks + service and registers `t.Cleanup()`. Mocks: entity-scoped in `internal/<entity>/mocks/`, reusable in `internal/testing/mocks/`.
+**Testing** — table-driven with `t.Run` subtests. `setupTestFixture(t)` wires mocks + service and registers `t.Cleanup()`. Mocks: entity-scoped in `internal/<entity>/mocks/`, reusable in `internal/testing/mocks/`. Detail: `gorest-testing`.
 
 **Logging** — structured/context-aware via `pkg/log`. Set at startup: `log.SetLogger(log.NewZerologAdapter(cfg.IsProduction()))`. Request-scoped fields (request_id, uid/sid) flow through context. Debug in dev, Info in prod.
 
@@ -135,6 +117,13 @@ Project-specific skills in `.agents/skills/` encode this repo's style, architect
 - **gorest-testing** — mockery placement, setupTestFixture, transactor expectations, subtests, config independence
 
 These supersede generic samber guidance where they overlap.
+
+Two installed `golang-*` skills still disagree with this repo. The repo wins:
+
+- Migrations are **goose** (`make migration:create` / `make migration:up`), not golang-migrate, Flyway, or Atlas.
+- Logging is **zerolog** behind `pkg/log`. Do not migrate to `log/slog`.
+
+Ten inapplicable skills were pruned from the library (benchmark, performance, CI, gopls, pkg-go-dev, how-to, refactoring, documentation, popular-libraries, dependency-management). `skills-lock.json` tracks the 19 remaining upstream skills; the `gorest-*` ones are hand-authored here and have no lock entry.
 
 ## Adding a Feature
 
