@@ -17,7 +17,7 @@ export type ErrorMap = {
 	REQ_RATE_LIMIT: null;
 	HANDLER_NOT_FOUND: null;
 	HANDLER_METHOD_NOT_ALLOWED: null;
-	INVALID_QUERY_PARAMETERS: { param: string; value: string; reason: string }[];
+	INVALID_QUERY_PARAMETERS: { key: string; message: string }[];
 	INVALID_PARAMETER: { parameter: string; value: string };
 	INTERNAL: null;
 	SERVER_TIMEOUT: null;
@@ -41,6 +41,7 @@ export type ErrorMap = {
 	// Auth
 	REQ_UNAUTHORIZED: null;
 	REQ_FORBIDDEN: null;
+	RBAC_UNAUTHORIZED_PERM: null;
 	AUTH_CREDENTIALS: null;
 	AUTH_EXPIRED: null;
 	AUTH_INVALID: null;

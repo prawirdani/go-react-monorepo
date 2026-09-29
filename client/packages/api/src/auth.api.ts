@@ -53,7 +53,7 @@ export class AuthAPI {
 		const res = await this.client.Get<RegistrationToken>(
 			`/api/auth/register/${rawToken}`,
 		);
-		return res.data;
+		return res.data!;
 	}
 
 	/** Authenticates and sets the session cookies. Unauthenticated. */
@@ -63,7 +63,7 @@ export class AuthAPI {
 			noAuth: true,
 		});
 
-		return res.data;
+		return res.data!;
 	}
 
 	/** Destroys the current session and clears its cookies. */
@@ -81,7 +81,7 @@ export class AuthAPI {
 		const res = await this.client.Get<User, { session_id: string }>(
 			"/api/auth/me",
 		);
-		return { user: res.data, session_id: res.meta.session_id };
+		return { user: res.data!, session_id: res.meta.session_id };
 	}
 
 	/**
@@ -128,7 +128,7 @@ export class AuthAPI {
 		const res = await this.client.Get<OpaqueTokenMeta>(
 			`/api/auth/password/recover/${token}`,
 		);
-		return res.data;
+		return res.data!;
 	}
 
 	/** Resets a password using a recovery token. Unauthenticated. */
@@ -141,7 +141,7 @@ export class AuthAPI {
 	/** Lists the current user's permissions. Self. */
 	async getPermissions(): Promise<Permission[]> {
 		const res = await this.client.Get<Permission[]>("/api/auth/permissions");
-		return res.data;
+		return res.data!;
 	}
 
 	/**
@@ -152,7 +152,7 @@ export class AuthAPI {
 		const res = await this.client.Get<SessionEntry[]>(
 			`/api/auth/sessions/users/${userId}`,
 		);
-		return res.data;
+		return res.data!;
 	}
 
 	/**
@@ -160,7 +160,7 @@ export class AuthAPI {
 	 * Requires auth.revoke-user-sessions permission or self (current user).
 	 */
 	async revokeUserSessions(userId: string) {
-		await this.client.Delete(`/api/auth/users/${userId}`);
+		await this.client.Delete(`/api/auth/sessions/users/${userId}`);
 	}
 
 	/**

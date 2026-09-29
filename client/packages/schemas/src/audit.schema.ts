@@ -1,6 +1,10 @@
 import { z } from "zod";
 import "./error-map";
-import { dateFields, dateStripDefaults } from "./search-query/date";
+import {
+	type DateQuery,
+	dateFields,
+	dateStripDefaults,
+} from "./search-query/date";
 import { filteringStripDefaults } from "./search-query/filtering";
 import { paginationFields } from "./search-query/pagination";
 import { sortingFields } from "./search-query/sorting";
@@ -36,7 +40,7 @@ export interface AuditEntry {
 
 // Search query for the audit log. Every field `.catch`es to a default so a
 // hand-edited/garbage URL param falls back instead of throwing at the router.
-// Params mirror the backend: ?sort=&order=&page=&limit=&entity=&actor=&from=&to=&date=
+// Params mirror the backend: ?sort=&order=&page=&limit=&entity=&actor=&date=&from=&to=&tz=
 // — entity is multi-select (comma-joined server-side); actor is free-text (a
 // name, or an exact id); date/from/to follow the cross-domain convention in
 // `search-query/date.ts` (`date` wins over `from`/`to`).
@@ -53,7 +57,8 @@ export type AuditEntity = (typeof AUDIT_ENTITIES)[number];
 /** The applied filter values the backend echoes back in `meta.filter`. */
 export type AuditFilter = {
 	entity: AuditEntity[];
-};
+	actor: string;
+} & DateQuery;
 
 const auditFilters = {
 	entity: z.array(z.enum(AUDIT_ENTITIES)).catch([]),

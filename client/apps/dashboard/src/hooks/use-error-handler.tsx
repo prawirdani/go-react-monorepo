@@ -37,6 +37,7 @@ const CODE_MESSAGES: Partial<Record<APIErrorCodes, MessageKeys<"app">>> = {
   USER_EMAIL_CONFLICT: "errors.codes.emailConflict",
   REQ_UNAUTHORIZED: "errors.codes.unauthorized",
   REQ_FORBIDDEN: "errors.codes.forbidden",
+  RBAC_UNAUTHORIZED_PERM: "errors.codes.forbidden",
   NETWORK_ERROR: "errors.codes.network",
   SERVER_TIMEOUT: "errors.codes.timeout",
   INTERNAL: "errors.codes.internal",

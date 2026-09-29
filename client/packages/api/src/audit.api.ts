@@ -1,14 +1,14 @@
-import type { AuditEntry, AuditSearchQuery } from "@repo/schemas/audit";
+import type {
+	AuditEntry,
+	AuditFilter,
+	AuditSearchQuery,
+	AuditSortKey,
+} from "@repo/schemas/audit";
 import type { APIClient } from "./client";
-import type { QueryableResponse, QueryMetaOnly } from "./response";
+import type { QueryableResponse, QueryMeta } from "./response";
 
-/**
- * `/api/audit` is confirmed to echo pagination only; its echo of applied
- * filter/sort is unconfirmed, so only the guaranteed slice is typed. Widen to
- * `QueryMeta<AuditFilter, AuditSortKey, true>` if the backend is confirmed to
- * echo them.
- */
-export type AuditListMeta = QueryMetaOnly;
+/** `/api/audit` echoes the applied filter, sort, and pagination. */
+export type AuditListMeta = QueryMeta<AuditFilter, AuditSortKey, true>;
 
 export class AuditAPI {
 	private client: APIClient;

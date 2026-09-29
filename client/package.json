@@ -4,6 +4,7 @@
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
+		"test": "turbo run test",
 		"format": "turbo run format",
 		"lint": "turbo run lint",
 		"audit:messages": "turbo run audit:messages",

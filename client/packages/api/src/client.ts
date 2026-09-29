@@ -188,7 +188,7 @@ export class APIClient {
 					const contentType = response.headers.get("content-type");
 					if (contentType?.includes("application/json")) {
 						const resBody = (await response.json()) as ResponseBody<TokenPair>;
-						this.onTokenRefreshed?.(resBody.data);
+						if (resBody.data) this.onTokenRefreshed?.(resBody.data);
 					}
 				}
 

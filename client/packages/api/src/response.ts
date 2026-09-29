@@ -1,5 +1,7 @@
 export interface ResponseBody<T = null> {
-	data: T;
+	// Optional to match Go's `Body` envelope (`data,omitempty`): message-only
+	// responses omit `data` entirely.
+	data?: T;
 	message?: string;
 }
 

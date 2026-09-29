@@ -10,7 +10,7 @@ Guidance for AI agents and humans working in this repo.
 ## Commands
 
 ```bash
-pnpm install                # workspace install (pnpm 10)
+pnpm install                # workspace install (pnpm 12)
 pnpm dev                    # run dashboard on $VITE_PORT (default 3001)
 pnpm build                  # turbo build (vite build && tsc per app)
 pnpm lint / format / check:write   # biome
@@ -32,11 +32,11 @@ pnpm --filter dashboard exec tsc --noEmit     # typecheck the app
 ### API layer (`packages/api`)
 - All endpoints go through `APIClient` with the configured `baseURL` from `VITE_API_URL`. **Never hardcode URLs** — a hardcoded `http://localhost:8080` was removed from `recoverPassword`; don't reintroduce.
 - Client always sends `credentials: "include"`; auth is **httpOnly-cookie based**. Do not store tokens in localStorage. `tokenProvider`/`TokenPair` are currently unused scaffolding — wire them only if switching to header-based auth.
-- Backend error envelope is **flat**: `{ message, details, code }`. `parseAPIError` handles it (plus a legacy `{ error: {...} }` wrapper). `VALIDATION` details are unwrapped to the `{ field: string[] }` map inside `parseAPIError` — callers pass `e.details` straight into `setFormErrors`.
+- Backend error envelope is **wrapped**: `{ error: { message, details, code } }`. `parseAPIError` also parses the legacy flat `{ message, details, code }` form. `VALIDATION` details are unwrapped to the `{ field: string[] }` map inside `parseAPIError` — callers pass `e.details` straight into `setFormErrors`.
 - Response success envelope: `{ data, message }`.
 
 ### Schemas (`packages/schemas`)
-- Distinguish **form schemas** (client validation only, e.g. include `new_password_confirmation` for match-checking) from **API payload types** (must match backend DTOs exactly, e.g. reset/change send `{ token, new_password }` / `{ password, new_password }` — no confirmation field). Backend ignores unknown JSON fields, but payload types must still mirror the backend.
+- **Form schemas** and **API payload types** are the same objects: payload types are inferred from the form schemas, so they include the confirmation fields (`password_confirmation`, `new_password_confirmation`) and the three call sites (`reset-password`, `register/complete`, `profile/-change-password-form`) send the full form. The backend ignores unknown JSON fields, so the extra keys are harmless.
 - JSON field names are **snake_case** (backend Go json tags): `access_token`, `new_password`, `email_verified_at`, `profile_picture`.
 
 ### Data access (dashboard)
@@ -49,10 +49,10 @@ pnpm --filter dashboard exec tsc --noEmit     # typecheck the app
 
 ### Forms (dashboard)
 - Use the shared `useAppForm` wrapper (`src/components/form`). Server errors: `handleError(error, { VALIDATION: (e) => setFormErrors(formApi, e.details), ... })`.
-- Error codes the backend emits and the app handles: `VALIDATION`, `AUTH_CREDENTIALS`, `AUTH_EXPIRED`, `AUTH_INVALID_SESSION`, `AUTH_INVALID_RECOV_TOKEN`, `AUTH_RECOVERY_THROTTLED` (`details.retry_after` is an ISO date), `RESOURCE_NOT_FOUND`, `USER_EMAIL_CONFLICT`, `REQ_UNAUTHORIZED`.
+- Error codes the backend emits and the app handles: `VALIDATION`, `AUTH_CREDENTIALS`, `AUTH_EXPIRED`, `AUTH_INVALID_SESSION`, `AUTH_INVALID_RECOV_TOKEN`, `AUTH_RECOVERY_THROTTLED` (`details.retry_after` is an ISO date), `RESOURCE_NOT_FOUND`, `USER_EMAIL_CONFLICT`, `REQ_UNAUTHORIZED`, `RBAC_UNAUTHORIZED_PERM`.
 
-### Backend contract (golang-restapi)
-- Repo: https://github.com/prawirdani/golang-restapi. All API endpoints under `/api` (no version prefix).
+### Backend contract (go-react-monorepo)
+- Repo: https://github.com/prawirdani/go-react-monorepo. All API endpoints under `/api` (no version prefix).
 - When the backend changes request/response shapes or error codes, sync `packages/api` + `packages/schemas` (and form call sites) — see README "Backend Compatibility".
 
 ## Gotchas
