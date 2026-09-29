@@ -1,13 +1,13 @@
 ---
 name: gorest-services
-description: "Service-layer conventions for github.com/prawirdani/golang-restapi — interface-driven dependencies, Transact for multi-step writes, nullable mutation + Validate, audit entries inside the transaction, side-effect placement (outbox events in-tx, non-transactional cleanup post-commit), async goroutines with snapshotted logger context, per-domain permission tables, and throttling. Use when writing or reviewing business logic in internal/ entity packages."
+description: "Service-layer conventions for github.com/prawirdani/go-react-monorepo — interface-driven dependencies, Transact for multi-step writes, nullable mutation + Validate, audit entries inside the transaction, side-effect placement (outbox events in-tx, non-transactional cleanup post-commit), async goroutines with snapshotted logger context, per-domain permission tables, and throttling. Use when writing or reviewing business logic in internal/ entity packages."
 user-invocable: true
 license: MIT
-compatibility: Designed for AI coding agents working in the golang-restapi repository.
+compatibility: Designed for AI coding agents working in the go-react-monorepo repository.
 metadata:
   author: prawirdani
   version: "1.0.0"
-  module: github.com/prawirdani/golang-restapi
+  module: github.com/prawirdani/go-react-monorepo
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 ---
 

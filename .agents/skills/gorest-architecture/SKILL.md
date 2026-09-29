@@ -1,13 +1,13 @@
 ---
 name: gorest-architecture
-description: "Project architecture rules for github.com/prawirdani/golang-restapi — clean/onion layering, dependency direction, interface placement, manual DI wiring, import aliases, and file/naming conventions. Use when adding a feature, a new package, or a new domain entity; when reviewing whether code belongs in domain/infrastructure/transport; or when wiring dependencies. Supersedes generic layering advice for this repo."
+description: "Project architecture rules for github.com/prawirdani/go-react-monorepo — clean/onion layering, dependency direction, interface placement, manual DI wiring, import aliases, and file/naming conventions. Use when adding a feature, a new package, or a new domain entity; when reviewing whether code belongs in domain/infrastructure/transport; or when wiring dependencies. Supersedes generic layering advice for this repo."
 user-invocable: true
 license: MIT
-compatibility: Designed for AI coding agents working in the golang-restapi repository.
+compatibility: Designed for AI coding agents working in the go-react-monorepo repository.
 metadata:
   author: prawirdani
   version: "1.0.0"
-  module: github.com/prawirdani/golang-restapi
+  module: github.com/prawirdani/go-react-monorepo
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(mockery) Agent
 ---
 
@@ -29,9 +29,9 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(m
 3. **DI is manual and explicit** in `cmd/api/container.go`. One constructor per dependency, services composed top-down, mocks not allowed in production wiring. `NewContainer` receives only `cfg`, `pg *postgres.DB`, `rdb *redis.Client` and builds everything else.
 
 4. **Import aliases are fixed** — never import these packages with a different alias:
-   - `redisInfra "github.com/prawirdani/golang-restapi/internal/infrastructure/redis"`
-   - `strs "github.com/prawirdani/golang-restapi/pkg/strings"`
-   - `sharedMocks "github.com/prawirdani/golang-restapi/internal/testing/mocks"`
+   - `redisInfra "github.com/prawirdani/go-react-monorepo/internal/infrastructure/redis"`
+   - `strs "github.com/prawirdani/go-react-monorepo/pkg/strings"`
+   - `sharedMocks "github.com/prawirdani/go-react-monorepo/internal/testing/mocks"`
 
    `internal/transport/http` is `package http` and is imported **unaliased** — there is no `httpx` alias.
 

@@ -1,13 +1,13 @@
 ---
 name: gorest-handlers
-description: "HTTP handler conventions for github.com/prawirdani/golang-restapi — fiber.Ctx handler signature, Routes registration, BindValidateJSON, the Body response envelope, status codes, cookies, and multipart uploads. Use when writing or reviewing any handler in internal/transport/http/."
+description: "HTTP handler conventions for github.com/prawirdani/go-react-monorepo — fiber.Ctx handler signature, Routes registration, BindValidateJSON, the Body response envelope, status codes, cookies, and multipart uploads. Use when writing or reviewing any handler in internal/transport/http/."
 user-invocable: true
 license: MIT
-compatibility: Designed for AI coding agents working in the golang-restapi repository.
+compatibility: Designed for AI coding agents working in the go-react-monorepo repository.
 metadata:
   author: prawirdani
   version: "2.0.0"
-  module: github.com/prawirdani/golang-restapi
+  module: github.com/prawirdani/go-react-monorepo
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 ---
 

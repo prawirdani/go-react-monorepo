@@ -1,13 +1,13 @@
 ---
 name: gorest-testing
-description: "Unit testing conventions for github.com/prawirdani/golang-restapi — mockery regeneration and placement, setupTestFixture pattern, mock.AssertExpectations cleanup, transactor mock expectations inside RunAndReturn, table-driven subtests, and assertion style (assert vs require). Use when writing or reviewing unit tests in internal/ (entity packages) or internal/transport/http/."
+description: "Unit testing conventions for github.com/prawirdani/go-react-monorepo — mockery regeneration and placement, setupTestFixture pattern, mock.AssertExpectations cleanup, transactor mock expectations inside RunAndReturn, table-driven subtests, and assertion style (assert vs require). Use when writing or reviewing unit tests in internal/ (entity packages) or internal/transport/http/."
 user-invocable: true
 license: MIT
-compatibility: Designed for AI coding agents working in the golang-restapi repository.
+compatibility: Designed for AI coding agents working in the go-react-monorepo repository.
 metadata:
   author: prawirdani
   version: "1.0.0"
-  module: github.com/prawirdani/golang-restapi
+  module: github.com/prawirdani/go-react-monorepo
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(mockery) Agent
 ---
 

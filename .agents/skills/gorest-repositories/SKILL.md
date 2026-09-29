@@ -1,13 +1,13 @@
 ---
 name: gorest-repositories
-description: "PostgreSQL repository conventions for github.com/prawirdani/golang-restapi — pgx.NamedArgs + generateInsertQuery/generateUpdateQuery builders, pgxscan scanning, transaction-aware connections (db.GetConn/IsTxConn + FOR UPDATE), error translation with uniqueViolationErr/noRowsErr, and method-level docs. Use when writing or reviewing any postgres repository in internal/infrastructure/postgres/."
+description: "PostgreSQL repository conventions for github.com/prawirdani/go-react-monorepo — pgx.NamedArgs + generateInsertQuery/generateUpdateQuery builders, pgxscan scanning, transaction-aware connections (db.GetConn/IsTxConn + FOR UPDATE), error translation with uniqueViolationErr/noRowsErr, and method-level docs. Use when writing or reviewing any postgres repository in internal/infrastructure/postgres/."
 user-invocable: true
 license: MIT
-compatibility: Designed for AI coding agents working in the golang-restapi repository.
+compatibility: Designed for AI coding agents working in the go-react-monorepo repository.
 metadata:
   author: prawirdani
   version: "1.0.0"
-  module: github.com/prawirdani/golang-restapi
+  module: github.com/prawirdani/go-react-monorepo
 allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 ---
 
