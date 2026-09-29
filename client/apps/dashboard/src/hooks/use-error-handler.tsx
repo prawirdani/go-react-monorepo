@@ -27,6 +27,7 @@ type ErrorHandlers = {
  */
 const CODE_MESSAGES: Partial<Record<APIErrorCodes, MessageKeys<"app">>> = {
   VALIDATION: "errors.codes.validation",
+  INVALID_QUERY_PARAMETERS: "errors.codes.invalidQuery",
   AUTH_CREDENTIALS: "errors.codes.credentials",
   AUTH_EXPIRED: "errors.codes.expired",
   AUTH_INVALID: "errors.codes.invalid",
@@ -74,16 +75,31 @@ export const useErrorHandler = () => {
       if (now - last < TOAST_COOLDOWN_MS) return
       toastGate.set(e.code, now)
 
-      const description =
-        e.code === "AUTH_RECOVERY_THROTTLED"
-          ? `${t("errors.codes.recoveryThrottled")} ${formatter.dateTime(
-              new Date(e.details.retry_after),
-              {
-                dateStyle: "short",
-                timeStyle: "short",
-              },
-            )}`
-          : t(CODE_MESSAGES[e.code] ?? "errors.generic")
+      let description: string
+
+      if (e.code === "AUTH_RECOVERY_THROTTLED") {
+        description = `${t("errors.codes.recoveryThrottled")} ${formatter.dateTime(
+          new Date(e.details.retry_after),
+          {
+            dateStyle: "short",
+            timeStyle: "short",
+          },
+        )}`
+      } else if (
+        e.code === "INVALID_QUERY_PARAMETERS" &&
+        Array.isArray(e.details)
+      ) {
+        // The backend names the offending query parameters. Those names are
+        // machine identifiers (`page`, `limit`), not prose, so they are safe to
+        // show untranslated — unlike `details[].message`, which is server text
+        // and is deliberately not surfaced (see the note on CODE_MESSAGES).
+        const names = e.details.map((d) => d.key).join(", ")
+        description = names
+          ? `${t("errors.codes.invalidQuery")} (${names})`
+          : t("errors.codes.invalidQuery")
+      } else {
+        description = t(CODE_MESSAGES[e.code] ?? "errors.generic")
+      }
 
       toast.error(t("errors.title"), { description, duration: 6000 })
     },

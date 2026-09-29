@@ -295,6 +295,7 @@ const app: DeepStringify<typeof en> = {
 			"Sesi Anda telah berakhir. Silakan login kembali untuk melanjutkan.",
 		codes: {
 			validation: "Beberapa isian belum valid. Periksa kembali formulir.",
+			invalidQuery: "Beberapa parameter kueri tidak valid",
 			credentials: "Email atau kata sandi Anda salah.",
 			expired: "Sesi Anda telah berakhir. Silakan login kembali.",
 			invalid:

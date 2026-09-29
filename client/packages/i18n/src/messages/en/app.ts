@@ -293,6 +293,7 @@ export default {
 			"Your session has ended. Please sign in again to continue.",
 		codes: {
 			validation: "Some fields are not valid. Please check the form again.",
+			invalidQuery: "Some query parameters are not valid",
 			credentials: "Your email or password is incorrect.",
 			expired: "Your session has ended. Please sign in again.",
 			invalid:
