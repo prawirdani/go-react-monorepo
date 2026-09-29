@@ -13,19 +13,19 @@ template: testify
 template-schema: "{{.Template}}.schema.json"
 inpackage: false
 packages:
-  github.com/prawirdani/golang-restapi/internal/ports/repository:
+  github.com/prawirdani/go-react-monorepo/internal/ports/repository:
     interfaces:
       Transactor:
         config:
           filename: transactor.go
 
-  github.com/prawirdani/golang-restapi/internal/audit:
+  github.com/prawirdani/go-react-monorepo/internal/audit:
     interfaces:
       Recorder:
         config:
           filename: audit_recorder.go
 
-  github.com/prawirdani/golang-restapi/internal/ports/storage:
+  github.com/prawirdani/go-react-monorepo/internal/ports/storage:
     interfaces:
       Storage:
         config:
@@ -34,13 +34,13 @@ packages:
         config:
           filename: storage_file.go
 
-  github.com/prawirdani/golang-restapi/internal/ports/throttle:
+  github.com/prawirdani/go-react-monorepo/internal/ports/throttle:
     interfaces:
       Throttler:
         config:
           filename: throttler.go
 
-  github.com/prawirdani/golang-restapi/internal/ports/revocation:
+  github.com/prawirdani/go-react-monorepo/internal/ports/revocation:
     interfaces:
       Checker:
         config:
@@ -52,7 +52,7 @@ packages:
         config:
           filename: revocation_store.go
 
-  github.com/prawirdani/golang-restapi/internal/auth:
+  github.com/prawirdani/go-react-monorepo/internal/auth:
     interfaces:
       Repository:
         config:
@@ -70,7 +70,7 @@ packages:
           structname: "{{.InterfaceName}}"
           filename: event_producer.go
 
-  github.com/prawirdani/golang-restapi/internal/user:
+  github.com/prawirdani/go-react-monorepo/internal/user:
     interfaces:
       Repository:
         config:

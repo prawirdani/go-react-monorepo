@@ -25,7 +25,7 @@ Two things a neighboring starter does not ship together: an integrated cookie-au
 - pnpm workspace with Turborepo; each app builds with Vite + React 19.
 - `apps/dashboard` is the reference app: TanStack Router file routes under `src/routes/**`, TanStack Query for server state, zod for validation, zustand for the auth store.
 - `packages/ui` holds all primitives (base-ui + shadcn conventions, Tailwind v4 css-first, tabler icons); `packages/api`, `packages/schemas`, `packages/queries`, `packages/utils`, `packages/config` are the supporting layers.
-- Backend is `golang-restapi` at `https://github.com/prawirdani/golang-restapi`. Auth is httpOnly-cookie based; the error envelope is flat (`{ message, details, code }`) and JSON fields are snake_case.
+- Backend is `go-react-monorepo` at `https://github.com/prawirdani/go-react-monorepo`. Auth is httpOnly-cookie based; the error envelope is flat (`{ message, details, code }`) and JSON fields are snake_case.
 - UI copy in the reference app is Indonesian. Real copy, not decoration — preserve it.
 - Biome formats per package (2-space in the dashboard app, tabs in packages).
 - Internal tools are scanned, not read: users return to the same screens repeatedly to check state and complete short tasks.

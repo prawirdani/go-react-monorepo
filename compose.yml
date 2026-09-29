@@ -18,7 +18,7 @@ services:
   api:
     build:
       context: .
-    image: golang-restapi:local
+    image: go-react-monorepo:local
     restart: always
     networks: [app-net]
     env_file:
@@ -53,7 +53,7 @@ services:
   worker:
     build:
       context: .
-    image: golang-restapi:local
+    image: go-react-monorepo:local
     command: ["./worker"]
     restart: always
     networks: [app-net]
@@ -78,7 +78,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-golang-restapi}
+      POSTGRES_DB: ${DB_NAME:-go-react-monorepo}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     # Not published. For pgAdmin / psql from outside, uncomment the loopback
@@ -88,7 +88,7 @@ services:
     # ports:
     #   - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"${DB_USER:-postgres}\" -d \"${DB_NAME:-golang-restapi}\""]
+      test: ["CMD-SHELL", "pg_isready -U \"${DB_USER:-postgres}\" -d \"${DB_NAME:-go-react-monorepo}\""]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -167,7 +167,7 @@ services:
   backup:
     build:
       context: ./deployment/backup
-    image: golang-restapi-backup:local
+    image: go-react-monorepo-backup:local
     entrypoint: ["crond", "-f", "-l", "8"]
     networks: [app-net]
     env_file:

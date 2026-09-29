@@ -1,6 +1,6 @@
 # Bruno API Collection
 
-Bruno collection for the `golang-restapi` service. It covers every HTTP route the
+Bruno collection for the `go-react-monorepo` service. It covers every HTTP route the
 API exposes: auth (login, registration, refresh, password recovery, sessions,
 permissions), users (list, update, delete, profile picture), audit log, health
 and metrics.

@@ -174,7 +174,7 @@ The catalogs and types are platform-independent; `I18nProvider` is web-only (it 
 
 This template is the frontend companion to
 
-**https://github.com/prawirdani/golang-restapi**
+**https://github.com/prawirdani/go-react-monorepo**
 
 The two repos are kept in sync; when the backend changes, the API layer in `packages/api` and schemas in `packages/schemas` must be updated to match. Key contracts:
 
