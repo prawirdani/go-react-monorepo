@@ -42,5 +42,12 @@ export const dateFields = {
 
 export type DateQuery = { date: string; from: string; to: string; tz: string };
 
+/**
+ * The echo view of the date slice. Go tags every bound `omitempty`, so a bound
+ * the caller never sent comes back absent rather than empty. `DateQuery` stays
+ * fully populated because it describes the request, not the reply.
+ */
+export type EchoedDateQuery = Partial<DateQuery>;
+
 /** Empty values, for the router's `stripSearchParams` middleware. */
 export const dateStripDefaults = { date: "", from: "", to: "", tz: "" };

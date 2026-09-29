@@ -28,12 +28,22 @@ type IsNever<T> = [T] extends [never] ? true : false;
 // intersection (`never & { pagination: … }` is `never`), so using it as the
 // sentinel would collapse `QueryMetaOnly` to `never` and leave a default-meta
 // `meta` unusable. `X & unknown = X` keeps the remaining slices.
+//
+// `filter` and `sort` are optional within a slice. Go marshals both with
+// `omitempty`/`omitzero` (internal/ports/repository/query.go:46-47): applying no
+// filter leaves the key out, and `ApplySort` clears its fields when the requested
+// column is not allow-listed, so an unsorted request omits `sort` entirely.
+//
+// `pagination` stays required, because it is always present:
+// `ApplyPagination` clamps page and limit to at least 1 before `PageMeta` runs
+// (internal/ports/repository/pagination.go), so that object is never the zero
+// value `omitzero` would drop.
 export type QueryMeta<
 	TFilter = never,
 	TSortKey extends string = never,
 	TPagination = never,
-> = (IsNever<TFilter> extends true ? unknown : { filter: TFilter }) &
-	(IsNever<TSortKey> extends true ? unknown : { sort: Sort<TSortKey> }) &
+> = (IsNever<TFilter> extends true ? unknown : { filter?: TFilter }) &
+	(IsNever<TSortKey> extends true ? unknown : { sort?: Sort<TSortKey> }) &
 	(IsNever<TPagination> extends true ? unknown : { pagination: PaginationMeta });
 
 /** Default meta: an endpoint that echoes pagination only, no filter/sort. */

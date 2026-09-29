@@ -41,10 +41,13 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export const USER_SORT_KEYS = ["id", "created_at", "updated_at"] as const;
 export type UserSortKey = (typeof USER_SORT_KEYS)[number];
 
-/** The applied filter values the backend echoes back in `meta.filter`. */
+/**
+ * The applied filter values the backend echoes back in `meta.filter`. Optional
+ * for the same reason as `AuditFilter`: Go marshals them `omitempty`.
+ */
 export type UserFilter = {
-	role: Role[];
-	gender: Gender[];
+	role?: Role[];
+	gender?: Gender[];
 };
 
 const userFilters = {

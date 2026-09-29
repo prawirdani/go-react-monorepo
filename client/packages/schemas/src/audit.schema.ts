@@ -1,7 +1,7 @@
 import { z } from "zod";
 import "./error-map";
 import {
-	type DateQuery,
+	type EchoedDateQuery,
 	dateFields,
 	dateStripDefaults,
 } from "./search-query/date";
@@ -54,11 +54,15 @@ export const AUDIT_ENTITIES = [
 ] as const;
 export type AuditEntity = (typeof AUDIT_ENTITIES)[number];
 
-/** The applied filter values the backend echoes back in `meta.filter`. */
+/**
+ * The applied filter values the backend echoes back in `meta.filter`. Every
+ * field is optional: Go marshals them `omitempty`, so a filter the caller never
+ * set is absent from the reply rather than present-and-empty.
+ */
 export type AuditFilter = {
-	entity: AuditEntity[];
-	actor: string;
-} & DateQuery;
+	entity?: AuditEntity[];
+	actor?: string;
+} & EchoedDateQuery;
 
 const auditFilters = {
 	entity: z.array(z.enum(AUDIT_ENTITIES)).catch([]),
