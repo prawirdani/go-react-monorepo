@@ -1,8 +1,8 @@
 # Deployment checklist
 
-Single-host deployment with Docker Compose and Caddy. This file is the
-step-by-step preparation gate; the `README.md` `## Deployment` and `## Backups`
-sections hold the reference material it points at.
+Single-host deployment with Docker Compose and Caddy. This file is both the
+step-by-step preparation gate and the deployment reference material. Backups have
+their own reference: [`BACKUP.md`](./BACKUP.md).
 
 - Architecture: `compose.yml` runs Postgres, Redis, API, worker, the one-shot
   migrate job, Caddy, Prometheus and Grafana on one pinned network.
@@ -133,7 +133,7 @@ sections hold the reference material it points at.
       (strict)**. Never `Flexible`.
 - [ ] Only works because of `header_up X-Forwarded-For {client_ip}` — without
       it Caddy appends the CF edge address and the audit log records that
-      instead of the client. See `README.md` → Deployment → Behind Cloudflare.
+      instead of the client. See [Behind Cloudflare](#behind-cloudflare-how-it-works).
 
 ---
 
@@ -170,7 +170,7 @@ sections hold the reference material it points at.
 
 ## 7. Backups
 
-Reference: `README.md` → `## Backups`.
+Reference: [`BACKUP.md`](./BACKUP.md).
 
 - [ ] Create a **separate, private** R2 bucket for dumps. The app's `R2_BUCKET`
       is served from a public URL — dumping there would publish the whole
@@ -185,7 +185,7 @@ Reference: `README.md` → `## Backups`.
       docker compose run --rm --entrypoint sh backup /backup-postgres.sh
       ls -lh backups/daily/
       ```
-- [ ] **Run the restore drill** (`README.md` → Backups → Restore drill). An
+- [ ] **Run the restore drill** ([`BACKUP.md` → Restore drill](./BACKUP.md#restore-drill)). An
       untested backup is a hope, not a backup.
 - [ ] Confirm the schedule fires: check `docker logs backup` the day after
       deployment (03:15 container-local; containers run UTC).
@@ -214,7 +214,7 @@ Reference: `README.md` → `## Backups`.
 - [ ] Previous app image: rebuild from the prior commit and `docker compose up -d`.
 - [ ] Schema: migrations are additive, so an older binary usually runs against a
       newer schema — but verify per release rather than assuming.
-- [ ] Data damage: restore a dump (`README.md` → Backups → Restore runbook).
+- [ ] Data damage: restore a dump ([`BACKUP.md` → Restore runbook](./BACKUP.md#restore-runbook)).
       Note the RPO: you can roll back to the last nightly dump, not to
       "one minute before the bad deploy".
 
@@ -230,8 +230,104 @@ Reference: `README.md` → `## Backups`.
 - [ ] **No container healthcheck for `api`/`worker`.** The runtime image is
       distroless (no shell, no HTTP client), so a healthcheck cannot be
       expressed. Caddy performs an active health check on `/api/healthz`.
-- [ ] Application image is built locally as `golang-restapi:local`; there is no
+- [ ] Application image is built locally as `go-react-monorepo:local`; there is no
       registry, so every host builds its own.
+
+---
+
+## Reference
+
+Explanatory material behind the steps above.
+
+### Caddy and the domain
+
+Caddy obtains and renews the Let's Encrypt certificate itself, serves 80 and 443, and
+redirects HTTP to HTTPS. There is no certificate configuration to write.
+
+Requirements:
+
+- An `A`/`AAAA` record for the domain pointing at the host's public IP.
+- Host ports 80 and 443 reachable from the internet — `CADDY_HTTP_PORT` and
+  `CADDY_HTTPS_PORT` must be exactly `80`/`443`, because the ACME challenge depends
+  on them.
+- Outbound access to `acme-v02.api.letsencrypt.org`, and nothing else already bound
+  to 80/443 on the host.
+
+Let's Encrypt permits only 5 failed validations per hostname per hour, so pointing
+Caddy at a domain that does not resolve can lock you out for an hour.
+
+### Going to production
+
+`APP_ENV=prod` enables `Secure` cookies and HSTS, which is correct once TLS
+terminates at Caddy.
+
+The API sits behind Caddy, so it receives plain HTTP and trusts `X-Forwarded-For`
+only from `TRUSTED_PROXIES`. Compose sets that to the project's own pinned subnet
+(`APP_NET_SUBNET`, default `172.28.0.0/24`) — deliberately not Docker's whole address
+pool, because Caddy is the only hop that should be trusted — so the audit log still
+records the real client IP.
+
+### Public surface
+
+| Service | Public | Notes |
+| --- | --- | --- |
+| `caddy` | 80, 443 | the only internet-facing entry point |
+| `grafana` | no | bound to `127.0.0.1:${GRAFANA_PORT}`; reach it with `ssh -L 3000:127.0.0.1:3000 user@host` |
+| `api`, `worker` | no | reached only by Caddy |
+| `postgres`, `redis` | no | not published |
+| `migrate` | no | one-shot goose job; exits before the app tier starts |
+| `prometheus` | no | scrapes `api:9091` |
+
+Every service shares the pinned `app-net` bridge. That also means Caddy, Prometheus
+and Grafana can reach the datastores — a deliberate simplification. To restore that
+segmentation, give Postgres and Redis their own `internal: true` network; Docker then
+suppresses any `ports:` mapping on them, so you cannot publish them from there.
+
+**Reaching the database for administration.** Either run a client inside the network,
+or uncomment the loopback mapping in `compose.yml` and tunnel it:
+
+```bash
+# no exposure at all
+docker compose exec postgres psql -U postgres -d go-react-monorepo
+
+# with the loopback mapping uncommented in compose.yml
+ssh -L 5432:127.0.0.1:5432 user@host
+```
+
+Never publish it on `0.0.0.0` — Docker publishes bypass ufw, so that puts the database
+directly on the internet, and the container runs without TLS.
+
+### Behind Cloudflare (how it works)
+
+Use the Cloudflare Caddyfile, which trusts only Cloudflare's published edge ranges and
+collapses the chain into a single verified client IP.
+
+- The script rewrites only the `trusted_proxies static ...` line in
+  `deployment/caddy/Caddyfile.cloudflare`, refusing to write an empty or malformed
+  list. Re-run it whenever Cloudflare announces new ranges.
+- `trusted_proxies static <CF ranges>` + `client_ip_headers CF-Connecting-IP` make
+  Caddy accept Cloudflare's forwarding headers **only** from CF peers. Both are
+  server-level options and must sit inside the Caddyfile's `servers { }` block —
+  Caddy rejects them at the top level.
+- The `header_up X-Forwarded-For {client_ip}` on `reverse_proxy` is **required**:
+  without it Caddy forwards the raw connection peer (the CF edge), so the audit log
+  would record Cloudflare instead of the visitor. `{client_ip}` resolves to the
+  verified client IP, so a spoofed `CF-Connecting-IP` from an untrusted peer is
+  ignored.
+- `TRUSTED_PROXIES` stays the project subnet: the API still trusts exactly one hop
+  (Caddy), and Caddy has already done the edge reasoning. Do not widen it to the
+  Cloudflare ranges.
+- Restrict the origin's 80/443 to Cloudflare's published ranges so the origin cannot
+  be reached directly, bypassing CF.
+- Terminate TLS with a **Cloudflare Origin Certificate** on Caddy and set the CF
+  SSL/TLS mode to **Full (strict)**.
+
+### Dashboard
+
+This stack deploys the API only. Nothing serves the built dashboard —
+`deployment/caddy/Caddyfile` only reverse-proxies to the API — so shipping
+`client/apps/dashboard/dist` (a static host, or embedding it in the Go binary) is a
+separate decision that has not been made yet.
 
 ---
 
