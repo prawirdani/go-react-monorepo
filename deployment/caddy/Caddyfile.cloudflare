@@ -1,4 +1,5 @@
-# Caddy reverse proxy for the API when Cloudflare fronts the proxy.
+# Caddy reverse proxy for the API and static host for the React client when
+# Cloudflare fronts the proxy.
 #
 # Mount this instead of Caddyfile by setting CADDYFILE=Caddyfile.cloudflare in
 # .env, then run ./update-cloudflare-ips.sh to refresh the CF ranges below.
@@ -40,14 +41,32 @@
 		format json
 	}
 
-	# The upstream port is the container-side APP_PORT, not a host port; the
-	# API is never published directly.
-	reverse_proxy api:{$APP_PORT:8080} {
-		# Replace the incoming chain with the single verified client IP. Without
-		# this, Caddy appends the CF edge address and the API records that.
-		header_up X-Forwarded-For {client_ip}
-		health_uri /api/healthz
-		health_interval 15s
-		health_timeout 3s
+	# API: only /api/* reaches the Go service. The upstream port is the
+	# container-side APP_PORT, not a host port; the API is never published
+	# directly.
+	handle /api/* {
+		reverse_proxy api:{$APP_PORT:8080} {
+			# Replace the incoming chain with the single verified client IP. Without
+			# this, Caddy appends the CF edge address and the API records that.
+			header_up X-Forwarded-For {client_ip}
+			health_uri /api/healthz
+			health_interval 15s
+			health_timeout 3s
+		}
+	}
+
+	# Everything else: the built React app, with SPA fallback to index.html.
+	handle {
+		root * /srv
+
+		# Hashed build assets are cacheable forever; every other response
+		# (index.html, including SPA fallbacks) must be revalidated.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@notassets not path /assets/*
+		header @notassets Cache-Control "no-cache"
+
+		try_files {path} /index.html
+		file_server
 	}
 }

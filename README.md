@@ -237,7 +237,7 @@ pkg/                   framework-agnostic helpers
 
 migrations/            goose SQL migrations (additive only)
 deployment/
-  caddy/               Caddy reverse-proxy config used by compose
+  caddy/               Caddyfiles + the dashboard Dockerfile the caddy service builds
   prometheus/          scrape config
   grafana/             datasource/dashboard provisioning + api-metrics.json
 
@@ -378,8 +378,10 @@ It talks to the API at a relative `/api`, and in development Vite proxies that t
 `VITE_API_URL` stays empty locally — same origin, no CORS to configure. Set it to an absolute
 origin only when the API is deployed on a different domain; `example.env` documents both cases.
 
-Nothing serves the built dashboard in production yet: `deployment/caddy/Caddyfile` only
-reverse-proxies to the API, so `client/apps/dashboard/dist` is not deployed by anything.
+In production the dashboard is built and served by the Caddy image: it is compiled from
+`client/` at image build time and served at `/srv`, so it sits at the same origin as
+`/api` and gets the same TLS and Cloudflare treatment. The client is not hot-reloaded —
+a frontend change needs a rebuild of the caddy image.
 
 ## Deployment
 
@@ -388,7 +390,8 @@ reference material (TLS/domain, production flip, public surface, Cloudflare) liv
 [`deployment/DEPLOYMENT.md`](./deployment/DEPLOYMENT.md).
 
 The compose stack is deployment-ready as-is; production only changes the Caddy site
-address, the published ports, and `APP_ENV`. Nothing here serves the built dashboard.
+address, the published ports, and `APP_ENV`. Caddy builds and serves the dashboard, so
+a frontend change needs a rebuild of the caddy image.
 
 ## Configuration
 

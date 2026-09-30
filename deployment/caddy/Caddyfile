@@ -1,4 +1,5 @@
-# Caddy reverse proxy for the API, used by the compose stack.
+# Caddy reverse proxy for the API and static host for the React client,
+# used by the compose stack.
 #
 # For Cloudflare in front of the proxy, use Caddyfile.cloudflare instead
 # (set CADDYFILE=Caddyfile.cloudflare and run update-cloudflare-ips.sh first).
@@ -8,7 +9,7 @@
 #   api.example.com    automatic HTTPS on 80 + 443, HTTP redirected to HTTPS
 #
 # With a domain, publish the host's 80 and 443 (CADDY_HTTP_PORT /
-# CADDY_HTTPS_PORT) — otherwise the ACME challenge cannot be answered and
+# CADDY_HTTPS_PORT), otherwise the ACME challenge cannot be answered and
 # issuance silently fails while HTTP keeps serving.
 {
 	# The admin API (localhost:2019) is not needed in a container.
@@ -30,16 +31,31 @@
 		format json
 	}
 
-	# Caddy sets X-Forwarded-For / -Proto / -Host automatically. The API only
-	# honours them from the CIDRs listed in TRUSTED_PROXIES (the compose
-	# network subnet by default), so the real client IP reaches the audit log.
-	#
+	# API: only /api/* reaches the Go service. Caddy sets X-Forwarded-For /
+	# -Proto / -Host automatically; the API honours them only from the CIDRs
+	# in TRUSTED_PROXIES, so the real client IP reaches the audit log.
 	# The upstream port is the container-side APP_PORT, not a host port; the
-	# API is never published directly. Caddy fills in :80 when the port is
-	# omitted, which is why it has to be stated explicitly here.
-	reverse_proxy api:{$APP_PORT:8080} {
-		health_uri /api/healthz
-		health_interval 15s
-		health_timeout 3s
+	# API is never published directly.
+	handle /api/* {
+		reverse_proxy api:{$APP_PORT:8080} {
+			health_uri /api/healthz
+			health_interval 15s
+			health_timeout 3s
+		}
+	}
+
+	# Everything else: the built React app, with SPA fallback to index.html.
+	handle {
+		root * /srv
+
+		# Hashed build assets are cacheable forever; every other response
+		# (index.html, including SPA fallbacks) must be revalidated.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@notassets not path /assets/*
+		header @notassets Cache-Control "no-cache"
+
+		try_files {path} /index.html
+		file_server
 	}
 }

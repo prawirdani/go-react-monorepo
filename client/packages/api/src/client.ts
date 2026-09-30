@@ -71,7 +71,9 @@ export class APIClient {
 	private onTokenRefreshed?: (tokens: TokenPair) => Promise<void>;
 
 	constructor(conf: APIClientConfig) {
-		this.baseURL = conf.baseURL.replace(/\/$/, ""); // Remove trailing slash
+		// `?? ""` keeps a caller that omits baseURL on the documented same-origin
+		// default rather than throwing here at construction time.
+		this.baseURL = (conf.baseURL ?? "").replace(/\/$/, ""); // Remove trailing slash
 		this.tokenProvider = conf.tokenProvider;
 		this.refreshEndpoint = conf.refreshEndpoint;
 		this.onTokenRefreshed = conf.onTokenRefreshed;

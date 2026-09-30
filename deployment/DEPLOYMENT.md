@@ -230,8 +230,10 @@ Reference: [`BACKUP.md`](./BACKUP.md).
 - [ ] **No container healthcheck for `api`/`worker`.** The runtime image is
       distroless (no shell, no HTTP client), so a healthcheck cannot be
       expressed. Caddy performs an active health check on `/api/healthz`.
-- [ ] Application image is built locally as `go-react-monorepo:local`; there is no
-      registry, so every host builds its own.
+- [ ] Application images are built locally — `go-react-monorepo:local` (api/worker)
+      and the caddy image — with no registry, so every host builds its own. The
+      dashboard's Node/pnpm toolchain is pulled inside the Docker build, so the host
+      only needs Docker.
 
 ---
 
@@ -324,10 +326,27 @@ collapses the chain into a single verified client IP.
 
 ### Dashboard
 
-This stack deploys the API only. Nothing serves the built dashboard —
-`deployment/caddy/Caddyfile` only reverse-proxies to the API — so shipping
-`client/apps/dashboard/dist` (a static host, or embedding it in the Go binary) is a
-separate decision that has not been made yet.
+Caddy builds the dashboard from `client/` at image build time and serves the static
+bundle from `/srv`. `handle /api/*` goes to the API; everything else serves the SPA
+with a fallback to `index.html`. Hashed `/assets/*` are cached immutably for a year;
+every other response is `no-cache`.
+
+It shares the API's origin, so the same TLS and Cloudflare behaviour applies to the
+dashboard. The client is built at image build time and is not hot-reloaded — a
+frontend change needs a rebuild of the caddy image.
+
+Because Vite inlines `import.meta.env.VITE_*` into the bundle, two client settings
+must be supplied **at build time**, and changing either needs
+`docker compose up -d --build` rather than a restart:
+
+| Build arg | Value |
+| --- | --- |
+| `VITE_API_URL` | empty — same origin, so the client calls `/api` relative to the page |
+| `VITE_IMAGE_URL` | the public asset base for uploaded files; compose defaults it to `R2_BUCKET_URL` |
+
+The image has no `.env` (it is dockerignored), so an unset variable reaches the
+bundle as `undefined`. The client tolerates that, but the resulting asset URLs
+would resolve against the dashboard origin instead of the bucket.
 
 ---
 

@@ -186,9 +186,22 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Builds the dashboard from client/ and serves it alongside the API. The
+  # Dockerfile lives in deployment/caddy/ but its context is client/, so every
+  # COPY in it resolves inside that directory. Bare-metal development does not
+  # use this image — `make client:dev` runs Vite directly.
   caddy:
-    image: caddy:2-alpine
-    container_name: caddy
+    build:
+      context: ./client
+      dockerfile: ../deployment/caddy/Dockerfile
+      args:
+        # Vite inlines these into the bundle at build time. VITE_API_URL stays
+        # empty for the same-origin setup the Caddyfile provides; VITE_IMAGE_URL
+        # is the public asset base for uploads and falls back to the R2 bucket
+        # URL, which is the same server.
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_IMAGE_URL: ${VITE_IMAGE_URL:-${R2_BUCKET_URL:-}}
+    image: go-react-monorepo-caddy:local
     env_file:
       - .env
     networks: [app-net]

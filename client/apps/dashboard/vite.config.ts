@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       analyzer({
         analyzerMode: "static",
-        openAnalyzer: true,
+        openAnalyzer: env.VITE_ANALYZER === "true",
       }),
       devtools(),
       tanstackRouter({
