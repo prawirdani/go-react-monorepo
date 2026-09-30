@@ -4,13 +4,21 @@ Nightly logical dumps with local GFS retention, plus an optional offsite copy to
 **private** R2 bucket. This is the reference material for `DEPLOYMENT.md` §7.
 
 The `backup` sidecar (`deployment/backup/`) runs
-`deployment/backup/backup-postgres.sh` under busybox `crond` at **03:15
-container-local** (containers run UTC). Cron output is redirected to PID 1, so it
-shows up in `docker logs backup`.
+`deployment/backup/backup-postgres.sh` under Debian `cron` at **03:15
+container-local** (containers run UTC). The crontab is baked into the image and
+installed at container start by the entrypoint, which also materialises the
+environment the script needs into a root-only file. Both are deliberate: Debian cron
+does not inherit the container environment, and it refuses any `/etc/cron.d` file
+that is not root-owned and `0644` — the ownership and env setup exist so a silent
+no-backup cannot happen. Cron output is redirected to PID 1, so it shows up in
+`docker logs backup`.
 
 ---
 
 ## Pipeline
+
+The backup image is `FROM postgres:18.1`, matching the server's major version,
+because `pg_dump` must be at least the server's major version.
 
 | Stage | What | Cadence | Retention | Where |
 | --- | --- | --- | --- | --- |

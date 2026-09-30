@@ -35,7 +35,7 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 - [ ] Clone and check out the ref you are deploying (tag or commit).
 - [ ] `git status` — the working tree must be clean, or you are deploying
       something that exists only on your laptop. *(This repo currently has
-      uncommitted work; see §10.)*
+      uncommitted work; see §11.)*
 - [ ] `docker compose config --quiet` → exit 0.
 
 ---
@@ -196,20 +196,57 @@ Reference: [`BACKUP.md`](./BACKUP.md).
 
 ---
 
-## 8. Ongoing operations
+## 8. Upgrading PostgreSQL across a major version (17 -> 18)
+
+Compose pins `postgres:18.1`. Applying the 18 image to an existing 17 data volume
+does **not** upgrade it: the 18 image looks for the cluster at
+`/var/lib/postgresql/18/docker` (the declared volume is now `/var/lib/postgresql`),
+finds nothing, and runs `initdb` — producing a **silently empty database**. The old
+files are orphaned, not deleted. Read this before the first `up` after the bump.
+
+The database name is unchanged (`DB_NAME=golang-restapi`), so nothing was renamed;
+the only risk is the major version. PostgreSQL cannot start 18 on a 17 data
+directory without `pg_upgrade`.
+
+**Preferred path — dump and restore.** Before switching the image, take a dump with
+`pg_dump` from a 17 container (or use the newest existing dump in `backups/`):
+
+```bash
+docker compose run --rm --entrypoint sh backup -c 'pg_dump -Fc -h $DB_HOST -U $DB_USER -d $DB_NAME -f /backups/pre18.dump'
+```
+
+This must run **before** the postgres image is switched, so the backup image can
+still reach the old server. Then start 18 so it initialises a fresh cluster, and
+restore into it using the runbook in
+[`BACKUP.md` → Restore runbook](./BACKUP.md#restore-runbook).
+
+**Alternative — `pg_upgrade --link`.** The 18 image moved the volume to
+`/var/lib/postgresql` so the old and new data directories can be mounted side by
+side, which is what `pg_upgrade` needs. It is the option for a database large enough
+that a dump/restore window is unacceptable; it needs a maintenance window and should
+be rehearsed on a copy first.
+
+Either way the old cluster's files are left in place and remain recoverable until
+that volume is removed. A fresh install has none of this problem — the caveat only
+applies to a host with an existing `postgres-data` volume.
+
+---
+
+## 9. Ongoing operations
 
 - [ ] Rotate secrets on a schedule, and immediately if anyone leaves.
 - [ ] `docker compose down -v` **destroys** `postgres-data` and `redis-data`.
       Know that before running it; it is not a restart.
 - [ ] Re-run `update-cloudflare-ips.sh` periodically if CF is in front.
 - [ ] Keep the host patched; `docker compose pull` for base-image updates, then
-      `up -d`.
+      `up -d`. `pull` does **not** update caddy — it is a locally built image, so
+      rebuild it with `up -d --build` after a client change.
 - [ ] Migrations are additive; deploy order is `migrate` → `api`/`worker`, which
       the compose dependency graph already enforces.
 
 ---
 
-## 9. Rollback
+## 10. Rollback
 
 - [ ] Previous app image: rebuild from the prior commit and `docker compose up -d`.
 - [ ] Schema: migrations are additive, so an older binary usually runs against a
@@ -220,7 +257,7 @@ Reference: [`BACKUP.md`](./BACKUP.md).
 
 ---
 
-## 10. Known gaps — read before go-live
+## 11. Known gaps — read before go-live
 
 - [ ] **A real offsite upload has never run** — no private backup bucket or
       scoped credentials exist yet, so only local dumps are proven.

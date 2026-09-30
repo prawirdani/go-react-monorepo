@@ -71,7 +71,7 @@ services:
         condition: service_completed_successfully
 
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18.1
     env_file:
       - .env
     networks: [app-net]
@@ -80,7 +80,12 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-go-react-monorepo}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # postgres:18 keeps PGDATA at /var/lib/postgresql/18/docker, so the volume
+      # mounts at /var/lib/postgresql rather than /var/lib/postgresql/data. An
+      # existing volume holds a 17 cluster at its root, which this image will not
+      # read — it runs initdb instead, yielding an empty database. See
+      # DEPLOYMENT.md, "Upgrading PostgreSQL across a major version".
+      - postgres-data:/var/lib/postgresql
     # Not published. For pgAdmin / psql from outside, uncomment the loopback
     # mapping and tunnel it — `ssh -L 5432:127.0.0.1:5432 user@host`.
     # Never publish on 0.0.0.0: Docker publishes bypass ufw, so that would put
@@ -88,7 +93,11 @@ services:
     # ports:
     #   - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"${DB_USER:-postgres}\" -d \"${DB_NAME:-go-react-monorepo}\""]
+      test:
+        [
+          "CMD-SHELL",
+          'pg_isready -U "${DB_USER:-postgres}" -d "${DB_NAME:-go-react-monorepo}"',
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -96,7 +105,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.6.2
     env_file:
       - .env
     networks: [app-net]
@@ -125,7 +134,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi",
+          'if [ -n "$$REDIS_PASSWORD" ]; then redis-cli -a "$$REDIS_PASSWORD" ping; else redis-cli ping; fi',
         ]
       interval: 5s
       timeout: 5s
@@ -158,8 +167,15 @@ services:
     restart: "no"
 
   # Nightly logical backups. The sidecar gets pg_dump/pg_restore from the
-  # postgres image and rclone from apk, and runs busybox crond. Dumps land in
-  # the host-mounted `backups/` dir — same host, so they are NOT offsite.
+  # postgres image (same major as the server, which pg_dump requires) and rclone
+  # from apt. Dumps land in the host-mounted `backups/` dir — same host, so they
+  # are NOT offsite.
+  #
+  # The crontab is baked into the image and installed at container start by the
+  # image entrypoint, deliberately not bind-mounted into /etc/cron.d: Debian cron
+  # refuses a cron.d file that is not root-owned and 0644, and it does not inherit
+  # the container environment, so the entrypoint also materialises the DB_* and
+  # BACKUP_* variables into a root-only env file the job sources.
   #
   # Set BACKUP_R2_BUCKET to a SEPARATE, PRIVATE R2 bucket for offsite copies.
   # It must never be R2_BUCKET: that bucket is served from a public URL, and
@@ -168,7 +184,6 @@ services:
     build:
       context: ./deployment/backup
     image: go-react-monorepo-backup:local
-    entrypoint: ["crond", "-f", "-l", "8"]
     networks: [app-net]
     env_file:
       - .env
@@ -177,7 +192,6 @@ services:
       # is the `postgres` service.
       DB_HOST: postgres
     volumes:
-      - ./deployment/backup/crontab:/etc/crontabs/root:ro
       - ./deployment/backup/backup-postgres.sh:/backup-postgres.sh:ro
       - ./backups:/backups
     # No published ports: nothing needs to reach the backup sidecar.

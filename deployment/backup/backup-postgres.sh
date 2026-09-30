@@ -1,7 +1,7 @@
 #!/bin/sh
 # Nightly PostgreSQL logical backup with local GFS retention and an optional
-# private-R2 offsite copy. Runs inside the `backup` sidecar under busybox
-# crond, so this is POSIX `ash`: no bashisms, no arrays, no `pipefail`.
+# private-R2 offsite copy. Runs inside the `backup` sidecar under Debian cron
+# with /bin/sh = dash, so this is POSIX `sh`: no bashisms, no arrays, no `pipefail`.
 #
 # Design rules:
 #   - A dump is only "done" after it is renamed off its `.partial` suffix, and
