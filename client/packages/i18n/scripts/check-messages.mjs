@@ -1,10 +1,10 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Validates the message catalogs:
 //   1. every message parses as ICU (use-intl has no build-time ICU check),
 //   2. `en` and `id` expose identical key sets.
 // Exits non-zero on any problem.
 //
-// NOTE: Node resolves ESM specifiers literally, so this script imports the
+// NOTE: Bun resolves ESM specifiers literally, so this script imports the
 // namespace files directly (with .ts extensions) rather than the barrel
 // indexes, which use extensionless imports for bundler resolution.
 import IntlMessageFormat from "intl-messageformat"

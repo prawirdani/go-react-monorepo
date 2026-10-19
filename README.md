@@ -11,7 +11,7 @@ boundaries, interface-driven dependencies, manual dependency injection, and
 tests that never touch a real database, Redis, or SMTP server.
 
 The dashboard this API serves lives in the same repository, under [`client/`](./client/README.md): a
-self-contained pnpm + Turborepo monorepo holding `apps/dashboard` and the packages it shares. One
+self-contained bun + Turborepo monorepo holding `apps/dashboard` and the packages it shares. One
 commit therefore changes both halves, and when a request/response shape, a JSON field name, or an
 error code moves, the client's zod schemas move with it — see [Client](#client).
 
@@ -248,16 +248,16 @@ Makefile               dev/build/test/lint/migration/cli/client targets
 .air.worker.toml       Air config for the worker, same exclusion
 .golangci.yml          golangci-lint v2 config; `make lint` scopes its package paths
 
-client/                the dashboard: a self-contained pnpm + Turborepo monorepo
+client/                the dashboard: a self-contained bun + Turborepo monorepo
   apps/dashboard/      Vite + React 19 app (TanStack Router/Query/Form, Biome)
   packages/            api (fetch client), schemas (zod), queries, ui, utils, i18n, config
-  package.json pnpm-workspace.yaml turbo.json pnpm-lock.yaml
+  package.json turbo.json bun.lock
   AGENTS.md            conventions for working in the client half
 ```
 
 ## Client
 
-`client/` is a pnpm 10 + Turborepo workspace, independent of the Go module: it has its own
+`client/` is a bun 1.4 + Turborepo workspace, independent of the Go module: it has its own
 `package.json` and lockfile, and Turborepo only ever orchestrates packages that have a
 `package.json`, so the API is not a Turbo task and Go is not a Turbo package. The `make client:*`
 targets are the bridge.
@@ -282,7 +282,7 @@ Start there with [`client/README.md`](./client/README.md) for the frontend stack
   `make migration:*` targets.
 - Optional: [Air](https://github.com/cosmtrek/air) for `make dev` /
   `make dev:worker`, and `golangci-lint` v2 for `make lint`.
-- For the dashboard: Node 24 and pnpm 10 (`corepack enable`). Only needed if you
+- For the dashboard: bun 1.4. Only needed if you
   work on `client/`.
 
 ### 1. Start the stack
@@ -368,7 +368,7 @@ default `CMD`; the `worker` compose service overrides it with `./worker`.
 The dashboard is a separate process with its own toolchain, so it gets its own terminal:
 
 ```bash
-make client:install                                      # pnpm install, once
+make client:install                                      # bun install, once
 cp client/apps/dashboard/example.env client/apps/dashboard/.env
 make client:dev                                          # Vite on :$VITE_PORT, default 3001
 ```
@@ -980,7 +980,7 @@ other's tests.
 
 `make lint` and `make test` take their package paths from `GO_PACKAGES` in the Makefile
 (`./cmd/... ./internal/... ./pkg/... ./config/...`) rather than `./...`, because the module root now
-also holds `client/`: `./...` walks it, and pnpm's symlinked `node_modules` would be walked too.
+also holds `client/`: `./...` walks it, and bun's symlinked `node_modules` would be walked too.
 Add a new top-level Go directory to that variable.
 
 `golangci-lint` must be **v2.x**; the config header recommends:
@@ -993,7 +993,7 @@ go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 
 | Target | Purpose |
 | --- | --- |
-| `make client:install` | `pnpm install` in `client/` |
+| `make client:install` | `bun install` in `client/` |
 | `make client:dev` | dashboard dev server (Vite, proxies `/api` to the API) |
 | `make client:lint` | Biome |
 | `make client:build` | Turborepo build (`vite build` + `tsc` per app) |

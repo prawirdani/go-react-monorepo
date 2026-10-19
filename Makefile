@@ -5,7 +5,7 @@ ifneq (,$(wildcard ./.env))
 endif
 
 # Go source roots. Listed explicitly rather than `./...` because the module root
-# also holds `client/`, the JS monorepo: `./...` walks it, and pnpm's symlinked
+# also holds `client/`, the JS monorepo: `./...` walks it, and bun's symlinked
 # node_modules would be walked too. golangci-lint v2 has no skip-dirs knob, so
 # the scope belongs on the command line. Add a new top-level Go dir here.
 GO_PACKAGES = ./cmd/... ./internal/... ./pkg/... ./config/...
@@ -44,21 +44,21 @@ run:
 # not a turbo package and Go is not a turbo task: these targets are the bridge.
 # ---------------------------------------------------------------------------
 
-# Install client dependencies (pnpm).
+# Install client dependencies (bun).
 client\:install:
-	@cd client && pnpm install
+	@cd client && bun install
 
 client\:dev:
-	@cd client && pnpm dev
+	@cd client && bun run dev
 
 client\:lint:
-	@cd client && pnpm lint
+	@cd client && bun run lint
 
 client\:build:
-	@cd client && pnpm build
+	@cd client && bun run build
 
 client\:test:
-	@cd client && pnpm test
+	@cd client && bun run test
 
 # Developer CLI. Run `make cli` (or `go run ./cmd/cli help`) for subcommands.
 cli:

@@ -12,7 +12,7 @@ const root = fileURLToPath(new URL(".", import.meta.url))
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // `loadEnv` resolves the root from the process cwd, which differs between a
-  // direct `pnpm dev` and a turbo-run task, so pass it explicitly. The empty
+  // direct `bun run dev` and a turbo-run task, so pass it explicitly. The empty
   // prefix reads every var in `.env`, not just the `VITE_`-exposed ones.
   const env = loadEnv(mode, root, "")
   const port = Number(env.VITE_PORT) || 3001

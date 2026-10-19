@@ -269,7 +269,7 @@ applies to a host with an existing `postgres-data` volume.
       expressed. Caddy performs an active health check on `/api/healthz`.
 - [ ] Application images are built locally — `go-react-monorepo:local` (api/worker)
       and the caddy image — with no registry, so every host builds its own. The
-      dashboard's Node/pnpm toolchain is pulled inside the Docker build, so the host
+      dashboard's bun toolchain is pulled inside the Docker build, so the host
       only needs Docker.
 
 ---

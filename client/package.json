@@ -16,8 +16,10 @@
 		"turbo": "^2.10.5",
 		"typescript": "7.0.2"
 	},
-	"packageManager": "pnpm@12.5.1",
+	"packageManager": "bun@1.4.2",
 	"engines": {
-		"node": ">=18"
-	}
+		"bun": ">=1.4"
+	},
+	"workspaces": ["apps/*", "packages/*"],
+	"trustedDependencies": ["esbuild"]
 }

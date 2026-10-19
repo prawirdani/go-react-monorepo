@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Catalog hygiene report. Informational only — always exits 0.
 //
 // `check:messages` guards correctness (ICU validity + key parity) and is wired
@@ -11,7 +11,7 @@
 // messages are emitted from there, so an app-only scan would report every
 // `validation.*` key as dead.
 //
-// Usage: pnpm audit:messages
+// Usage: bun run audit:messages
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -113,4 +113,4 @@ for (const key of identical) {
 	console.log(`  ${key} = "${String(flat.en[key]).slice(0, 40)}"`)
 }
 
-console.log("\nreported, not enforced — run `pnpm check:messages` for the gate")
+console.log("\nreported, not enforced — run `bun run check:messages` for the gate")

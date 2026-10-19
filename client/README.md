@@ -1,10 +1,10 @@
 # React Monorepo Template
 
-A production-oriented React monorepo template built with **pnpm + Turborepo**. Ships a single dashboard app plus a set of shared packages (API client, TanStack Query wrappers, zod schemas, UI kit) that can be reused by future apps.
+A production-oriented React monorepo template built with **bun + Turborepo**. Ships a single dashboard app plus a set of shared packages (API client, TanStack Query wrappers, zod schemas, UI kit) that can be reused by future apps.
 
 ## Tech Stack
 
-- **Build:** Vite + Turborepo + pnpm workspaces
+- **Build:** Vite + Turborepo + bun workspaces
 - **Framework:** React 19
 - **Routing:** TanStack Router (file-based)
 - **Server state:** TanStack Query
@@ -49,9 +49,9 @@ DESIGN.md             # the visual system: tokens, named rules, per-component sp
 ## Getting Started
 
 ```bash
-pnpm install
+bun install
 cp apps/dashboard/example.env apps/dashboard/.env   # then fill in values
-pnpm dev                                             # dashboard on $VITE_PORT (default 3001)
+bun run dev                                             # dashboard on $VITE_PORT (default 3001)
 ```
 
 ### Environment Variables (`apps/dashboard/.env`)
@@ -67,13 +67,13 @@ pnpm dev                                             # dashboard on $VITE_PORT (
 ### Scripts
 
 ```bash
-pnpm build          # turbo run build (runs check:messages first)
-pnpm dev            # turbo run dev
-pnpm lint           # biome lint
-pnpm format         # biome format
-pnpm check:write    # biome check --write
-pnpm check:messages # validate catalogs: ICU syntax + locale key parity
-pnpm audit:messages # report catalog smells: unused / duplicate / untranslated keys
+bun run build          # turbo run build (runs check:messages first)
+bun run dev            # turbo run dev
+bun run lint           # biome lint
+bun run format         # biome format
+bun run check:write    # biome check --write
+bun run check:messages # validate catalogs: ICU syntax + locale key parity
+bun run audit:messages # report catalog smells: unused / duplicate / untranslated keys
 ```
 
 ## Authentication & Session Model
@@ -152,9 +152,9 @@ const buildOptions = (tc: Translator<"common">) => …                        //
 
 `MessageKeys<N>` is the union of leaf keys in namespace `N` (objects never qualify), and `Translator<N>` is the translator bound to `N`.
 
-**Guard:** `pnpm check:messages` validates ICU syntax for every message and asserts identical key sets across locales. Vite has no build-time ICU validation — a malformed plural silently renders the key path at runtime — so this is the only guard. It is wired into the pipeline (`build` depends on it), so a malformed plural or a one-sided key fails the build instead of shipping.
+**Guard:** `bun run check:messages` validates ICU syntax for every message and asserts identical key sets across locales. Vite has no build-time ICU validation — a malformed plural silently renders the key path at runtime — so this is the only guard. It is wired into the pipeline (`build` depends on it), so a malformed plural or a one-sided key fails the build instead of shipping.
 
-**Hygiene:** `pnpm audit:messages` reports what shouldn't fail a build — keys nothing references, text duplicated across keys, and strings identical in every locale. It scans `packages/schemas` too, because validation keys are emitted from there; an app-only scan would report every `validation.*` key as dead. Run it when adding or removing screens.
+**Hygiene:** `bun run audit:messages` reports what shouldn't fail a build — keys nothing references, text duplicated across keys, and strings identical in every locale. It scans `packages/schemas` too, because validation keys are emitted from there; an app-only scan would report every `validation.*` key as dead. Run it when adding or removing screens.
 
 **Validation messages are keys, not copy.** `packages/schemas` emits `validation.*` keys (a locale-agnostic global error map keys generic zod issues too), and the UI resolves them at the display layer:
 
@@ -204,6 +204,6 @@ The two repos are kept in sync; when the backend changes, the API layer in `pack
 
 ## Gotchas
 
-- **Adding an `exports` subpath to a workspace package requires a dev-server restart.** Vite caches the `exports` map, so a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath — while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. Restart `pnpm dev`; don't chase the module itself.
+- **Adding an `exports` subpath to a workspace package requires a dev-server restart.** Vite caches the `exports` map, so a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath — while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. Restart `bun run dev`; don't chase the module itself.
 - **Set `VITE_VERSION` in the build environment.** `apps/dashboard/.env` is gitignored and `example.env` is only a template, so a production build needs the value supplied by the environment — otherwise the sidebar footer falls back to `dev`.
 - **Pre-existing `tsc` failure** (not caused by feature work) — 1: `vite.config.ts` rejects an unknown `babel` option.

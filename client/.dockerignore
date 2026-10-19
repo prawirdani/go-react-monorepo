@@ -1,7 +1,7 @@
 # The caddy image builds with client/ as its build context (see
 # deployment/caddy/Dockerfile), so this file — not the repo-root .dockerignore —
 # governs what is sent to the daemon. Keep node_modules/.turbo out of the
-# context so the host-resolved tree never lands over `pnpm install`.
+# context so the host-resolved tree never lands over `bun install`.
 node_modules
 **/node_modules
 .turbo
@@ -18,6 +18,5 @@ coverage
 .DS_Store
 .git
 
-# NOTE: pnpm-lock.yaml and pnpm-workspace.yaml are COPYed explicitly by the
-# Dockerfile — never ignore them. routeTree.gen.ts is regenerated during the
-# build but kept available.
+# NOTE: bun.lock is COPYed explicitly by the Dockerfile — never ignore it.
+# routeTree.gen.ts is regenerated during the build but kept available.

@@ -20,7 +20,7 @@ import { z } from "zod";
  * True when `tz` names a zone the platform knows.
  *
  * The backend falls back to UTC for an absent or unknown zone, and `Intl` is
- * the zone database both the browser and Node ship, so an unknown name is
+ * the zone database both the browser and Bun ship, so an unknown name is
  * dropped here rather than sent.
  */
 export function isValidTimeZone(tz: string): boolean {

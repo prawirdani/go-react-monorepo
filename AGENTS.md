@@ -4,7 +4,7 @@ Go RESTful API template. Clean architecture (Handler -> Service -> Repository) w
 
 ## Repository layout
 
-One repo, two toolchains: the API is the Go module at the root, and the dashboard it serves is a pnpm + Turborepo JS monorepo in `client/`.
+One repo, two toolchains: the API is the Go module at the root, and the dashboard it serves is a bun + Turborepo JS monorepo in `client/`.
 
 ```
 client/                  # JS monorepo: apps/dashboard + packages/{api,schemas,queries,ui,utils,i18n,config}
@@ -36,7 +36,7 @@ make migration:create  # Scaffold a goose migration
 make migration:up      # Apply migrations
 make cli               # Developer CLI, e.g. `make cli ARGS="permissions"`
 make permissions       # Dump registered permission codes as a JS array
-make client:install    # Install the dashboard's dependencies (pnpm)
+make client:install    # Install the dashboard's dependencies (bun)
 make client:dev        # Dashboard dev server (proxies /api to the API)
 make client:lint       # biome
 make client:build      # turbo build (vite build && tsc)
