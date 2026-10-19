@@ -7,7 +7,7 @@ import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react"
 import { defineConfig, loadEnv } from "vite"
 import { analyzer } from "vite-bundle-analyzer"
 
-const root = fileURLToPath(new URL(".", import.meta.url))
+const root = fileURLToPath(new URL("../../..", import.meta.url))
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
