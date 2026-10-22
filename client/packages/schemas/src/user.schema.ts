@@ -8,11 +8,6 @@ const GENDERS = ["M", "F", "O"] as const;
 const ROLES = ["admin", "user"] as const;
 const DELETED_STATES = ["active", "deleted"] as const;
 
-// The group opens on live accounts. This is the filter's schema default, so it
-// behaves like `page=1` / `sort=created_at`: absent in the URL, re-applied on
-// every parse, and the status group always holds at least one value.
-export const DEFAULT_DELETED_STATES: DeletedState[] = ["active"];
-
 export type Gender = (typeof GENDERS)[number];
 export type Role = (typeof ROLES)[number];
 export type DeletedState = (typeof DELETED_STATES)[number];
@@ -46,10 +41,10 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 // Search query for the admin users table. Every field `.catch`es to a default so
 // a hand-edited/garbage URL param falls back instead of throwing at the router.
 // Params mirror the backend: ?sort=&order=&page=&limit=&role=&gender=&deleted_at=
-// — role, gender and deleted_at are multi-select (comma-joined server-side;
-// gender is UPPERCASE; deleted_at values are `active`/`deleted`). An absent
-// filter means no filter at all, so the backend lists every row; the UI starts
-// with deleted_at=active checked, which asks for live accounts only.
+// — role and gender are multi-select (comma-joined server-side, gender is
+// UPPERCASE); deleted_at is a radio of one state (`active`/`deleted`). An absent
+// param means no filter for that group — "Semua" — so the backend lists every
+// row unless a group narrows it.
 export const USER_SORT_KEYS = ["id", "created_at", "updated_at"] as const;
 export type UserSortKey = (typeof USER_SORT_KEYS)[number];
 
@@ -66,7 +61,8 @@ export type UserFilter = {
 const userFilters = {
 	role: z.array(z.enum(ROLES)).catch([]),
 	gender: z.array(z.enum(GENDERS)).catch([]),
-	deleted_at: z.array(z.enum(DELETED_STATES)).catch(DEFAULT_DELETED_STATES),
+	// Radio: one state at a time. Absent is "Semua" (no filter).
+	deleted_at: z.enum(DELETED_STATES).optional().catch(undefined),
 };
 
 export const userSearchQuerySchema = z.object({
@@ -78,9 +74,8 @@ export const userSearchQuerySchema = z.object({
 export type UserSearchQuery = z.infer<typeof userSearchQuerySchema>;
 
 /**
- * Each filter's default for the URL stripper. `deleted_at` is deliberately
- * absent: it opens pre-selected, so it belongs in the URL like any other live
- * filter instead of being implied by a schema default.
+ * Each filter's default for the URL stripper. `deleted_at` is not stripped: an
+ * empty role/gender selection is noise, while a chosen status is real state.
  */
 export const userSearchQueryStripDefaults = filteringStripDefaults({
 	role: userFilters.role,

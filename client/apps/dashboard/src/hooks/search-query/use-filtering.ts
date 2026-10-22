@@ -1,28 +1,25 @@
 import { useMemo } from "react"
-import type { SearchQuery, SearchQueryNavigate } from "./types"
+import type { SearchQueryNavigate } from "./types"
 
 /**
- * Filter mutators: every toggle and clear resets to page 1.
+ * Filter mutators: every change and clear resets to page 1.
  *
- * The current selection is read from the VALIDATED query — the schema
- * `.catch([])`s every filter, so it is always an array. The router's raw `prev`
- * is unsafe to read for arrays (an absent param arrives `undefined`); it is
- * only spread.
+ * A filter is written as `undefined` when nothing is selected, which drops the
+ * param from the URL — that is what "Semua" means on both sides: no filter for
+ * that group. The router's raw `prev` is only spread; its absent params are
+ * `undefined` and unsafe to read.
  */
-export function useFiltering(
-  search: SearchQuery,
-  navigate: SearchQueryNavigate,
-) {
+export function useFiltering(navigate: SearchQueryNavigate) {
   return useMemo(
     () => ({
-      toggleFilter: (key: string, value: string, on: boolean) => {
-        const current = search[key] as string[]
+      // A multi group passes its whole selection; a radio group passes the one
+      // chosen value. Either way, nothing selected means the param is dropped.
+      setFilter: (key: string, value: string[] | string | undefined) => {
+        const empty = Array.isArray(value) && value.length === 0
         navigate({
           search: (prev) => ({
             ...prev,
-            [key]: on
-              ? [...current, value]
-              : current.filter((entry) => entry !== value),
+            [key]: empty ? undefined : value,
             page: 1,
           }),
         })
@@ -31,12 +28,12 @@ export function useFiltering(
         navigate({
           search: (prev) => ({
             ...prev,
-            ...Object.fromEntries(keys.map((key) => [key, []])),
+            ...Object.fromEntries(keys.map((key) => [key, undefined])),
             page: 1,
           }),
         })
       },
     }),
-    [navigate, search],
+    [navigate],
   )
 }

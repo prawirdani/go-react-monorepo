@@ -20,6 +20,7 @@ export default {
 		prev: "Previous page",
 		next: "Next page",
 		filter: "Filter",
+		all: "All",
 		clear: "Clear filters",
 		sortNewest: "Latest",
 		sortOldest: "Oldest",

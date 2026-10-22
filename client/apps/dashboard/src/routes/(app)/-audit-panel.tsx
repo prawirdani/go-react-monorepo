@@ -82,7 +82,7 @@ export function AuditPanel({ className }: { className?: string }) {
   const nav = navigate as SearchQueryNavigate
   const { setPage, setLimit } = usePagination(search, nav)
   const { toggleSort } = useSorting(search, nav)
-  const { toggleFilter, clearFilters } = useFiltering(search, nav)
+  const { setFilter, clearFilters } = useFiltering(nav)
   const { setDate, setRange, clearDate } = useDateFiltering(search, nav)
 
   const { data, isPending, isError, isPlaceholderData } = useQuery(
@@ -136,7 +136,7 @@ export function AuditPanel({ className }: { className?: string }) {
             <FilterDropdown
               groups={[entityGroup]}
               activeCount={search.entity.length}
-              onToggle={toggleFilter}
+              onChange={setFilter}
               onClear={() => clearFilters(["entity"])}
             />
             <DateFilter

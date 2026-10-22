@@ -23,6 +23,7 @@ const common: DeepStringify<typeof en> = {
 		prev: "Halaman sebelumnya",
 		next: "Halaman berikutnya",
 		filter: "Filter",
+		all: "Semua",
 		clear: "Hapus filter",
 		sortNewest: "Terbaru",
 		sortOldest: "Terlama",

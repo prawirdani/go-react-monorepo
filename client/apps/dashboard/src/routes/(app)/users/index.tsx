@@ -1,7 +1,6 @@
 import { useFormatter, useTranslations } from "@repo/i18n"
 import type { SortOrder } from "@repo/schemas/search-query"
 import {
-  DEFAULT_DELETED_STATES,
   type Gender,
   type Role,
   type User,
@@ -43,7 +42,7 @@ import {
 } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { createFileRoute, redirect, stripSearchParams } from "@tanstack/react-router"
+import { createFileRoute, stripSearchParams } from "@tanstack/react-router"
 import { Fragment, useState } from "react"
 import { FilterDropdown } from "@/components/data-table/filter-dropdown"
 import { SortableHead } from "@/components/data-table/sortable-head"
@@ -77,19 +76,7 @@ import { InviteUserDialog } from "./-invite-user-dialog"
 
 export const Route = createFileRoute("/(app)/users/")({
   validateSearch: userSearchQuerySchema,
-  // The status filter is a real filter, so it lives in the URL rather than being
-  // implied by the schema default: a first visit is redirected once to
-  // `deleted_at=active`, which also makes the visited URL reproducible. The
-  // redirect only fires when the param is absent, so clearing the group (an
-  // explicit empty selection) is left alone.
-  beforeLoad: ({ search, location }) => {
-    if ("deleted_at" in location.search) return
-    throw redirect({
-      search: { ...search, deleted_at: DEFAULT_DELETED_STATES },
-      replace: true,
-    })
-  },
-  // Keep the URL clean: an empty filter array is omitted entirely rather than
+  // Keep the URL clean: an empty multi-select is omitted entirely rather than
   // serialized as `role=[]`. The base params (page/limit/sort/order) stay.
   search: {
     middlewares: [stripSearchParams(userSearchQueryStripDefaults)],
@@ -152,7 +139,7 @@ function RouteComponent() {
   const nav = navigate as SearchQueryNavigate
   const { setPage, setLimit } = usePagination(search, nav)
   const { toggleSort } = useSorting(search, nav)
-  const { toggleFilter, clearFilters } = useFiltering(search, nav)
+  const { setFilter, clearFilters } = useFiltering(nav)
 
   const { data, isPending, isError, isPlaceholderData } = useQuery(
     listUser(search),
@@ -185,45 +172,20 @@ function RouteComponent() {
       })),
     },
     {
-      // Deletion state as a filter, not a separate control. It opens on
-      // "active"; checking every state (or clearing the group) means no filter,
-      // which the backend answers with every row.
+      // Deletion state is a radio: one state at a time, or "Semua".
       key: "deleted_at",
       label: t("users.table.status"),
-      selected: search.deleted_at,
+      mode: "radio" as const,
+      selected: search.deleted_at ? [search.deleted_at] : [],
       options: [
         { value: "active", label: t("users.status.active") },
         { value: "deleted", label: t("users.status.deleted") },
       ],
     },
   ]
-  // The status group starts on "active"; that is a real narrowing filter, so it
-  // counts like role and gender do.
+  // "Semua" is not a filter, so it does not count; each applied value does.
   const activeFilterCount =
-    search.role.length + search.gender.length + search.deleted_at.length
-
-  // Checking every option of a group is the same query as checking none, so the
-  // group clears itself instead of pinning a filter that changes nothing. The
-  // empty selection is stored explicitly, so a cleared status group means
-  // "every row" rather than falling back to the "active" default.
-  const toggleGroupFilter = (key: string, value: string, on: boolean) => {
-    const group = filterGroups.find((entry) => entry.key === key)
-    const selected: string[] = group ? [...group.selected] : []
-    const next = on
-      ? [...selected, value]
-      : selected.filter((entry) => entry !== value)
-    const coversAll =
-      group !== undefined &&
-      group.options.length > 0 &&
-      group.options.every((option) => next.includes(option.value))
-
-    if (!coversAll) {
-      toggleFilter(key, value, on)
-      return
-    }
-
-    nav({ search: (prev) => ({ ...prev, [key]: [], page: 1 }) })
-  }
+    search.role.length + search.gender.length + (search.deleted_at ? 1 : 0)
 
   return (
     <Page
@@ -245,10 +207,14 @@ function RouteComponent() {
                 <FilterDropdown
                   groups={filterGroups}
                   activeCount={activeFilterCount}
-                  onToggle={toggleGroupFilter}
-                  onClear={() =>
-                    clearFilters(["role", "gender", "deleted_at"])
-                  }
+                  onChange={(key, values) => {
+                    // Radio groups are scalar params; the rest are arrays.
+                    const group = filterGroups.find(
+                      (entry) => entry.key === key,
+                    )
+                    setFilter(key, group?.mode === "radio" ? values[0] : values)
+                  }}
+                  onClear={() => clearFilters(["role", "gender", "deleted_at"])}
                 />
               </>
             }
@@ -328,7 +294,7 @@ function RouteComponent() {
                     >
                       {t("users.table.created")}
                     </SortableHead>
-                    {(canEdit || canDelete || canRestore) ? (
+                    {canEdit || canDelete || canRestore ? (
                       <TableHead className="w-[104px] px-3 text-right">
                         <span className="sr-only">
                           {t("users.table.actions")}
@@ -458,9 +424,11 @@ function RouteComponent() {
                               timeStyle: "short",
                             })}
                           </TableCell>
-                          {(isDeleted
-                            ? canRestore && !isSelf
-                            : (canEdit || canDelete) && !isSelf) ? (
+                          {(
+                            isDeleted
+                              ? canRestore && !isSelf
+                              : (canEdit || canDelete) && !isSelf
+                          ) ? (
                             <TableCell className="px-3 text-right">
                               <div className="flex justify-end gap-1">
                                 {isDeleted ? (
@@ -587,9 +555,7 @@ function UsersLoading({ compact }: { compact: boolean }) {
               <TableHead className="px-3 panel-label">
                 {t("users.table.created")}
               </TableHead>
-              {showActions ? (
-                <TableHead className="w-[104px] px-3" />
-              ) : null}
+              {showActions ? <TableHead className="w-[104px] px-3" /> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -914,7 +880,8 @@ function RestoreUserDialog({ user }: { user: User }) {
       // terms instead of the generic conflict toast.
       onError: (e) =>
         handleError(e, {
-          USER_EMAIL_CONFLICT: () => toast.error(t("users.restore.emailConflict")),
+          USER_EMAIL_CONFLICT: () =>
+            toast.error(t("users.restore.emailConflict")),
         }),
     })
 
@@ -964,9 +931,7 @@ function DeletedBadge({ deletedAt }: { deletedAt: string }) {
   const format = useFormatter()
   return (
     <span className="flex shrink-0 flex-col items-end">
-      <StateBadge className="uppercase">
-        {t("users.status.deleted")}
-      </StateBadge>
+      <StateBadge className="uppercase">{t("users.status.deleted")}</StateBadge>
       <span className="mt-0.5 font-mono text-xs text-muted-foreground">
         {format.dateTime(new Date(deletedAt), {
           dateStyle: "medium",
