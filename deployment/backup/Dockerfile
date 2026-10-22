@@ -1,19 +1,21 @@
-# Backup sidecar: pg client tools come from the postgres image; rclone adds
-# S3/R2 upload. The backup script itself is bind-mounted, so changing it does
-# not require an image rebuild.
-FROM postgres:18.1
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends cron rclone \
-	&& rm -rf /var/lib/apt/lists/*
+# syntax=docker/dockerfile:1
 
-# The crontab is baked to a NON-cron path on purpose. Debian cron refuses any
-# /etc/cron.d file that is not root-owned or that is group/other-writable, and a
-# bind mount inherits the host uid/mode, so mounting it into /etc/cron.d is
-# silently ignored. It also cannot be installed at build time: the container
-# environment only exists at runtime and must be materialised first.
-# entrypoint.sh copies it into place as root:root 0644 at container start.
-COPY crontab /etc/backup-crontab
+# Self-contained backup runner, independent of the app/migrate images.
+# Built on the official rclone image (Alpine) — Alpine ships postgresql18-client
+# via apk, so no PGDG/glibc dance, and rclone comes preinstalled and current.
+# ~100MB vs ~300MB for the postgres image + apt rclone. Runs busybox crond in
+# the foreground; one daily job streams `pg_dump -Fc | rclone copyto` to R2
+# (see backup-postgres.sh).
+FROM rclone/rclone:latest
+
+# pg_dump must be >= its server (Postgres 18); Alpine's apk has the matching 18
+# client natively. busybox already provides crond.
+RUN apk add --no-cache postgresql18-client
+
+COPY backup-postgres.sh /usr/local/bin/backup-postgres.sh
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY crontab /etc/crontabs/root
+RUN chmod +x /usr/local/bin/backup-postgres.sh /usr/local/bin/entrypoint.sh
 
+# The rclone base sets ENTRYPOINT ["rclone"]; override it.
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

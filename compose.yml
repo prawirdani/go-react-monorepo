@@ -166,20 +166,20 @@ services:
     # One-shot: never restart, and a failure must block the app tier.
     restart: "no"
 
-  # Nightly logical backups. The sidecar gets pg_dump/pg_restore from the
-  # postgres image (same major as the server, which pg_dump requires) and rclone
-  # from apt. Dumps land in the host-mounted `backups/` dir — same host, so they
-  # are NOT offsite.
+  # Nightly logical backups, offsite-only. Built on the rclone image (Alpine)
+  # with postgresql18-client from apk — ~100MB vs ~300MB for the postgres image
+  # plus apt rclone, and rclone is preinstalled. One busybox-crond job streams
+  # `pg_dump -Fc | rclone copyto` straight to a private R2 bucket; there is no
+  # local copy and no on-host volume. Retention is an R2 lifecycle rule on
+  # BACKUP_PREFIX, not pruned here.
   #
-  # The crontab is baked into the image and installed at container start by the
-  # image entrypoint, deliberately not bind-mounted into /etc/cron.d: Debian cron
-  # refuses a cron.d file that is not root-owned and 0644, and it does not inherit
-  # the container environment, so the entrypoint also materialises the DB_* and
-  # BACKUP_* variables into a root-only env file the job sources.
+  # The crontab is baked at /etc/crontabs/root (busybox's default). cron does not
+  # inherit the container environment, so the entrypoint snapshots the DB_* and
+  # BACKUP_R2_* variables into /etc/backup.env, which the job sources.
   #
-  # Set BACKUP_R2_BUCKET to a SEPARATE, PRIVATE R2 bucket for offsite copies.
-  # It must never be R2_BUCKET: that bucket is served from a public URL, and
-  # the script hard-refuses to upload to it.
+  # BACKUP_R2_BUCKET must be a SEPARATE, PRIVATE R2 bucket. It must never be
+  # R2_BUCKET: that bucket is served from a public URL, and the script
+  # hard-refuses to upload to it.
   backup:
     build:
       context: ./deployment/backup
@@ -191,10 +191,11 @@ services:
       # .env sets DB_HOST=localhost for bare-metal; inside compose the database
       # is the `postgres` service.
       DB_HOST: postgres
-    volumes:
-      - ./deployment/backup/backup-postgres.sh:/backup-postgres.sh:ro
-      - ./backups:/backups
-    # No published ports: nothing needs to reach the backup sidecar.
+      # cron fires in the container's local time; pin it so "03:15" is a known
+      # wall clock rather than UTC.
+      TZ: ${TZ:-Asia/Jakarta}
+    # No published ports and no volumes: the sidecar only reaches the database
+    # and R2, and keeps nothing on the host.
     depends_on:
       postgres:
         condition: service_healthy

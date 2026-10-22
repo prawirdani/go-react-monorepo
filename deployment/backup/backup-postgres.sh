@@ -1,144 +1,77 @@
 #!/bin/sh
-# Nightly PostgreSQL logical backup with local GFS retention and an optional
-# private-R2 offsite copy. Runs inside the `backup` sidecar under Debian cron
-# with /bin/sh = dash, so this is POSIX `sh`: no bashisms, no arrays, no `pipefail`.
+# One backup run: pg_dump -Fc (custom, already compressed) -> temp file ->
+# rclone copyto -> R2. Invoked by cron (see crontab); env sourced from
+# /etc/backup.env.
 #
-# Design rules:
-#   - A dump is only "done" after it is renamed off its `.partial` suffix, and
-#     only a valid archive after `pg_restore --list` succeeds.
-#   - Local dumps are NOT offsite. Same-host copies die with the host.
-#   - Offsite must be a SEPARATE, PRIVATE bucket. `R2_BUCKET` is public; the
-#     script refuses to upload there (see the guard below).
-#   - `rclone copy`, never `rclone sync`: mirroring would propagate an empty or
-#     lost local `backups/` dir by deleting every remote copy.
+#   pg_dump -Fc > $TMP && rclone copyto $TMP r2:<bucket>/<prefix>/<db>-<ts>.dump
+#
+# Custom format (-Fc) so the dump restores with pg_restore: selective/parallel
+# restore, inspectable TOC, and click-restore in pgAdmin. It is compressed
+# internally, so no separate gzip. Trade-off: pg_restore must be >= the dumping
+# server's version.
+#
+# Ownership is RECORDED (no --no-owner here): a custom archive keeps owner as
+# metadata, so the restore side chooses — `pg_restore --no-owner` to drop it on
+# a scratch/pgAdmin target, or omit it on the real server (where the role
+# exists) to preserve it.
+#
+# The temp file is required, not a style choice: `rclone rcat` streams with
+# chunked transfer-encoding, which R2 rejects (501 NotImplemented), and rcat
+# cannot retry because stdin is not seekable -> every run would fail. A file
+# gives rclone a known length and a rewindable source so its retries work.
+#
+# Backups use their OWN private R2 bucket + credentials (BACKUP_R2_*), separate
+# from the public images bucket (R2_BUCKET) — a leaked images key can never read
+# DB dumps, and vice versa. Retention is an R2 lifecycle rule on BACKUP_PREFIX —
+# no pruning here (that would need bucket-API scope we don't grant).
+#
+# rclone remote config comes entirely from RCLONE_CONFIG_R2_* env, so no
+# rclone.conf and no secret on a command line. pg_dump reads PG* env for the
+# same reason. Single-stream whole-DB dump; switch to WAL archiving only if a
+# dump ever gets too slow.
 set -eu
 
-log() {
-    printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"
-}
+: "${DB_HOST:?DB_HOST not set}"
+: "${DB_PORT:?DB_PORT not set}"
+: "${DB_USER:?DB_USER not set}"
+: "${DB_PASSWORD:?DB_PASSWORD not set}"
+: "${DB_NAME:?DB_NAME not set}"
+: "${BACKUP_R2_ACCOUNT_ID:?BACKUP_R2_ACCOUNT_ID not set}"
+: "${BACKUP_R2_ACCESS_KEY_ID:?BACKUP_R2_ACCESS_KEY_ID not set}"
+: "${BACKUP_R2_SECRET_ACCESS_KEY:?BACKUP_R2_SECRET_ACCESS_KEY not set}"
+: "${BACKUP_R2_BUCKET:?BACKUP_R2_BUCKET not set}"
 
-die() {
-    log "ERROR: $*"
+BUCKET="$BACKUP_R2_BUCKET"
+PREFIX="${BACKUP_PREFIX:-postgres}"
+
+# HARD GUARD: R2_BUCKET is served from a public URL, so a dump there is a data
+# leak, not a backup. Refuse before configuring or uploading anything.
+if [ -n "${R2_BUCKET:-}" ] && [ "$BUCKET" = "$R2_BUCKET" ]; then
+    echo "backup: BACKUP_R2_BUCKET is set to R2_BUCKET, which is PUBLIC. Refusing to upload backups to a public bucket. Use a separate PRIVATE bucket." >&2
     exit 1
-}
-
-# --- Required configuration ------------------------------------------------
-for v in DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME; do
-    eval "value=\${$v:-}"
-    [ -n "$value" ] || die "required environment variable $v is not set"
-done
-
-# --- Optional configuration (defaults) -------------------------------------
-BACKUP_DIR="${BACKUP_DIR:-/backups}"
-BACKUP_RETENTION_DAILY="${BACKUP_RETENTION_DAILY:-7}"
-BACKUP_RETENTION_WEEKLY="${BACKUP_RETENTION_WEEKLY:-4}"
-BACKUP_RETENTION_MONTHLY="${BACKUP_RETENTION_MONTHLY:-6}"
-BACKUP_PREFIX="${BACKUP_PREFIX:-postgres}"
-BACKUP_R2_BUCKET="${BACKUP_R2_BUCKET:-}"
-BACKUP_R2_ACCESS_KEY_ID="${BACKUP_R2_ACCESS_KEY_ID:-}"
-BACKUP_R2_SECRET_ACCESS_KEY="${BACKUP_R2_SECRET_ACCESS_KEY:-}"
-BACKUP_R2_ACCOUNT_ID="${BACKUP_R2_ACCOUNT_ID:-${R2_ACCOUNT_ID:-}}"
-BACKUP_R2_RETAIN_DAYS="${BACKUP_R2_RETAIN_DAYS:-30}"
-
-DAILY_DIR="$BACKUP_DIR/daily"
-WEEKLY_DIR="$BACKUP_DIR/weekly"
-MONTHLY_DIR="$BACKUP_DIR/monthly"
-mkdir -p "$DAILY_DIR" "$WEEKLY_DIR" "$MONTHLY_DIR"
-
-STAMP="$(date -u '+%Y-%m-%dT%H%M%SZ')"
-PARTIAL="$DAILY_DIR/$STAMP.dump.partial"
-FINAL="$DAILY_DIR/$STAMP.dump"
-CREATED_FILES=""
-UPLOAD_RAN="no"
-
-log "starting backup db=$DB_NAME host=$DB_HOST:$DB_PORT prefix=$BACKUP_PREFIX"
-
-# --- 1. Dump ---------------------------------------------------------------
-# PGPASSWORD is scoped to the command only; it is never exported or logged.
-if ! PGPASSWORD="$DB_PASSWORD" pg_dump -Fc \
-    -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-    -f "$PARTIAL"; then
-    rm -f "$PARTIAL"
-    die "pg_dump failed"
-fi
-# Only now is an interrupted dump impossible: the rename drops `.partial`, so
-# a killed pg_dump can never be mistaken for a good backup.
-mv "$PARTIAL" "$FINAL"
-CREATED_FILES="$FINAL"
-log "dump written: $FINAL"
-
-# --- 2. Verify the archive -------------------------------------------------
-if ! pg_restore --list "$FINAL" >/dev/null 2>&1; then
-    rm -f "$FINAL"
-    die "pg_restore --list failed; $FINAL is not a valid archive and was deleted"
-fi
-log "archive verified: $FINAL"
-
-# --- 3. Tier promotion (GFS) ----------------------------------------------
-if [ "$(date -u '+%w')" = "0" ]; then
-    cp "$FINAL" "$WEEKLY_DIR/$STAMP.dump"
-    CREATED_FILES="$CREATED_FILES $WEEKLY_DIR/$STAMP.dump"
-    log "promoted to weekly: $WEEKLY_DIR/$STAMP.dump"
-fi
-if [ "$(date -u '+%d')" = "01" ]; then
-    cp "$FINAL" "$MONTHLY_DIR/$STAMP.dump"
-    CREATED_FILES="$CREATED_FILES $MONTHLY_DIR/$STAMP.dump"
-    log "promoted to monthly: $MONTHLY_DIR/$STAMP.dump"
 fi
 
-# --- 4. Local rotation -----------------------------------------------------
-# Keep the newest N per tier; `tail -n +N` yields nothing once <= N exist, so
-# deleting nothing is a no-op rather than an error.
-rotate() {
-    dir="$1"
-    keep="$2"
-    ls -1t "$dir" | tail -n +"$((keep + 1))" | while read -r old; do
-        log "rotate: removing $dir/$old"
-        rm -f "$dir/$old"
-    done
-}
-rotate "$DAILY_DIR" "$BACKUP_RETENTION_DAILY"
-rotate "$WEEKLY_DIR" "$BACKUP_RETENTION_WEEKLY"
-rotate "$MONTHLY_DIR" "$BACKUP_RETENTION_MONTHLY"
+export PGHOST="$DB_HOST"
+export PGPORT="$DB_PORT"
+export PGUSER="$DB_USER"
+export PGPASSWORD="$DB_PASSWORD"
+export PGDATABASE="$DB_NAME"
 
-# --- 5. Offsite (private R2) ----------------------------------------------
-if [ -n "$BACKUP_R2_BUCKET" ]; then
-    # HARD GUARD: R2_BUCKET is served from a public URL, so a dump there is a
-    # data leak, not a backup. Refuse before configuring or uploading anything.
-    if [ "$BACKUP_R2_BUCKET" = "${R2_BUCKET:-}" ]; then
-        die "BACKUP_R2_BUCKET is set to R2_BUCKET, which is PUBLIC. Refusing to upload backups to a public bucket. Create a separate PRIVATE R2 bucket and point BACKUP_R2_BUCKET at it."
-    fi
-    [ -n "$BACKUP_R2_ACCESS_KEY_ID" ] || die "BACKUP_R2_ACCESS_KEY_ID is required when BACKUP_R2_BUCKET is set"
-    [ -n "$BACKUP_R2_SECRET_ACCESS_KEY" ] || die "BACKUP_R2_SECRET_ACCESS_KEY is required when BACKUP_R2_BUCKET is set"
-    [ -n "$BACKUP_R2_ACCOUNT_ID" ] || die "BACKUP_R2_ACCOUNT_ID (or R2_ACCOUNT_ID) is required when BACKUP_R2_BUCKET is set"
+export RCLONE_CONFIG_R2_TYPE=s3
+export RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+export RCLONE_CONFIG_R2_ACCESS_KEY_ID="$BACKUP_R2_ACCESS_KEY_ID"
+export RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$BACKUP_R2_SECRET_ACCESS_KEY"
+export RCLONE_CONFIG_R2_ENDPOINT="https://${BACKUP_R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+export RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true
 
-    # rclone is configured entirely from the environment: no config file.
-    export RCLONE_CONFIG_BACKUP_TYPE=s3
-    export RCLONE_CONFIG_BACKUP_PROVIDER=Cloudflare
-    export RCLONE_CONFIG_BACKUP_ACCESS_KEY_ID="$BACKUP_R2_ACCESS_KEY_ID"
-    export RCLONE_CONFIG_BACKUP_SECRET_ACCESS_KEY="$BACKUP_R2_SECRET_ACCESS_KEY"
-    export RCLONE_CONFIG_BACKUP_ENDPOINT="https://$BACKUP_R2_ACCOUNT_ID.r2.cloudflarestorage.com"
-    export RCLONE_CONFIG_BACKUP_ACL=private
+TS=$(date -u +%Y%m%d-%H%M%S)
+KEY="${PREFIX}/${DB_NAME}-${TS}.dump"
+TMP="/tmp/${DB_NAME}-${TS}.dump"
+trap 'rm -f "$TMP"' EXIT
 
-    for f in $CREATED_FILES; do
-        tier="$(basename "$(dirname "$f")")"
-        dest="backup:$BACKUP_R2_BUCKET/$BACKUP_PREFIX/$tier/"
-        # copy, NOT sync: sync would mirror local deletions and wipe the remote.
-        if ! rclone copy "$f" "$dest"; then
-            die "rclone copy failed for $f -> $dest (offsite copy is not complete)"
-        fi
-        log "uploaded: $f -> $dest"
-    done
-    # Age-based prune only. Never mirror-delete the remote.
-    if ! rclone delete --min-age "${BACKUP_R2_RETAIN_DAYS}d" "backup:$BACKUP_R2_BUCKET/$BACKUP_PREFIX/"; then
-        die "rclone delete --min-age failed (remote prune)"
-    fi
-    UPLOAD_RAN="yes (bucket=$BACKUP_R2_BUCKET, min-age=${BACKUP_R2_RETAIN_DAYS}d)"
-else
-    log "BACKUP_R2_BUCKET is empty; keeping backups local-only (NOT offsite)"
-fi
-
-# --- 6. Summary ------------------------------------------------------------
-TOTAL_SIZE="$(du -sh "$BACKUP_DIR" 2>/dev/null | cut -f1)"
-log "summary: wrote ${CREATED_FILES# } (total $TOTAL_SIZE in $BACKUP_DIR); offsite=$UPLOAD_RAN"
-log "done"
+echo "backup: dumping ${DB_NAME} -> r2:${BUCKET}/${KEY}"
+# -Fc writes a self-compressed custom archive; no gzip in the pipeline.
+# Ownership kept in the archive; the restore side decides (pg_restore --no-owner).
+pg_dump -Fc > "$TMP"
+rclone copyto "$TMP" "r2:${BUCKET}/${KEY}"
+echo "backup: done"
