@@ -6,6 +6,9 @@ export default {
 		invalid: "Invalid email format",
 		required: "Email is required",
 	},
+	email_change_token: {
+		required: "Email change token is required",
+	},
 	invalidFormat: "Invalid format",
 	invalidType: "Invalid value",
 	invalidValue: "Invalid value",

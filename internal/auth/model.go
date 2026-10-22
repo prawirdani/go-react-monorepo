@@ -37,6 +37,14 @@ type ResetPasswordInput struct {
 	NewPassword string `json:"new_password" validate:"required,min=8,max=72"`
 }
 
+type RequestEmailChangeInput struct {
+	NewEmail string `json:"new_email" validate:"required,email"`
+}
+
+type ConfirmEmailChangeInput struct {
+	Token string `json:"token" validate:"required"`
+}
+
 type ChangePasswordInput struct {
 	Password    string `json:"password"     validate:"required"`
 	NewPassword string `json:"new_password" validate:"required,min=8,max=72"`
@@ -53,6 +61,15 @@ type PasswordRecoveryMessage struct {
 	Name     string        `json:"name"`       // Recipient's name
 	ResetURL string        `json:"reset_url"`  // Link for resetting the password
 	Expiry   time.Duration `json:"expiry_min"` // Expiration time of the reset token in minutes
+}
+
+// EmailChangeMessage is payload shape for the email change outbox job
+type EmailChangeMessage struct {
+	To       string        `json:"to"`         // Recipient's new email address
+	Name     string        `json:"name"`       // Recipient's name
+	NewEmail string        `json:"new_email"`  // Address being confirmed
+	URL      string        `json:"url"`        // Link for confirming the email change
+	Expiry   time.Duration `json:"expiry_min"` // Expiration time of the token in minutes
 }
 
 // CompleteRegistrationMessage is payload shape for the registration completion outbox job

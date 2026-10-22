@@ -740,6 +740,297 @@ func TestService_ResetPassword(t *testing.T) {
 	})
 }
 
+func TestService_RequestEmailChange(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		input := auth.RequestEmailChangeInput{NewEmail: "new@example.com"}
+
+		mockUser := &user.User{
+			ID:    userID,
+			Name:  "John Doe",
+			Email: "john@example.com",
+		}
+
+		f.throttler.EXPECT().
+			TryAcquire(ctx, "change-email:"+userID.String(), auth.EmailChangeThrottledTTL).
+			Return(throttle.Result{Allowed: true}, nil)
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			Run(func(ctx context.Context, fn func(context.Context) error) {
+				f.userRepo.EXPECT().GetByID(ctx, userID).Return(mockUser, nil)
+				f.userRepo.EXPECT().GetByEmail(ctx, input.NewEmail).Return(nil, apperr.ErrNotFound)
+				f.authRepo.EXPECT().RevokeEmailChangeTokens(ctx, input.NewEmail).Return(nil)
+				f.authRepo.EXPECT().
+					StoreEmailChangeToken(ctx, mock.AnythingOfType("*auth.EmailChangeToken")).
+					Return(nil)
+			}).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				return fn(ctx)
+			})
+
+		f.eventProducer.EXPECT().
+			ProduceEmailChangeEvent(ctx, mock.MatchedBy(func(msg auth.EmailChangeMessage) bool {
+				return msg.To == input.NewEmail && msg.NewEmail == input.NewEmail
+			})).
+			Return(nil)
+
+		result, err := f.service.RequestEmailChange(ctx, userID, input)
+		assert.NoError(t, err)
+		require.True(t, result.Allowed)
+	})
+
+	t.Run("Event enqueue fails: transaction rolls back", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		input := auth.RequestEmailChangeInput{NewEmail: "new@example.com"}
+
+		mockUser := &user.User{ID: userID, Name: "John Doe", Email: "john@example.com"}
+
+		f.throttler.EXPECT().
+			TryAcquire(ctx, "change-email:"+userID.String(), auth.EmailChangeThrottledTTL).
+			Return(throttle.Result{Allowed: true}, nil)
+		f.throttler.EXPECT().
+			Release(ctx, "change-email:"+userID.String()).
+			Return(nil)
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			Run(func(ctx context.Context, fn func(context.Context) error) {
+				f.userRepo.EXPECT().GetByID(ctx, userID).Return(mockUser, nil)
+				f.userRepo.EXPECT().GetByEmail(ctx, input.NewEmail).Return(nil, apperr.ErrNotFound)
+				f.authRepo.EXPECT().RevokeEmailChangeTokens(ctx, input.NewEmail).Return(nil)
+				f.authRepo.EXPECT().
+					StoreEmailChangeToken(ctx, mock.AnythingOfType("*auth.EmailChangeToken")).
+					Return(nil)
+			}).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				return fn(ctx)
+			})
+
+		f.eventProducer.EXPECT().
+			ProduceEmailChangeEvent(ctx, mock.AnythingOfType("auth.EmailChangeMessage")).
+			Return(assert.AnError)
+
+		_, err := f.service.RequestEmailChange(ctx, userID, input)
+		assert.ErrorIs(t, err, assert.AnError)
+	})
+
+	t.Run("New email already taken", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		input := auth.RequestEmailChangeInput{NewEmail: "taken@example.com"}
+
+		f.throttler.EXPECT().
+			TryAcquire(ctx, "change-email:"+userID.String(), auth.EmailChangeThrottledTTL).
+			Return(throttle.Result{Allowed: true}, nil)
+		// Conflict is not a not-found: the slot is released.
+		f.throttler.EXPECT().
+			Release(ctx, "change-email:"+userID.String()).
+			Return(nil)
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				f.userRepo.EXPECT().
+					GetByID(ctx, userID).
+					Return(&user.User{ID: userID, Email: "john@example.com"}, nil)
+				f.userRepo.EXPECT().
+					GetByEmail(ctx, input.NewEmail).
+					Return(&user.User{ID: uuid.New(), Email: input.NewEmail}, nil)
+				return fn(ctx)
+			})
+
+		_, err := f.service.RequestEmailChange(ctx, userID, input)
+		assert.ErrorIs(t, err, user.ErrEmailConflict)
+	})
+
+	t.Run("Throttled", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		input := auth.RequestEmailChangeInput{NewEmail: "new@example.com"}
+
+		f.throttler.EXPECT().
+			TryAcquire(ctx, "change-email:"+userID.String(), auth.EmailChangeThrottledTTL).
+			Return(throttle.Result{Allowed: false, RetryAfter: time.Now().Add(30 * time.Second)}, nil)
+
+		result, err := f.service.RequestEmailChange(ctx, userID, input)
+		assert.ErrorIs(t, err, auth.ErrEmailChangeThrottled)
+		assert.False(t, result.Allowed)
+	})
+}
+
+func TestService_ConfirmEmailChange(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		tokenObj, tokenRaw, err := auth.NewEmailChangeToken(userID, "new@example.com", f.cfg.EmailChangeTokenTTL)
+		require.NoError(t, err)
+
+		input := auth.ConfirmEmailChangeInput{Token: tokenRaw}
+		mockUser := &user.User{ID: userID, Name: "John Doe", Email: "john@example.com"}
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			Run(func(ctx context.Context, fn func(context.Context) error) {
+				f.authRepo.EXPECT().
+					GetEmailChangeToken(ctx, mock.AnythingOfType("[]uint8")).
+					Return(tokenObj, nil)
+				f.userRepo.EXPECT().GetByID(ctx, userID).Return(mockUser, nil)
+				f.userRepo.EXPECT().GetByEmail(ctx, tokenObj.NewEmail).Return(nil, apperr.ErrNotFound)
+				f.authRepo.EXPECT().
+					UpdateEmailChangeToken(ctx, mock.AnythingOfType("*auth.EmailChangeToken")).
+					Return(nil)
+				f.userRepo.EXPECT().Update(ctx, mock.MatchedBy(func(u *user.User) bool {
+					return u.ID == userID && u.Email == tokenObj.NewEmail
+				})).Return(nil)
+				f.authRepo.EXPECT().RevokeUserSessions(ctx, userID).Return(nil)
+			}).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				return fn(ctx)
+			})
+
+		f.revoker.EXPECT().RevokeAllForUser(mock.Anything, userID).Return(nil)
+
+		err = f.service.ConfirmEmailChange(ctx, input)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Access-token revoke failure still succeeds", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		tokenObj, tokenRaw, err := auth.NewEmailChangeToken(userID, "new@example.com", f.cfg.EmailChangeTokenTTL)
+		require.NoError(t, err)
+
+		input := auth.ConfirmEmailChangeInput{Token: tokenRaw}
+		mockUser := &user.User{ID: userID, Name: "John Doe", Email: "john@example.com"}
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			Run(func(ctx context.Context, fn func(context.Context) error) {
+				f.authRepo.EXPECT().
+					GetEmailChangeToken(ctx, mock.AnythingOfType("[]uint8")).
+					Return(tokenObj, nil)
+				f.userRepo.EXPECT().GetByID(ctx, userID).Return(mockUser, nil)
+				f.userRepo.EXPECT().GetByEmail(ctx, tokenObj.NewEmail).Return(nil, apperr.ErrNotFound)
+				f.authRepo.EXPECT().
+					UpdateEmailChangeToken(ctx, mock.AnythingOfType("*auth.EmailChangeToken")).
+					Return(nil)
+				f.userRepo.EXPECT().Update(ctx, mock.AnythingOfType("*user.User")).Return(nil)
+				f.authRepo.EXPECT().RevokeUserSessions(ctx, userID).Return(nil)
+			}).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				return fn(ctx)
+			})
+
+		f.revoker.EXPECT().RevokeAllForUser(mock.Anything, userID).Return(assert.AnError)
+
+		err = f.service.ConfirmEmailChange(ctx, input)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Token expired", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		tokenObj, tokenRaw, err := auth.NewEmailChangeToken(userID, "new@example.com", f.cfg.EmailChangeTokenTTL)
+		require.NoError(t, err)
+		tokenObj.ExpiresAt = time.Now().Add(-time.Hour)
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				f.authRepo.EXPECT().
+					GetEmailChangeToken(ctx, mock.AnythingOfType("[]uint8")).
+					Return(tokenObj, nil)
+				return fn(ctx)
+			})
+
+		err = f.service.ConfirmEmailChange(ctx, auth.ConfirmEmailChangeInput{Token: tokenRaw})
+		assert.ErrorIs(t, err, auth.ErrInvalidEmailChangeToken)
+	})
+
+	t.Run("Token already used", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		tokenObj, tokenRaw, err := auth.NewEmailChangeToken(userID, "new@example.com", f.cfg.EmailChangeTokenTTL)
+		require.NoError(t, err)
+		tokenObj.Use()
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				f.authRepo.EXPECT().
+					GetEmailChangeToken(ctx, mock.AnythingOfType("[]uint8")).
+					Return(tokenObj, nil)
+				return fn(ctx)
+			})
+
+		err = f.service.ConfirmEmailChange(ctx, auth.ConfirmEmailChangeInput{Token: tokenRaw})
+		assert.ErrorIs(t, err, auth.ErrInvalidEmailChangeToken)
+	})
+
+	t.Run("Token not found", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				f.authRepo.EXPECT().
+					GetEmailChangeToken(ctx, mock.AnythingOfType("[]uint8")).
+					Return(nil, apperr.ErrNotFound)
+				return fn(ctx)
+			})
+
+		err := f.service.ConfirmEmailChange(ctx, auth.ConfirmEmailChangeInput{Token: "nope"})
+		assert.ErrorIs(t, err, auth.ErrInvalidEmailChangeToken)
+	})
+
+	t.Run("New email claimed since request", func(t *testing.T) {
+		ctx := context.Background()
+		f := setupTestFixture(t)
+
+		userID := uuid.New()
+		tokenObj, tokenRaw, err := auth.NewEmailChangeToken(userID, "new@example.com", f.cfg.EmailChangeTokenTTL)
+		require.NoError(t, err)
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				f.authRepo.EXPECT().
+					GetEmailChangeToken(ctx, mock.AnythingOfType("[]uint8")).
+					Return(tokenObj, nil)
+				f.userRepo.EXPECT().
+					GetByID(ctx, userID).
+					Return(&user.User{ID: userID, Email: "john@example.com"}, nil)
+				f.userRepo.EXPECT().
+					GetByEmail(ctx, tokenObj.NewEmail).
+					Return(&user.User{ID: uuid.New(), Email: tokenObj.NewEmail}, nil)
+				return fn(ctx)
+			})
+
+		err = f.service.ConfirmEmailChange(ctx, auth.ConfirmEmailChangeInput{Token: tokenRaw})
+		assert.ErrorIs(t, err, user.ErrEmailConflict)
+	})
+}
+
 func TestService_ChangePassword(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		f := setupTestFixture(t)
@@ -1253,6 +1544,7 @@ func setupTestFixture(t *testing.T) *testFixture {
 		JwtTTL:                   time.Hour,
 		SessionTTL:               24 * time.Hour,
 		PasswordRecoveryTokenTTL: time.Hour,
+		EmailChangeTokenTTL:      time.Hour,
 		RegistrationTokenTTL:     time.Hour,
 	}
 	// InternalMode defaults to false, so registration is public in tests.

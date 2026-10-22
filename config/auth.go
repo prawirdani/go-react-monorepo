@@ -11,8 +11,10 @@ type Auth struct {
 	JwtTTL                           time.Duration
 	SessionTTL                       time.Duration
 	PasswordRecoveryTokenTTL         time.Duration
+	EmailChangeTokenTTL              time.Duration
 	RegistrationTokenTTL             time.Duration
 	ResetPasswordFormEndpoint        string
+	ConfirmEmailChangeFormEndpoint   string
 	CompleteRegistrationFormEndpoint string
 	// RevocationFailClosed makes access-token revocation checks deny access
 	// when the backing store errors, instead of failing open
@@ -23,6 +25,7 @@ type Auth struct {
 func (t *Auth) Parse() error {
 	t.JwtSecret = os.Getenv("AUTH_JWT_SECRET")
 	t.ResetPasswordFormEndpoint = os.Getenv("AUTH_RESET_PASSWORD_FORM_ENDPOINT")
+	t.ConfirmEmailChangeFormEndpoint = os.Getenv("AUTH_CONFIRM_EMAIL_CHANGE_FORM_ENDPOINT")
 	t.CompleteRegistrationFormEndpoint = os.Getenv("AUTH_COMPLETE_REGISTRATION_FORM_ENDPOINT")
 
 	if val := os.Getenv("AUTH_JWT_TTL"); val != "" {
@@ -38,6 +41,11 @@ func (t *Auth) Parse() error {
 	if val := os.Getenv("AUTH_PASSWORD_RECOVERY_TOKEN_TTL"); val != "" {
 		if d, err := time.ParseDuration(val); err == nil {
 			t.PasswordRecoveryTokenTTL = d
+		}
+	}
+	if val := os.Getenv("AUTH_EMAIL_CHANGE_TOKEN_TTL"); val != "" {
+		if d, err := time.ParseDuration(val); err == nil {
+			t.EmailChangeTokenTTL = d
 		}
 	}
 	if val := os.Getenv("AUTH_REGISTRATION_TOKEN_TTL"); val != "" {
@@ -64,6 +72,10 @@ func (t *Auth) Parse() error {
 	// Registration links travel in a URL the same way; default to a short window.
 	if t.RegistrationTokenTTL == 0 {
 		t.RegistrationTokenTTL = 15 * time.Minute
+	}
+	// The confirmation link also travels in a URL; default to a short window.
+	if t.EmailChangeTokenTTL == 0 {
+		t.EmailChangeTokenTTL = 15 * time.Minute
 	}
 	return nil
 }

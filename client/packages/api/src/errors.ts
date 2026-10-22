@@ -53,6 +53,12 @@ export type ErrorMap = {
 		/** ISO 8601 date-time when another request is allowed. */
 		retry_after: string;
 	};
+	AUTH_INVALID_EMAIL_CHANGE_TOKEN: null;
+	AUTH_EMAIL_CHANGE_THROTTLED: {
+		allowed: boolean;
+		/** ISO 8601 date-time when another request is allowed. */
+		retry_after: string;
+	};
 };
 
 export type APIError = {

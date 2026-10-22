@@ -9,6 +9,9 @@ const validation: DeepStringify<typeof en> = {
 		invalid: "Format email tidak valid",
 		required: "Email wajib diisi",
 	},
+	email_change_token: {
+		required: "Token perubahan email wajib diisi",
+	},
 	invalidFormat: "Format tidak valid",
 	invalidType: "Nilai tidak valid",
 	invalidValue: "Nilai tidak valid",

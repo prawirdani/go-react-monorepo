@@ -58,6 +58,13 @@ func run() error {
 			}
 			return authWorker.SendCompleteRegistrationEmail(ctx, msg)
 		},
+		outbox.TopicEmailChange: func(ctx context.Context, payload []byte) error {
+			var msg auth.EmailChangeMessage
+			if err := json.Unmarshal(payload, &msg); err != nil {
+				return fmt.Errorf("decode email change message: %w", err)
+			}
+			return authWorker.SendEmailChangeEmail(ctx, msg)
+		},
 	}
 
 	wrk := worker.NewOutboxWorker(postgres.NewOutboxRepository(pg), handlers)

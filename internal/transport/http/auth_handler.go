@@ -53,10 +53,13 @@ func (h *AuthHandler) Routes(router fiber.Router, auth *authenticatorMiddleware)
 		authRouter.Get("/password/recover/:token", h.getPasswordRecoveryToken)
 		authRouter.Put("/password/reset", h.resetPassword)
 
+		authRouter.Put("/email/change/confirm", h.confirmEmailChange)
+
 		authRouter.Use(auth.Authenticate).Route("/", func(r fiber.Router) {
 			r.Delete("/logout", h.logout)
 			r.Get("/me", h.getCurrentUser)
 			r.Put("/password/change", h.changePassword)
+			r.Put("/email/change", h.requestEmailChange)
 			r.Get("/permissions", h.listPermission)
 			r.Delete("/sessions/users/:userID", h.revokeUserSessions)
 			r.Get("/sessions/users/:userID", h.listUserSessions)
@@ -276,6 +279,53 @@ func (h *AuthHandler) resetPassword(c fiber.Ctx) error {
 
 	return c.JSON(Body{
 		Message: "Password has been reset successfully!",
+	})
+}
+
+// requestEmailChange starts an email change for the authenticated user. The
+// confirmation link is sent to the requested new address.
+func (h *AuthHandler) requestEmailChange(c fiber.Ctx) error {
+	ctx := c.Context()
+
+	var reqBody auth.RequestEmailChangeInput
+	if err := BindValidateJSON(c, &reqBody); err != nil {
+		return err
+	}
+
+	aCtx, err := rbac.GetContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	res, err := h.authService.RequestEmailChange(ctx, *aCtx.Actor.UserID, reqBody)
+	c.Set("Retry-After", strconv.FormatInt(res.RetryAfter.UTC().Unix(), 10))
+
+	if err != nil {
+		log.ErrorCtx(ctx, "Failed to request email change", err)
+		return err
+	}
+
+	return c.JSON(Body{
+		Message: "email change confirmation has been sent to the new address",
+	})
+}
+
+// confirmEmailChange applies a requested email change using the emailed token.
+func (h *AuthHandler) confirmEmailChange(c fiber.Ctx) error {
+	ctx := c.Context()
+
+	var reqBody auth.ConfirmEmailChangeInput
+	if err := BindValidateJSON(c, &reqBody); err != nil {
+		return err
+	}
+
+	if err := h.authService.ConfirmEmailChange(ctx, reqBody); err != nil {
+		log.ErrorCtx(ctx, "Failed to confirm email change", err)
+		return err
+	}
+
+	return c.JSON(Body{
+		Message: "Email has been changed successfully!",
 	})
 }
 

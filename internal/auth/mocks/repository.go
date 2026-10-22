@@ -39,6 +39,74 @@ func (_m *Repository) EXPECT() *Repository_Expecter {
 	return &Repository_Expecter{mock: &_m.Mock}
 }
 
+// GetEmailChangeToken provides a mock function for the type Repository
+func (_mock *Repository) GetEmailChangeToken(ctx context.Context, tokenHash []byte) (*auth.EmailChangeToken, error) {
+	ret := _mock.Called(ctx, tokenHash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEmailChangeToken")
+	}
+
+	var r0 *auth.EmailChangeToken
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte) (*auth.EmailChangeToken, error)); ok {
+		return returnFunc(ctx, tokenHash)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []byte) *auth.EmailChangeToken); ok {
+		r0 = returnFunc(ctx, tokenHash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*auth.EmailChangeToken)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
+		r1 = returnFunc(ctx, tokenHash)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repository_GetEmailChangeToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEmailChangeToken'
+type Repository_GetEmailChangeToken_Call struct {
+	*mock.Call
+}
+
+// GetEmailChangeToken is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tokenHash []byte
+func (_e *Repository_Expecter) GetEmailChangeToken(ctx any, tokenHash any) *Repository_GetEmailChangeToken_Call {
+	return &Repository_GetEmailChangeToken_Call{Call: _e.mock.On("GetEmailChangeToken", ctx, tokenHash)}
+}
+
+func (_c *Repository_GetEmailChangeToken_Call) Run(run func(ctx context.Context, tokenHash []byte)) *Repository_GetEmailChangeToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []byte
+		if args[1] != nil {
+			arg1 = args[1].([]byte)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repository_GetEmailChangeToken_Call) Return(emailChangeToken *auth.EmailChangeToken, err error) *Repository_GetEmailChangeToken_Call {
+	_c.Call.Return(emailChangeToken, err)
+	return _c
+}
+
+func (_c *Repository_GetEmailChangeToken_Call) RunAndReturn(run func(ctx context.Context, tokenHash []byte) (*auth.EmailChangeToken, error)) *Repository_GetEmailChangeToken_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPasswordRecoveryToken provides a mock function for the type Repository
 func (_mock *Repository) GetPasswordRecoveryToken(ctx context.Context, tokenHash []byte) (*auth.PasswordRecoveryToken, error) {
 	ret := _mock.Called(ctx, tokenHash)
@@ -379,6 +447,63 @@ func (_c *Repository_ListSessions_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
+// RevokeEmailChangeTokens provides a mock function for the type Repository
+func (_mock *Repository) RevokeEmailChangeTokens(ctx context.Context, email string) error {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RevokeEmailChangeTokens")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Repository_RevokeEmailChangeTokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RevokeEmailChangeTokens'
+type Repository_RevokeEmailChangeTokens_Call struct {
+	*mock.Call
+}
+
+// RevokeEmailChangeTokens is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *Repository_Expecter) RevokeEmailChangeTokens(ctx any, email any) *Repository_RevokeEmailChangeTokens_Call {
+	return &Repository_RevokeEmailChangeTokens_Call{Call: _e.mock.On("RevokeEmailChangeTokens", ctx, email)}
+}
+
+func (_c *Repository_RevokeEmailChangeTokens_Call) Run(run func(ctx context.Context, email string)) *Repository_RevokeEmailChangeTokens_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repository_RevokeEmailChangeTokens_Call) Return(err error) *Repository_RevokeEmailChangeTokens_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Repository_RevokeEmailChangeTokens_Call) RunAndReturn(run func(ctx context.Context, email string) error) *Repository_RevokeEmailChangeTokens_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RevokeRegistrationTokens provides a mock function for the type Repository
 func (_mock *Repository) RevokeRegistrationTokens(ctx context.Context, email string) error {
 	ret := _mock.Called(ctx, email)
@@ -489,6 +614,63 @@ func (_c *Repository_RevokeUserSessions_Call) Return(err error) *Repository_Revo
 }
 
 func (_c *Repository_RevokeUserSessions_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID) error) *Repository_RevokeUserSessions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// StoreEmailChangeToken provides a mock function for the type Repository
+func (_mock *Repository) StoreEmailChangeToken(ctx context.Context, token *auth.EmailChangeToken) error {
+	ret := _mock.Called(ctx, token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for StoreEmailChangeToken")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *auth.EmailChangeToken) error); ok {
+		r0 = returnFunc(ctx, token)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Repository_StoreEmailChangeToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StoreEmailChangeToken'
+type Repository_StoreEmailChangeToken_Call struct {
+	*mock.Call
+}
+
+// StoreEmailChangeToken is a helper method to define mock.On call
+//   - ctx context.Context
+//   - token *auth.EmailChangeToken
+func (_e *Repository_Expecter) StoreEmailChangeToken(ctx any, token any) *Repository_StoreEmailChangeToken_Call {
+	return &Repository_StoreEmailChangeToken_Call{Call: _e.mock.On("StoreEmailChangeToken", ctx, token)}
+}
+
+func (_c *Repository_StoreEmailChangeToken_Call) Run(run func(ctx context.Context, token *auth.EmailChangeToken)) *Repository_StoreEmailChangeToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *auth.EmailChangeToken
+		if args[1] != nil {
+			arg1 = args[1].(*auth.EmailChangeToken)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repository_StoreEmailChangeToken_Call) Return(err error) *Repository_StoreEmailChangeToken_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Repository_StoreEmailChangeToken_Call) RunAndReturn(run func(ctx context.Context, token *auth.EmailChangeToken) error) *Repository_StoreEmailChangeToken_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -660,6 +842,63 @@ func (_c *Repository_StoreSession_Call) Return(err error) *Repository_StoreSessi
 }
 
 func (_c *Repository_StoreSession_Call) RunAndReturn(run func(ctx context.Context, session *auth.Session) error) *Repository_StoreSession_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateEmailChangeToken provides a mock function for the type Repository
+func (_mock *Repository) UpdateEmailChangeToken(ctx context.Context, token *auth.EmailChangeToken) error {
+	ret := _mock.Called(ctx, token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateEmailChangeToken")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *auth.EmailChangeToken) error); ok {
+		r0 = returnFunc(ctx, token)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Repository_UpdateEmailChangeToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateEmailChangeToken'
+type Repository_UpdateEmailChangeToken_Call struct {
+	*mock.Call
+}
+
+// UpdateEmailChangeToken is a helper method to define mock.On call
+//   - ctx context.Context
+//   - token *auth.EmailChangeToken
+func (_e *Repository_Expecter) UpdateEmailChangeToken(ctx any, token any) *Repository_UpdateEmailChangeToken_Call {
+	return &Repository_UpdateEmailChangeToken_Call{Call: _e.mock.On("UpdateEmailChangeToken", ctx, token)}
+}
+
+func (_c *Repository_UpdateEmailChangeToken_Call) Run(run func(ctx context.Context, token *auth.EmailChangeToken)) *Repository_UpdateEmailChangeToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *auth.EmailChangeToken
+		if args[1] != nil {
+			arg1 = args[1].(*auth.EmailChangeToken)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repository_UpdateEmailChangeToken_Call) Return(err error) *Repository_UpdateEmailChangeToken_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Repository_UpdateEmailChangeToken_Call) RunAndReturn(run func(ctx context.Context, token *auth.EmailChangeToken) error) *Repository_UpdateEmailChangeToken_Call {
 	_c.Call.Return(run)
 	return _c
 }

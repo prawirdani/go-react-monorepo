@@ -96,6 +96,16 @@ export const resetPasswordSchema = z
 		path: ["new_password_confirmation"],
 	});
 
+export const requestEmailChangeSchema = z.object({
+	new_email: z
+		.email("validation.email.invalid")
+		.nonempty("validation.email.required"),
+});
+
+export const confirmEmailChangeSchema = z.object({
+	token: z.string().nonempty("validation.email_change_token.required"),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type CompleteRegistrationInput = z.infer<
 	typeof completeRegistrationSchema
@@ -104,3 +114,5 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type RecoverPasswordInput = z.infer<typeof recoverPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type RequestEmailChangeInput = z.infer<typeof requestEmailChangeSchema>;
+export type ConfirmEmailChangeInput = z.infer<typeof confirmEmailChangeSchema>;

@@ -1,11 +1,13 @@
 import type {
 	ChangePasswordInput,
 	CompleteRegistrationInput,
+	ConfirmEmailChangeInput,
 	LoginInput,
 	OpaqueTokenMeta,
 	RecoverPasswordInput,
 	RegisterInput,
 	RegistrationToken,
+	RequestEmailChangeInput,
 	ResetPasswordInput,
 	SessionEntry,
 	TokenPair,
@@ -134,6 +136,20 @@ export class AuthAPI {
 	/** Resets a password using a recovery token. Unauthenticated. */
 	async resetPassword(payload: ResetPasswordInput): Promise<void> {
 		await this.client.Put("/api/auth/password/reset", {
+			body: JSON.stringify(payload),
+		});
+	}
+
+	/** Requests an email change. Authenticated. */
+	async requestEmailChange(payload: RequestEmailChangeInput): Promise<void> {
+		await this.client.Put("/api/auth/email/change", {
+			body: JSON.stringify(payload),
+		});
+	}
+
+	/** Confirms an email change using a token. Unauthenticated. */
+	async confirmEmailChange(payload: ConfirmEmailChangeInput): Promise<void> {
+		await this.client.Put("/api/auth/email/change/confirm", {
 			body: JSON.stringify(payload),
 		});
 	}

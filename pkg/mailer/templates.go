@@ -11,6 +11,7 @@ var templatesFS embed.FS
 type Templates struct {
 	ResetPassword        *template.Template
 	CompleteRegistration *template.Template
+	ConfirmEmailChange   *template.Template
 }
 
 func parseTemplates() *Templates {
@@ -20,6 +21,9 @@ func parseTemplates() *Templates {
 		),
 		CompleteRegistration: template.Must(
 			template.ParseFS(templatesFS, "templates/complete-registration.html"),
+		),
+		ConfirmEmailChange: template.Must(
+			template.ParseFS(templatesFS, "templates/confirm-email-change.html"),
 		),
 	}
 }

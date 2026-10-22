@@ -54,6 +54,10 @@ type TokenReader interface {
 	// GetPasswordRecoveryToken retrieves a token by its tokenHash value.
 	// Returns [apperr.ErrNotFound] if no token exists with the given tokenHash
 	GetPasswordRecoveryToken(ctx context.Context, tokenHash []byte) (*PasswordRecoveryToken, error)
+
+	// GetEmailChangeToken retrieves an email change token by its tokenHash value.
+	// Returns [apperr.ErrNotFound] if no token exists with the given tokenHash
+	GetEmailChangeToken(ctx context.Context, tokenHash []byte) (*EmailChangeToken, error)
 }
 
 type TokenWriter interface {
@@ -75,6 +79,17 @@ type TokenWriter interface {
 	// UpdatePasswordRecoveryToken updates an existing password recovery token.
 	// Only updates the UsedAt field
 	UpdatePasswordRecoveryToken(ctx context.Context, token *PasswordRecoveryToken) error
+
+	// StoreEmailChangeToken persists a new email change token.
+	StoreEmailChangeToken(ctx context.Context, token *EmailChangeToken) error
+
+	// UpdateEmailChangeToken updates an existing email change token.
+	// Only updates the UsedAt field
+	UpdateEmailChangeToken(ctx context.Context, token *EmailChangeToken) error
+
+	// RevokeEmailChangeTokens supersedes all outstanding (unused) email change
+	// tokens for an address, so a newer request wins.
+	RevokeEmailChangeTokens(ctx context.Context, email string) error
 }
 
 // UserRepository is the slice of [user.Repository] that the auth flow needs.
@@ -103,4 +118,5 @@ type UserRepository interface {
 type EventProducer interface {
 	ProducePasswordRecoveryEvent(ctx context.Context, msg PasswordRecoveryMessage) error
 	ProduceRegistrationCompletionEvent(ctx context.Context, msg CompleteRegistrationMessage) error
+	ProduceEmailChangeEvent(ctx context.Context, msg EmailChangeMessage) error
 }

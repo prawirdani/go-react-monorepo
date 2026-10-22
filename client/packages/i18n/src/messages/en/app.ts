@@ -90,6 +90,18 @@ export default {
 			success: "Your password was updated successfully,",
 			successLink: "sign in",
 		},
+		confirmEmailChange: {
+			title: "Confirm Email Change",
+			description: "Confirm the new email address for your account.",
+			invalidDescription: "This link can no longer be used.",
+			expired: "The link has expired or is invalid.",
+			requestAgainLead: "Please",
+			requestAgainLink: "request a new email change",
+			requestAgainTail: "for a link that still works.",
+			success: "Your email address was updated successfully,",
+			successLink: "sign in",
+			submit: "Confirm email change",
+		},
 		register: {
 			title: "Create account",
 			description:
@@ -253,6 +265,13 @@ export default {
 			currentPlaceholder: "Enter your current password",
 			newPlaceholder: "Enter a new password",
 			confirmPlaceholder: "Enter the new password again",
+		},
+		changeEmail: {
+			label: "New email",
+			placeholder: "Enter your new email address",
+			success: "Check your new inbox to confirm the change.",
+			throttled: "Too many attempts. Try again at",
+			conflict: "This email is already used by another account.",
 		},
 		updateUser: {
 			success: "Profile updated successfully",

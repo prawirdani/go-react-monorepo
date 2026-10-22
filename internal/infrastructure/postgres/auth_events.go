@@ -37,3 +37,11 @@ func (p *authEventProducer) ProduceRegistrationCompletionEvent(
 ) error {
 	return p.w.Enqueue(ctx, outbox.TopicUserRegistration, msg)
 }
+
+// ProduceEmailChangeEvent implements [auth.EventProducer].
+func (p *authEventProducer) ProduceEmailChangeEvent(
+	ctx context.Context,
+	msg auth.EmailChangeMessage,
+) error {
+	return p.w.Enqueue(ctx, outbox.TopicEmailChange, msg)
+}

@@ -21,6 +21,7 @@ import { RoleBadge } from "@/components/layout/role-badge"
 import { SessionList } from "@/components/session-list"
 import { getSession } from "@/lib/data-access/queries"
 import { GENDER_LABEL_KEYS } from "@/lib/i18n"
+import { ChangeEmailForm } from "./-change-email-form"
 import { ChangePasswordForm } from "./-change-password-form"
 import { ProfilePicture } from "./-profile-picture"
 import { UpdateUserForm } from "./-update-user-form"
@@ -123,6 +124,7 @@ function SecurityPanel({ className }: { className?: string }) {
   const user = Route.useLoaderData()
   const currentSessionId = useQuery(getSession).data?.sessionId
   const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [showEmailForm, setShowEmailForm] = useState(false)
   const t = useTranslations("app")
 
   return (
@@ -137,7 +139,13 @@ function SecurityPanel({ className }: { className?: string }) {
           <SecurityRow
             icon={<Email className="size-4" />}
             action={
-              <Button variant="outline" size="sm" disabled={showPasswordForm}>
+              <Button
+                variant="outline"
+                size="sm"
+                hidden={showEmailForm}
+                disabled={showPasswordForm}
+                onClick={() => setShowEmailForm(true)}
+              >
                 {user.email_verified_at
                   ? t("profile.security.changeEmail")
                   : t("profile.security.verifyEmail")}
@@ -158,6 +166,12 @@ function SecurityPanel({ className }: { className?: string }) {
             )}
           </SecurityRow>
 
+          {showEmailForm && (
+            <div className="p-3">
+              <ChangeEmailForm onClose={() => setShowEmailForm(false)} />
+            </div>
+          )}
+
           <SecurityRow
             icon={<Password className="size-4" />}
             action={
@@ -165,6 +179,7 @@ function SecurityPanel({ className }: { className?: string }) {
                 variant="outline"
                 size="sm"
                 hidden={showPasswordForm}
+                disabled={showEmailForm}
                 onClick={() => setShowPasswordForm(true)}
               >
                 {t("profile.security.changePassword")}

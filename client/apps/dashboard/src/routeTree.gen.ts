@@ -13,6 +13,7 @@ import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as appIndexRouteImport } from './routes/(app)/index'
 import { Route as appForbiddenRouteImport } from './routes/(app)/forbidden'
 import { Route as appUsersRouteRouteImport } from './routes/(app)/users/route'
+import { Route as AuthConfirmEmailChangeRouteImport } from './routes/auth/confirm-email-change'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
@@ -41,6 +42,11 @@ const appUsersRouteRoute = appUsersRouteRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => appRouteRoute,
+} as any)
+const AuthConfirmEmailChangeRoute = AuthConfirmEmailChangeRouteImport.update({
+  id: '/auth/confirm-email-change',
+  path: '/auth/confirm-email-change',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/auth/forgot-password',
@@ -91,6 +97,7 @@ const AuthRegisterCompleteRoute = AuthRegisterCompleteRouteImport.update({
 export interface FileRoutesByFullPath {
   '/users': typeof appUsersRouteRouteWithChildren
   '/forbidden': typeof appForbiddenRoute
+  '/auth/confirm-email-change': typeof AuthConfirmEmailChangeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/forbidden': typeof appForbiddenRoute
+  '/auth/confirm-email-change': typeof AuthConfirmEmailChangeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/(app)': typeof appRouteRouteWithChildren
   '/(app)/users': typeof appUsersRouteRouteWithChildren
   '/(app)/forbidden': typeof appForbiddenRoute
+  '/auth/confirm-email-change': typeof AuthConfirmEmailChangeRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/users'
     | '/forbidden'
+    | '/auth/confirm-email-change'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forbidden'
+    | '/auth/confirm-email-change'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/(app)'
     | '/(app)/users'
     | '/(app)/forbidden'
+    | '/auth/confirm-email-change'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
@@ -178,6 +190,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   appRouteRoute: typeof appRouteRouteWithChildren
+  AuthConfirmEmailChangeRoute: typeof AuthConfirmEmailChangeRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/users'
       preLoaderRoute: typeof appUsersRouteRouteImport
       parentRoute: typeof appRouteRoute
+    }
+    '/auth/confirm-email-change': {
+      id: '/auth/confirm-email-change'
+      path: '/auth/confirm-email-change'
+      fullPath: '/auth/confirm-email-change'
+      preLoaderRoute: typeof AuthConfirmEmailChangeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/forgot-password': {
       id: '/auth/forgot-password'
@@ -317,6 +337,7 @@ const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   appRouteRoute: appRouteRouteWithChildren,
+  AuthConfirmEmailChangeRoute: AuthConfirmEmailChangeRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,

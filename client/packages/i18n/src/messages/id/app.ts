@@ -91,6 +91,18 @@ const app: DeepStringify<typeof en> = {
 			success: "Kata sandi Anda berhasil diperbarui,",
 			successLink: "login",
 		},
+		confirmEmailChange: {
+			title: "Konfirmasi Perubahan Email",
+			description: "Konfirmasi alamat email baru untuk akun Anda.",
+			invalidDescription: "Tautan ini tidak dapat digunakan lagi.",
+			expired: "Tautan telah kedaluwarsa atau tidak valid.",
+			requestAgainLead: "Silakan",
+			requestAgainLink: "ajukan kembali",
+			requestAgainTail: "perubahan email untuk mendapatkan tautan baru.",
+			success: "Alamat email Anda berhasil diperbarui,",
+			successLink: "login",
+			submit: "Konfirmasi perubahan email",
+		},
 		register: {
 			title: "Buat Akun",
 			description:
@@ -255,6 +267,14 @@ const app: DeepStringify<typeof en> = {
 			currentPlaceholder: "Masukkan kata sandi Anda saat ini",
 			newPlaceholder: "Masukkan kata sandi baru",
 			confirmPlaceholder: "Masukkan ulang kata sandi baru",
+		},
+		changeEmail: {
+			label: "Email baru",
+			placeholder: "Masukkan alamat email baru Anda",
+			success:
+				"Periksa kotak masuk email baru Anda untuk mengonfirmasi perubahan.",
+			throttled: "Terlalu banyak percobaan. Coba lagi pada",
+			conflict: "Email ini sudah dipakai akun lain.",
 		},
 		updateUser: {
 			success: "Profile berhasil diperbarui",

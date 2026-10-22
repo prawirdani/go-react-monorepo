@@ -306,3 +306,84 @@ func (r *authRepository) RevokeRegistrationTokens(ctx context.Context, email str
 
 	return nil
 }
+
+// GetEmailChangeToken implements [auth.Repository].
+func (r *authRepository) GetEmailChangeToken(
+	ctx context.Context,
+	tokenHash []byte,
+) (*auth.EmailChangeToken, error) {
+	query := "SELECT * FROM email_change_tokens WHERE token_hash=$1"
+
+	conn := r.db.GetConn(ctx)
+	if r.db.IsTxConn(conn) {
+		query += "\nFOR UPDATE"
+	}
+
+	var token auth.EmailChangeToken
+	if err := pgxscan.Get(ctx, conn, &token, query, tokenHash); err != nil {
+		if noRowsErr(err) {
+			return nil, apperr.ErrNotFound
+		}
+		return nil, fmt.Errorf("get email change token: %w", err)
+	}
+
+	return &token, nil
+}
+
+// StoreEmailChangeToken implements [auth.Repository]
+func (r *authRepository) StoreEmailChangeToken(
+	ctx context.Context,
+	token *auth.EmailChangeToken,
+) error {
+	if token == nil {
+		return errors.New("email change token is nil")
+	}
+	args := pgx.NamedArgs{
+		"user_id":    token.UserID,
+		"new_email":  token.NewEmail,
+		"token_hash": token.TokenHash,
+		"issued_at":  token.IssuedAt,
+		"expires_at": token.ExpiresAt,
+	}
+	query := generateInsertQuery("email_change_tokens", args)
+	conn := r.db.GetConn(ctx)
+
+	if _, err := conn.Exec(ctx, query, args); err != nil {
+		return fmt.Errorf("store email change token: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateEmailChangeToken implements [auth.Repository]
+func (r *authRepository) UpdateEmailChangeToken(
+	ctx context.Context,
+	token *auth.EmailChangeToken,
+) error {
+	if token == nil {
+		return errors.New("email change token is nil")
+	}
+
+	query := "UPDATE email_change_tokens SET used_at=$1 WHERE id=$2"
+	conn := r.db.GetConn(ctx)
+
+	if _, err := conn.Exec(ctx, query, token.UsedAt, token.ID); err != nil {
+		return fmt.Errorf("update email change token: %w", err)
+	}
+
+	return nil
+}
+
+// RevokeEmailChangeTokens implements [auth.Repository]. The table mirrors the
+// password recovery tokens (no revoked_at column), so superseding deletes the
+// still-usable tokens for that address instead of flagging them.
+func (r *authRepository) RevokeEmailChangeTokens(ctx context.Context, email string) error {
+	query := "DELETE FROM email_change_tokens WHERE new_email = $1 AND used_at IS NULL"
+
+	conn := r.db.GetConn(ctx)
+	if _, err := conn.Exec(ctx, query, email); err != nil {
+		return fmt.Errorf("revoke email change tokens: %w", err)
+	}
+
+	return nil
+}

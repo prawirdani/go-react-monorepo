@@ -60,6 +60,8 @@ const (
 	ActionChangePassword       audit.Action = "auth.change-password"
 	ActionResetPassword        audit.Action = "auth.reset-password"
 	ActionRecoverPassword      audit.Action = "auth.password-recovery-request"
+	ActionRequestEmailChange   audit.Action = "auth.email-change-request"
+	ActionConfirmEmailChange   audit.Action = "auth.email-change-confirm"
 	ActionRevokeUserSessions   audit.Action = "auth.revoke-user-sessions"
 	ActionRevokeSession        audit.Action = "auth.revoke-session"
 )
@@ -511,6 +513,162 @@ func (s *Service) ResetPassword(ctx context.Context, inp ResetPasswordInput) err
 	defer cancel()
 	if err := s.revoker.RevokeAllForUser(cleanupCtx, revokedUserID); err != nil {
 		log.ErrorCtx(ctx, "Failed to revoke user access tokens after password reset", err)
+	}
+
+	return nil
+}
+
+// RequestEmailChange starts an email change: a confirmation link is sent to the
+// requested new address. The authenticated user is identified by userID, never
+// by the email in the payload.
+// Returns [user.ErrEmailConflict] if the new email is already registered.
+func (s *Service) RequestEmailChange(
+	ctx context.Context,
+	userID uuid.UUID,
+	inp RequestEmailChangeInput,
+) (throttle.Result, error) {
+	key := fmt.Sprintf("change-email:%s", userID)
+
+	th, err := s.throttler.TryAcquire(ctx, key, EmailChangeThrottledTTL)
+	if err != nil {
+		return th, err
+	}
+
+	if !th.Allowed {
+		return th, ErrEmailChangeThrottled.WithDetails(th)
+	}
+
+	err = s.transactor.Transact(ctx, func(ctx context.Context) error {
+		usr, err := s.userRepo.GetByID(ctx, userID)
+		if err != nil {
+			return err
+		}
+
+		existing, err := s.userRepo.GetByEmail(ctx, inp.NewEmail)
+		if err != nil && !errors.Is(err, apperr.ErrNotFound) {
+			return fmt.Errorf("looking up user by email: %w", err)
+		}
+		if existing != nil {
+			return user.ErrEmailConflict
+		}
+
+		// A new request supersedes any outstanding one for that address, so a
+		// re-request invalidates the previous link (latest request wins).
+		if err := s.authRepo.RevokeEmailChangeTokens(ctx, inp.NewEmail); err != nil {
+			return fmt.Errorf("revoking previous email change tokens: %w", err)
+		}
+
+		tokenObj, tokenRaw, err := NewEmailChangeToken(usr.ID, inp.NewEmail, s.cfg.Auth.EmailChangeTokenTTL)
+		if err != nil {
+			log.ErrorCtx(ctx, "Failed to create email change token", err)
+			return err
+		}
+
+		if err := s.authRepo.StoreEmailChangeToken(ctx, tokenObj); err != nil {
+			return err
+		}
+
+		// Token, its audit record, and the email event commit together; the
+		// event is enqueued in the same transaction.
+		if err := s.audit.Record(ctx, audit.Entry{
+			Action:   ActionRequestEmailChange,
+			Entity:   "user",
+			EntityID: usr.ID.String(),
+		}); err != nil {
+			return err
+		}
+
+		return s.eventProducer.ProduceEmailChangeEvent(ctx, EmailChangeMessage{
+			To:       inp.NewEmail,
+			Name:     usr.Name,
+			NewEmail: inp.NewEmail,
+			URL:      s.cfg.Auth.ConfirmEmailChangeFormEndpoint + "?token=" + tokenRaw,
+			Expiry:   s.cfg.Auth.EmailChangeTokenTTL,
+		})
+	})
+	if err != nil {
+		// Release the slot on internal failures so a transient error does not
+		// lock the user out for the full TTL.
+		if !errors.Is(err, apperr.ErrNotFound) {
+			if rerr := s.throttler.Release(ctx, key); rerr != nil {
+				log.WarnCtx(ctx, "failed to release email change throttle", rerr)
+			}
+		}
+		return th, err
+	}
+
+	return th, nil
+}
+
+// ConfirmEmailChange applies a requested email change using the token sent to
+// the new address.
+//
+// Returns [ErrInvalidEmailChangeToken] for missing, already-consumed, or
+// expired tokens.
+func (s *Service) ConfirmEmailChange(ctx context.Context, inp ConfirmEmailChangeInput) error {
+	sum := HashStr(inp.Token)
+
+	var revokedUserID uuid.UUID
+	if err := s.transactor.Transact(ctx, func(ctx context.Context) error {
+		token, err := s.authRepo.GetEmailChangeToken(ctx, sum)
+		if err != nil {
+			if errors.Is(err, apperr.ErrNotFound) {
+				return ErrInvalidEmailChangeToken
+			}
+			return err
+		}
+
+		if token.Expired() || token.IsUsed() {
+			return ErrInvalidEmailChangeToken
+		}
+
+		usr, err := s.userRepo.GetByID(ctx, token.UserID)
+		if err != nil {
+			return err
+		}
+
+		// The address may have been claimed since the request was made.
+		existing, err := s.userRepo.GetByEmail(ctx, token.NewEmail)
+		if err != nil && !errors.Is(err, apperr.ErrNotFound) {
+			return fmt.Errorf("looking up user by email: %w", err)
+		}
+		if existing != nil {
+			return user.ErrEmailConflict
+		}
+
+		usr.Email = token.NewEmail
+		revokedUserID = usr.ID
+
+		token.Use()
+		if err := s.authRepo.UpdateEmailChangeToken(ctx, token); err != nil {
+			return err
+		}
+
+		if err := s.userRepo.Update(ctx, usr); err != nil {
+			return err
+		}
+
+		// Email change is a credential change: every session dies with it.
+		if err := s.authRepo.RevokeUserSessions(ctx, usr.ID); err != nil {
+			return err
+		}
+
+		return s.audit.Record(ctx, audit.Entry{
+			Action:   ActionConfirmEmailChange,
+			Entity:   "user",
+			EntityID: usr.ID.String(),
+		})
+	}); err != nil {
+		return err
+	}
+
+	// Session rows are already revoked, so refresh is dead. Also watermark
+	// stateless access tokens; a write failure must not turn a completed
+	// email change into a 500.
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cancel()
+	if err := s.revoker.RevokeAllForUser(cleanupCtx, revokedUserID); err != nil {
+		log.ErrorCtx(ctx, "Failed to revoke user access tokens after email change", err)
 	}
 
 	return nil

@@ -47,6 +47,31 @@ func (w *AuthWorker) SendPasswordRecoveryEmail(
 	)
 }
 
+// SendEmailChangeEmail renders and sends the "confirm your new email" email
+// carrying the confirmation link.
+func (w *AuthWorker) SendEmailChangeEmail(
+	ctx context.Context,
+	msg auth.EmailChangeMessage,
+) error {
+	var buf bytes.Buffer
+	if err := w.mailer.Templates.ConfirmEmailChange.Execute(&buf, map[string]any{
+		"Name":     msg.Name,
+		"NewEmail": msg.NewEmail,
+		"Minutes":  msg.Expiry.Minutes(),
+		"URL":      msg.URL,
+	}); err != nil {
+		return err
+	}
+
+	return w.mailer.Send(
+		mailer.HeaderParams{
+			To:      []string{msg.To},
+			Subject: "Confirm Email Change",
+		},
+		buf,
+	)
+}
+
 // SendCompleteRegistrationEmail renders and sends the "complete your
 // registration" email carrying the password-creation link.
 func (w *AuthWorker) SendCompleteRegistrationEmail(
