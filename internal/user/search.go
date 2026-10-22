@@ -34,9 +34,12 @@ var userSortFields = map[string]string{
 
 // ApplySort implements [repository.Sorter]
 //
-// The pointer receiver lets the sanitised sort reach the metadata, which echoes
-// these fields.
+// Tombstones always sink below live accounts: the first key is a boolean
+// expression, so every requested ordering (created_at, id, ...) stays intact
+// within each group. The pointer receiver lets the sanitised sort reach the
+// metadata, which echoes these fields.
 func (s *Search) ApplySort(q repository.Query) {
+	q.OrderBy("(deleted_at IS NOT NULL)", "ASC")
 	s.Sorting.ApplySort(q, userSortFields)
 }
 
@@ -47,11 +50,11 @@ func (s *Search) ApplySort(q repository.Query) {
 // [Search.SetMeta] reports as applied. The slices stay nil when nothing
 // survives, which leaves the filter at its zero value so the metadata omits it.
 //
-// DeletedAt is a list because the UI drives a multi-select of deletion states.
-// Absent means no deletion filter at all: every row is listed, like a group
-// with no option checked. Active only (the UI default) lists live users;
-// deleted only lists tombstones; both also means all rows, so no predicate is
-// added.
+// DeletedAt is a list on the wire, but the UI drives a radio: at most one state
+// per request. An absent param means no deletion filter at all: every row is
+// listed, which is what the "Semua" option sends. Active only lists live users;
+// deleted only lists tombstones. Both states still mean every row, so a caller
+// that sends the whole set is answered like a caller that sends none.
 func (s *Search) ApplyFilter(q repository.Query) {
 	var validGenders []string
 

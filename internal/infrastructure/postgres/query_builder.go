@@ -142,18 +142,27 @@ func (q *QueryBuilder) WhereBetween(column string, from, to time.Time) {
 	}
 }
 
-// OrderBy adds an ORDER BY clause.
+// OrderBy appends an ORDER BY key; repeated calls build a comma-separated list,
+// so a domain can pin a leading key (e.g. "deleted rows last") and still apply
+// the requested sort.
 // Implements [repository.Query]
 func (q *QueryBuilder) OrderBy(column, order string) {
 	if column == "" {
 		return
 	}
 
-	q.orderBy = column
+	clause := column
 
 	if order != "" {
-		q.orderBy += " " + order
+		clause += " " + order
 	}
+
+	if q.orderBy == "" {
+		q.orderBy = clause
+		return
+	}
+
+	q.orderBy += ", " + clause
 }
 
 // Paginate applies offset-based pagination.

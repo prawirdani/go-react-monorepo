@@ -43,7 +43,11 @@ func (r *searchRecorder) WhereNotNull(column string) {
 func (r *searchRecorder) WhereBetween(string, time.Time, time.Time) {}
 
 func (r *searchRecorder) OrderBy(column, order string) {
-	r.orderBy = column + " " + order
+	clause := column + " " + order
+	if r.orderBy != "" {
+		clause = r.orderBy + ", " + clause
+	}
+	r.orderBy = clause
 }
 
 func (r *searchRecorder) Paginate(page, limit int) {
@@ -167,9 +171,21 @@ func TestSearch_ApplySortUsesAllowList(t *testing.T) {
 		by, order string
 		want      string
 	}{
-		{name: "allow-listed column", by: "created_at", order: "desc", want: "created_at DESC"},
-		{name: "order defaults to ascending", by: "id", want: "id ASC"},
-		{name: "unlisted column is ignored", by: "password", order: "desc"},
+		{
+			name: "allow-listed column",
+			by:   "created_at", order: "desc",
+			want: "(deleted_at IS NOT NULL) ASC, created_at DESC",
+		},
+		{
+			name: "order defaults to ascending",
+			by:   "id",
+			want: "(deleted_at IS NOT NULL) ASC, id ASC",
+		},
+		{
+			name: "unlisted column is ignored",
+			by:   "password", order: "desc",
+			want: "(deleted_at IS NOT NULL) ASC",
+		},
 	}
 
 	for _, tt := range tests {

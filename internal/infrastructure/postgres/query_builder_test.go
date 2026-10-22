@@ -65,6 +65,17 @@ func TestQueryBuilder_SQL(t *testing.T) {
 				" LEFT JOIN teams t ON t.id = u.team_id WHERE u.deleted_at IS NULL ORDER BY u.id DESC",
 		},
 		{
+			name: "repeated order keys stack",
+			build: func() *QueryBuilder {
+				qb := Select("users", "id")
+				qb.OrderBy("(deleted_at IS NOT NULL)", "ASC")
+				qb.OrderBy("created_at", "DESC")
+				return qb
+			},
+			wantSQL: "SELECT id FROM users" +
+				" ORDER BY (deleted_at IS NOT NULL) ASC, created_at DESC",
+		},
+		{
 			name: "empty order column adds nothing",
 			build: func() *QueryBuilder {
 				qb := Select("users", "id")
