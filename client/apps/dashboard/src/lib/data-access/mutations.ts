@@ -6,6 +6,7 @@ export const { inviteUser, revokeSession, revokeUserSessions } =
 export const {
   updateUser,
   deleteUser,
+  restoreUser,
   changeProfilePicture,
   deleteProfilePicture,
 } = userMutations(userAPI)

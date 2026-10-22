@@ -20,6 +20,14 @@ type Auth struct {
 	// when the backing store errors, instead of failing open
 	// (AUTH_REVOCATION_FAIL_CLOSED).
 	RevocationFailClosed bool
+	// LoginMaxAttempts is the number of consecutive failed logins for one
+	// account before that account is locked out
+	// (AUTH_LOGIN_MAX_ATTEMPTS, default 5).
+	LoginMaxAttempts int
+	// LoginLockoutTTL is how long a login lockout lasts, and the window the
+	// per-account failure counter lives in (AUTH_LOGIN_LOCKOUT_TTL,
+	// default 15m).
+	LoginLockoutTTL time.Duration
 }
 
 func (t *Auth) Parse() error {
@@ -58,6 +66,16 @@ func (t *Auth) Parse() error {
 			t.RevocationFailClosed = b
 		}
 	}
+	if val := os.Getenv("AUTH_LOGIN_MAX_ATTEMPTS"); val != "" {
+		if n, err := strconv.Atoi(val); err == nil {
+			t.LoginMaxAttempts = n
+		}
+	}
+	if val := os.Getenv("AUTH_LOGIN_LOCKOUT_TTL"); val != "" {
+		if d, err := time.ParseDuration(val); err == nil {
+			t.LoginLockoutTTL = d
+		}
+	}
 	// Revocation checks fail open by default, so a short access-token TTL
 	// bounds how long a revoked token can still be accepted. Env var overrides.
 	if t.JwtTTL == 0 {
@@ -76,6 +94,14 @@ func (t *Auth) Parse() error {
 	// The confirmation link also travels in a URL; default to a short window.
 	if t.EmailChangeTokenTTL == 0 {
 		t.EmailChangeTokenTTL = 15 * time.Minute
+	}
+	// Per-account brute-force lockout: five consecutive failures by default,
+	// remembered for 15 minutes.
+	if t.LoginMaxAttempts == 0 {
+		t.LoginMaxAttempts = 5
+	}
+	if t.LoginLockoutTTL == 0 {
+		t.LoginLockoutTTL = 15 * time.Minute
 	}
 	return nil
 }

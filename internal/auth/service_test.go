@@ -2,7 +2,10 @@ package auth_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,6 +38,12 @@ func auditCtx() context.Context {
 		UserAgent: "test-agent",
 		RequestID: "test-request",
 	})
+}
+
+// loginKey mirrors the service's unexported attempt key derivation.
+func loginKey(email string) string {
+	sum := sha256.Sum256([]byte(strings.ToLower(strings.TrimSpace(email))))
+	return fmt.Sprintf("login:fail:%x", sum)
 }
 
 func TestService_Register(t *testing.T) {
@@ -237,6 +246,9 @@ func TestService_Login(t *testing.T) {
 		}
 
 		f.userRepo.EXPECT().GetByEmail(ctx, input.Email).Return(mockUser, nil)
+		f.attempts.On("Count", ctx, loginKey(input.Email)).
+			Return(int64(0), time.Duration(0), nil).Once()
+		f.attempts.On("Reset", ctx, loginKey(input.Email)).Return(nil).Once()
 		// Session store and its audit record commit in one transaction.
 		f.transactor.EXPECT().
 			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
@@ -261,6 +273,10 @@ func TestService_Login(t *testing.T) {
 		}
 
 		f.userRepo.EXPECT().GetByEmail(ctx, input.Email).Return(nil, apperr.ErrNotFound)
+		f.attempts.On("Count", ctx, loginKey(input.Email)).
+			Return(int64(0), time.Duration(0), nil).Once()
+		f.attempts.On("Increment", ctx, loginKey(input.Email), f.cfg.LoginLockoutTTL).
+			Return(int64(1), f.cfg.LoginLockoutTTL, nil).Once()
 
 		tokenPair, err := f.service.Login(ctx, input)
 
@@ -289,12 +305,100 @@ func TestService_Login(t *testing.T) {
 		}
 
 		f.userRepo.EXPECT().GetByEmail(ctx, input.Email).Return(mockUser, nil)
+		f.attempts.On("Count", ctx, loginKey(input.Email)).
+			Return(int64(0), time.Duration(0), nil).Once()
+		f.attempts.On("Increment", ctx, loginKey(input.Email), f.cfg.LoginLockoutTTL).
+			Return(int64(1), f.cfg.LoginLockoutTTL, nil).Once()
 
 		tokenPair, err := f.service.Login(ctx, input)
 
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, auth.ErrWrongCredentials)
 		assert.Nil(t, tokenPair)
+	})
+
+	t.Run("Locked account is throttled before any credential check", func(t *testing.T) {
+		ctx := auditCtx()
+		f := setupTestFixture(t)
+
+		input := auth.LoginInput{
+			Email:    "locked@example.com",
+			Password: "password123",
+		}
+
+		f.attempts.On("Count", ctx, loginKey(input.Email)).
+			Return(int64(f.cfg.LoginMaxAttempts), 5*time.Minute, nil)
+
+		// No userRepo expectation: a locked account must not reach the lookup
+		// or the bcrypt compare.
+		tokenPair, err := f.service.Login(ctx, input)
+
+		require.Error(t, err)
+		assert.Nil(t, tokenPair)
+		assert.ErrorIs(t, err, auth.ErrAccountLocked)
+
+		var appErr *apperr.Error
+		require.ErrorAs(t, err, &appErr)
+		assert.Equal(t, apperr.KindThrottled, appErr.Kind())
+		assert.Equal(t, map[string]int64{"retry_after_seconds": 300}, appErr.Details)
+	})
+
+	t.Run("Unknown email records a failure", func(t *testing.T) {
+		ctx := auditCtx()
+		f := setupTestFixture(t)
+
+		input := auth.LoginInput{
+			Email:    "nonexistent@example.com",
+			Password: "password123",
+		}
+
+		key := loginKey(input.Email)
+		f.userRepo.EXPECT().GetByEmail(ctx, input.Email).Return(nil, apperr.ErrNotFound)
+		f.attempts.On("Count", ctx, key).Return(int64(0), time.Duration(0), nil).Once()
+		f.attempts.On("Increment", ctx, key, f.cfg.LoginLockoutTTL).
+			Return(int64(1), f.cfg.LoginLockoutTTL, nil).Once()
+
+		tokenPair, err := f.service.Login(ctx, input)
+
+		assert.ErrorIs(t, err, auth.ErrWrongCredentials)
+		assert.Nil(t, tokenPair)
+	})
+
+	t.Run("Counter error fails open", func(t *testing.T) {
+		ctx := auditCtx()
+		f := setupTestFixture(t)
+
+		input := auth.LoginInput{
+			Email:    "john@example.com",
+			Password: "password123",
+		}
+
+		hashedPassword, err := auth.HashPassword(input.Password)
+		require.NoError(t, err)
+
+		mockUser := &user.User{
+			ID:       uuid.New(),
+			Name:     "John Doe",
+			Email:    input.Email,
+			Password: string(hashedPassword),
+		}
+
+		f.userRepo.EXPECT().GetByEmail(ctx, input.Email).Return(mockUser, nil)
+		f.attempts.On("Count", ctx, loginKey(input.Email)).
+			Return(int64(0), time.Duration(0), assert.AnError)
+		// The counter is down, so the login proceeds and still clears it.
+		f.attempts.On("Reset", ctx, loginKey(input.Email)).Return(nil).Once()
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				f.authRepo.EXPECT().StoreSession(ctx, mock.AnythingOfType("*auth.Session")).Return(nil)
+				return fn(ctx)
+			})
+
+		tokenPair, err := f.service.Login(ctx, input)
+
+		require.NoError(t, err)
+		assert.NotNil(t, tokenPair)
 	})
 }
 
@@ -1532,6 +1636,7 @@ type testFixture struct {
 	authRepo      *mocks.Repository
 	eventProducer *mocks.EventProducer
 	throttler     *sharedMocks.Throttler
+	attempts      *sharedMocks.Counter
 	audit         *sharedMocks.Recorder
 	revoker       *sharedMocks.Revoker
 	service       *auth.Service
@@ -1546,6 +1651,8 @@ func setupTestFixture(t *testing.T) *testFixture {
 		PasswordRecoveryTokenTTL: time.Hour,
 		EmailChangeTokenTTL:      time.Hour,
 		RegistrationTokenTTL:     time.Hour,
+		LoginMaxAttempts:         5,
+		LoginLockoutTTL:          15 * time.Minute,
 	}
 	// InternalMode defaults to false, so registration is public in tests.
 	cfg := &config.Config{Auth: authCfg}
@@ -1555,16 +1662,21 @@ func setupTestFixture(t *testing.T) *testFixture {
 	authRepo := mocks.NewRepository(t)
 	eventProducer := mocks.NewEventProducer(t)
 	throttler := sharedMocks.NewThrottler(t)
+	attempts := sharedMocks.NewCounter(t)
 	auditRec := sharedMocks.NewRecorder(t)
 	revoker := sharedMocks.NewRevoker(t)
 
+	// Every Login calls Count, then Reset on success or Increment on failure.
+	// Each login test registers those expectations explicitly: a lenient
+	// default would match first and shadow the specific one a lockout test
+	// depends on.
 	// Audit is a side-effect; most tests don't care. Best-effort paths call it
 	// without a prior expectation, so register a lenient default. Tests that
 	// assert audit behavior can still add a specific (more-recently-registered)
 	// expectation, which testify matches first.
 	auditRec.On("Record", mock.Anything, mock.AnythingOfType("audit.Entry")).Return(nil).Maybe()
 
-	service := auth.NewService(cfg, tr, userRepo, authRepo, rbac.NewAuthorizer(), eventProducer, throttler, auditRec, revoker)
+	service := auth.NewService(cfg, tr, userRepo, authRepo, rbac.NewAuthorizer(), eventProducer, throttler, auditRec, revoker, attempts)
 
 	t.Cleanup(func() {
 		tr.AssertExpectations(t)
@@ -1572,6 +1684,7 @@ func setupTestFixture(t *testing.T) *testFixture {
 		authRepo.AssertExpectations(t)
 		eventProducer.AssertExpectations(t)
 		throttler.AssertExpectations(t)
+		attempts.AssertExpectations(t)
 		auditRec.AssertExpectations(t)
 		revoker.AssertExpectations(t)
 	})
@@ -1583,6 +1696,7 @@ func setupTestFixture(t *testing.T) *testFixture {
 		authRepo:      authRepo,
 		eventProducer: eventProducer,
 		throttler:     throttler,
+		attempts:      attempts,
 		audit:         auditRec,
 		revoker:       revoker,
 		service:       service,

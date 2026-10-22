@@ -39,6 +39,10 @@ export function userMutations(userAPI: UserAPI) {
 			mutationFn: (userId: string) => userAPI.deleteUser(userId),
 			meta,
 		}),
+		restoreUser: mutationOptions({
+			mutationFn: (userId: string) => userAPI.restoreUser(userId),
+			meta,
+		}),
 		changeProfilePicture: mutationOptions({
 			mutationFn: (pict: File) => userAPI.changeProfilePicture(pict),
 			meta,

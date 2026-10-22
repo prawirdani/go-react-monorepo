@@ -12,10 +12,12 @@ import (
 
 // searchRecorder captures what a Search pushes into a query.
 type searchRecorder struct {
-	whereIn map[string][]string
-	orderBy string
-	page    int
-	limit   int
+	whereIn      map[string][]string
+	whereNull    []string
+	whereNotNull []string
+	orderBy      string
+	page         int
+	limit        int
 }
 
 func (r *searchRecorder) WhereIn(column string, value any) {
@@ -29,8 +31,14 @@ func (r *searchRecorder) WhereIn(column string, value any) {
 
 func (r *searchRecorder) WhereLike(string, any)  {}
 func (r *searchRecorder) WhereILike(string, any) {}
-func (r *searchRecorder) WhereNull(string)       {}
-func (r *searchRecorder) WhereNotNull(string)    {}
+
+func (r *searchRecorder) WhereNull(column string) {
+	r.whereNull = append(r.whereNull, column)
+}
+
+func (r *searchRecorder) WhereNotNull(column string) {
+	r.whereNotNull = append(r.whereNotNull, column)
+}
 
 func (r *searchRecorder) WhereBetween(string, time.Time, time.Time) {}
 
@@ -92,6 +100,63 @@ func TestSearch_ApplyFilterSanitisesValues(t *testing.T) {
 			assert.Equal(t, tt.wantRole, s.Role)
 			assert.Equal(t, tt.wantGender, q.whereIn["gender"])
 			assert.Equal(t, tt.wantRole, q.whereIn["role"])
+		})
+	}
+}
+
+// TestSearch_ApplyFilterDeletedAt: an absent param is no filter at all, so it
+// lists every row; a single state narrows; both states are equivalent to none.
+func TestSearch_ApplyFilterDeletedAt(t *testing.T) {
+	tests := []struct {
+		name        string
+		deletedAt   []string
+		wantFilter  []string
+		wantNull    bool
+		wantNotNull bool
+	}{
+		{name: "absent means every row"},
+		{name: "explicit active", deletedAt: []string{"active"}, wantFilter: []string{"active"}, wantNull: true},
+		{name: "deleted only", deletedAt: []string{"deleted"}, wantFilter: []string{"deleted"}, wantNotNull: true},
+		{
+			name:       "both states mean all rows",
+			deletedAt:  []string{"active", "deleted"},
+			wantFilter: []string{"active", "deleted"},
+		},
+		{
+			name:       "unknown values are dropped",
+			deletedAt:  []string{"banana", "ACTIVE"},
+			wantFilter: []string{"active"},
+			wantNull:   true,
+		},
+		{
+			name:        "duplicates are collapsed",
+			deletedAt:   []string{"deleted", " deleted ", "deleted"},
+			wantFilter:  []string{"deleted"},
+			wantNotNull: true,
+		},
+		{name: "nothing valid stays unfiltered", deletedAt: []string{"banana"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Search{Filter: Filter{DeletedAt: tt.deletedAt}}
+
+			var q searchRecorder
+			s.ApplyFilter(&q)
+			s.SetMeta(0)
+
+			// The metadata echoes the sanitised set, not the requested one.
+			assert.Equal(t, tt.wantFilter, s.Meta().Filter.DeletedAt)
+			if tt.wantNull {
+				assert.Equal(t, []string{"deleted_at"}, q.whereNull)
+			} else {
+				assert.Empty(t, q.whereNull)
+			}
+			if tt.wantNotNull {
+				assert.Equal(t, []string{"deleted_at"}, q.whereNotNull)
+			} else {
+				assert.Empty(t, q.whereNotNull)
+			}
 		})
 	}
 }

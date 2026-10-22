@@ -34,8 +34,8 @@ make test           # go test -race -count=1 on GO_PACKAGES -cover
 make lint           # golangci-lint run
 make migration:create  # Scaffold a goose migration
 make migration:up      # Apply migrations
-make cli               # Developer CLI, e.g. `make cli ARGS="permissions"`
-make permissions       # Dump registered permission codes as a JS array
+make cli               # Developer CLI (`permissions`, `create-admin`), e.g. `make cli ARGS="create-admin"`
+make permissions       # Regenerate the client's permission catalog
 make client:install    # Install the dashboard's dependencies (bun)
 make client:dev        # Dashboard dev server (proxies /api to the API)
 make client:lint       # biome

@@ -39,6 +39,9 @@ packages:
       Throttler:
         config:
           filename: throttler.go
+      Counter:
+        config:
+          filename: counter.go
 
   github.com/prawirdani/go-react-monorepo/internal/ports/revocation:
     interfaces:

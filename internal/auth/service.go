@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -66,6 +67,21 @@ const (
 	ActionRevokeSession        audit.Action = "auth.revoke-session"
 )
 
+// ErrAccountLocked is returned while an account is locked out after too many
+// consecutive failed logins. Details carry the remaining window in seconds.
+var ErrAccountLocked = apperr.ThrottledErr(
+	"too many failed login attempts, try again later",
+	"AUTH_ACCOUNT_LOCKED",
+)
+
+// loginAttemptKey builds the per-account failure counter key from a hash of the
+// normalized email. Hashing keeps raw addresses out of Redis keys, which are
+// visible to anyone with store access, and keeps the key a fixed length.
+func loginAttemptKey(email string) string {
+	sum := HashStr(strings.ToLower(strings.TrimSpace(email)))
+	return fmt.Sprintf("login:fail:%x", sum)
+}
+
 type Service struct {
 	cfg           *config.Config
 	transactor    repository.Transactor
@@ -76,6 +92,7 @@ type Service struct {
 	throttler     throttle.Throttler
 	audit         audit.Recorder
 	revoker       revocation.Revoker
+	attempts      throttle.Counter
 }
 
 func NewService(
@@ -88,6 +105,7 @@ func NewService(
 	throttler throttle.Throttler,
 	auditRecorder audit.Recorder,
 	revoker revocation.Revoker,
+	attempts throttle.Counter,
 ) *Service {
 	authorizer.RegisterPermissions(permTables)
 
@@ -101,6 +119,7 @@ func NewService(
 		authorizer:    authorizer,
 		audit:         auditRecorder,
 		revoker:       revoker,
+		attempts:      attempts,
 	}
 }
 
@@ -232,6 +251,21 @@ func (s *Service) Login(
 	ctx context.Context,
 	inp LoginInput,
 ) (*TokenPair, error) {
+	attemptKey := loginAttemptKey(inp.Email)
+
+	// Lockout check runs before any credential work. A locked account must not
+	// cost a bcrypt compare, so the attacker cannot turn the lockout into CPU
+	// load. A counter error is fail-open: a Redis outage must not lock everyone
+	// out, mirroring the revocation store's default.
+	if n, ttl, err := s.attempts.Count(ctx, attemptKey); err != nil {
+		log.WarnCtx(ctx, "login attempt counter unavailable", "err", err)
+	} else if n >= int64(s.cfg.Auth.LoginMaxAttempts) && ttl > 0 {
+		log.WarnCtx(ctx, "login failed", "email", inp.Email, "reason", "account_locked")
+		return nil, ErrAccountLocked.WithDetails(map[string]int64{
+			"retry_after_seconds": int64(ttl.Seconds()),
+		})
+	}
+
 	usr, err := s.userRepo.GetByEmail(ctx, inp.Email)
 	if err != nil && !errors.Is(err, apperr.ErrNotFound) {
 		// Surface real DB errors (e.g. outage) instead of masking them as 401.
@@ -243,14 +277,24 @@ func (s *Service) Login(
 		// enumeration via response time is not possible. Logged, not audited —
 		// this is a security event, and the email is attacker-supplied.
 		DummyVerify()
+		// Count unknown emails too, otherwise the lockout would itself leak
+		// which addresses exist.
+		s.countLoginFailure(ctx, attemptKey)
 		log.WarnCtx(ctx, "login failed", "email", inp.Email, "reason", "unknown_email")
 		return nil, ErrWrongCredentials
 	}
 
 	if err := VerifyPassword(inp.Password, usr.Password); err != nil {
+		s.countLoginFailure(ctx, attemptKey)
 		log.WarnCtx(ctx, "login failed",
 			"email", inp.Email, "user_id", usr.ID.String(), "reason", "bad_password")
 		return nil, err
+	}
+
+	// Correct credentials clear the failure window. Best-effort: a stale
+	// counter only costs the user an earlier lockout, never a failed login.
+	if err := s.attempts.Reset(ctx, attemptKey); err != nil {
+		log.WarnCtx(ctx, "failed to reset login attempt counter", "err", err)
 	}
 
 	sess, refreshToken, err := NewSession(ctx, usr.ID, s.cfg.Auth.SessionTTL)
@@ -283,6 +327,14 @@ func (s *Service) Login(
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+}
+
+// countLoginFailure records one failed attempt against key. A counter error is
+// logged and ignored: losing a failure must not change the caller's answer.
+func (s *Service) countLoginFailure(ctx context.Context, key string) {
+	if _, _, err := s.attempts.Increment(ctx, key, s.cfg.Auth.LoginLockoutTTL); err != nil {
+		log.WarnCtx(ctx, "failed to record login failure", "err", err)
+	}
 }
 
 // RefreshAccessToken refresh access token. it will rotate the refresh token if refreshing success.

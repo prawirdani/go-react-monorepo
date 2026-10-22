@@ -74,8 +74,8 @@ func (r *userRepository) List(ctx context.Context, search *user.Search) ([]user.
 		"profile_picture",
 		"created_at",
 		"updated_at",
+		"deleted_at",
 	)
-	qb.WhereNull("deleted_at")
 	repository.ApplyQuery(qb, search)
 
 	conn := r.db.GetConn(ctx)
@@ -152,6 +152,36 @@ func (r *userRepository) Delete(ctx context.Context, u *user.User) error {
 	_, err := conn.Exec(ctx, "UPDATE users SET deleted_at=NOW() WHERE id=$1", u.ID)
 	if err != nil {
 		return fmt.Errorf("delete user: %w", err)
+	}
+
+	return nil
+}
+
+// Restore implements [user.Repository].
+func (r *userRepository) Restore(ctx context.Context, userID uuid.UUID) error {
+	conn := r.db.GetConn(ctx)
+	tag, err := conn.Exec(
+		ctx,
+		"UPDATE users SET deleted_at=NULL, updated_at=NOW() WHERE id=$1 AND deleted_at IS NOT NULL",
+		userID,
+	)
+	if err != nil {
+		// The email index is partial (unique only among live rows), so an
+		// account created with this address while the user was deleted makes
+		// the restore a conflict rather than an internal error.
+		if uniqueViolationErr(err, "users_email_key") {
+			return user.ErrEmailConflict.WithDetails(map[string]any{
+				"user_id": userID,
+			})
+		}
+
+		return fmt.Errorf("restore user: %w", err)
+	}
+
+	if tag.RowsAffected() == 0 {
+		return apperr.ErrNotFound.WithDetails(map[string]any{
+			"user_id": userID,
+		})
 	}
 
 	return nil

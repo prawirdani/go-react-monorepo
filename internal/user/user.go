@@ -29,6 +29,7 @@ type User struct {
 	ProfilePicture  nullable.Nullable[string]    `db:"profile_picture"   json:"profile_picture"`
 	CreatedAt       time.Time                    `db:"created_at"        json:"created_at"`
 	UpdatedAt       time.Time                    `db:"updated_at"        json:"updated_at"`
+	DeletedAt       nullable.Nullable[time.Time] `db:"deleted_at"        json:"deleted_at"`
 }
 
 func (u *User) Validate() error {

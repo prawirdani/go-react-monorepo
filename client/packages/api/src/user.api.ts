@@ -18,7 +18,7 @@ export class UserAPI {
 		this.client = client;
 	}
 
-	// available queries: /api/users?sort=(id/created_at/updated_at)&order=(asc/desc)&page=1&limit=10&role=admin,user&gender=M,F,O
+	// available queries: /api/users?sort=(id/created_at/updated_at)&order=(asc/desc)&page=1&limit=10&role=admin,user&gender=M,F,O&deleted_at=active,deleted
 	/* requires user.read permission */
 	async listUser(
 		params: UserSearchQuery,
@@ -33,6 +33,9 @@ export class UserAPI {
 		// treats gender as UPPERCASE M/F/O).
 		if (params.role.length) query.set("role", params.role.join(","));
 		if (params.gender.length) query.set("gender", params.gender.join(","));
+		// Omitted means "no status filter" — the backend returns every row.
+		if (params.deleted_at.length)
+			query.set("deleted_at", params.deleted_at.join(","));
 		return await this.client.Queryable<User, UserListMeta>(
 			`/api/users?${query}`,
 		);
@@ -50,6 +53,11 @@ export class UserAPI {
 	 */
 	async deleteUser(userId: string): Promise<void> {
 		await this.client.Delete(`/api/users/${userId}`);
+	}
+
+	/* requires user.restore permission */
+	async restoreUser(userId: string): Promise<void> {
+		await this.client.Put(`/api/users/${userId}/restore`, {});
 	}
 
 	/* self (current user) */

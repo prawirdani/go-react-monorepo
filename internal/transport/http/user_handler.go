@@ -25,6 +25,7 @@ func (h *UserHandler) Routes(router fiber.Router, auth *authenticatorMiddleware)
 		router.Put("/profile-picture", h.changeProfilePicture)
 		router.Delete("/:id", h.deleteUser)
 		router.Put("/:id", h.updateUser)
+		router.Put("/:id/restore", h.restoreUser)
 	})
 }
 
@@ -91,6 +92,25 @@ func (h *UserHandler) deleteUser(c fiber.Ctx) error {
 
 	return c.JSON(Body{
 		Message: "user deleted.",
+	})
+}
+
+func (h *UserHandler) restoreUser(c fiber.Ctx) error {
+	ctx := c.Context()
+	param := c.Params("id")
+
+	userID, err := uuid.Parse(param)
+	if err != nil {
+		return ErrInvalidParam("id", param)
+	}
+
+	if err := h.userService.RestoreUser(ctx, userID); err != nil {
+		log.ErrorCtx(ctx, "Failed to restore user", err)
+		return err
+	}
+
+	return c.JSON(Body{
+		Message: "user restored.",
 	})
 }
 

@@ -50,6 +50,7 @@ func NewContainer(
 	}
 
 	redisThrottler := redisInfra.NewThrottler(rdb)
+	loginCounter := redisInfra.NewCounter(rdb)
 	revocationStore := redisInfra.NewRevocationStore(rdb, cfg.Auth.JwtTTL)
 
 	// Repos init
@@ -76,6 +77,7 @@ func NewContainer(
 		redisThrottler,
 		auditRepo,
 		revocationStore,
+		loginCounter,
 	)
 	auditSvc := audit.NewAuditService(authorizer, auditRepo)
 

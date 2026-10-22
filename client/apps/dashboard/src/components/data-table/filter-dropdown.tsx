@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu"
-import { ChevronDown, Filter } from "@repo/ui/icons"
+import { ChevronDown, Filter, FilterOff } from "@repo/ui/icons"
 import { Fragment, type ReactNode } from "react"
 
 /** One labelled checkbox section of the filter menu. */
@@ -78,6 +78,7 @@ export function FilterDropdown({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onClear}>
+              <FilterOff />
               {t("searchQuery.clear")}
             </DropdownMenuItem>
           </>

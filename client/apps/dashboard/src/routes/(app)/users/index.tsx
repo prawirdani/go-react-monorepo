@@ -1,6 +1,7 @@
 import { useFormatter, useTranslations } from "@repo/i18n"
 import type { SortOrder } from "@repo/schemas/search-query"
 import {
+  DEFAULT_DELETED_STATES,
   type Gender,
   type Role,
   type User,
@@ -35,12 +36,14 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  FilterOff,
   Inbox,
+  Restore,
   Trash,
 } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { createFileRoute, stripSearchParams } from "@tanstack/react-router"
+import { createFileRoute, redirect, stripSearchParams } from "@tanstack/react-router"
 import { Fragment, useState } from "react"
 import { FilterDropdown } from "@/components/data-table/filter-dropdown"
 import { SortableHead } from "@/components/data-table/sortable-head"
@@ -53,6 +56,7 @@ import {
   PanelHeader,
   PanelRow,
   PanelRows,
+  StateBadge,
 } from "@/components/layout/panel"
 import { RoleBadge } from "@/components/layout/role-badge"
 import { SessionList } from "@/components/session-list"
@@ -65,7 +69,7 @@ import { useErrorHandler } from "@/hooks/use-error-handler"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useCan } from "@/lib/auth/access"
 import { imageUrl } from "@/lib/data-access/api"
-import { deleteUser } from "@/lib/data-access/mutations"
+import { deleteUser, restoreUser } from "@/lib/data-access/mutations"
 import { getSession, listUser } from "@/lib/data-access/queries"
 import { GENDER_LABEL_KEYS, ROLE_LABEL_KEYS } from "@/lib/i18n"
 import { EditUserDialog } from "./-edit-user-dialog"
@@ -73,6 +77,18 @@ import { InviteUserDialog } from "./-invite-user-dialog"
 
 export const Route = createFileRoute("/(app)/users/")({
   validateSearch: userSearchQuerySchema,
+  // The status filter is a real filter, so it lives in the URL rather than being
+  // implied by the schema default: a first visit is redirected once to
+  // `deleted_at=active`, which also makes the visited URL reproducible. The
+  // redirect only fires when the param is absent, so clearing the group (an
+  // explicit empty selection) is left alone.
+  beforeLoad: ({ search, location }) => {
+    if ("deleted_at" in location.search) return
+    throw redirect({
+      search: { ...search, deleted_at: DEFAULT_DELETED_STATES },
+      replace: true,
+    })
+  },
   // Keep the URL clean: an empty filter array is omitted entirely rather than
   // serialized as `role=[]`. The base params (page/limit/sort/order) stay.
   search: {
@@ -111,6 +127,9 @@ function RouteComponent() {
   const navigate = Route.useNavigate()
   const canEdit = useCan("user.update")
   const canDelete = useCan("user.delete")
+  // Restoring is a separate, admin-only permission, so a user may be allowed
+  // one of delete/restore and not the other.
+  const canRestore = useCan("user.restore")
   const canInvite = useCan("auth.register-user")
   const canViewSessions = useCan("auth.view-user-sessions")
   const canRevokeSessions = useCan("auth.revoke-user-sessions")
@@ -124,8 +143,8 @@ function RouteComponent() {
     setExpandedId((prev) => (prev === id ? null : id))
 
   // Every cell that can render: user, role, phone, gender, created,
-  // plus the actions cell when edit or delete is allowed.
-  const columnCount = 5 + (canEdit || canDelete ? 1 : 0)
+  // plus the actions cell when edit, delete or restore is allowed.
+  const columnCount = 5 + (canEdit || canDelete || canRestore ? 1 : 0)
 
   // The router's navigate is generic over this route's own search; the query
   // concerns only need the functional `search` updater. One documented cast,
@@ -165,8 +184,46 @@ function RouteComponent() {
         label: tc(GENDER_LABEL_KEYS[gender]),
       })),
     },
+    {
+      // Deletion state as a filter, not a separate control. It opens on
+      // "active"; checking every state (or clearing the group) means no filter,
+      // which the backend answers with every row.
+      key: "deleted_at",
+      label: t("users.table.status"),
+      selected: search.deleted_at,
+      options: [
+        { value: "active", label: t("users.status.active") },
+        { value: "deleted", label: t("users.status.deleted") },
+      ],
+    },
   ]
-  const activeFilterCount = search.role.length + search.gender.length
+  // The status group starts on "active"; that is a real narrowing filter, so it
+  // counts like role and gender do.
+  const activeFilterCount =
+    search.role.length + search.gender.length + search.deleted_at.length
+
+  // Checking every option of a group is the same query as checking none, so the
+  // group clears itself instead of pinning a filter that changes nothing. The
+  // empty selection is stored explicitly, so a cleared status group means
+  // "every row" rather than falling back to the "active" default.
+  const toggleGroupFilter = (key: string, value: string, on: boolean) => {
+    const group = filterGroups.find((entry) => entry.key === key)
+    const selected: string[] = group ? [...group.selected] : []
+    const next = on
+      ? [...selected, value]
+      : selected.filter((entry) => entry !== value)
+    const coversAll =
+      group !== undefined &&
+      group.options.length > 0 &&
+      group.options.every((option) => next.includes(option.value))
+
+    if (!coversAll) {
+      toggleFilter(key, value, on)
+      return
+    }
+
+    nav({ search: (prev) => ({ ...prev, [key]: [], page: 1 }) })
+  }
 
   return (
     <Page
@@ -188,8 +245,10 @@ function RouteComponent() {
                 <FilterDropdown
                   groups={filterGroups}
                   activeCount={activeFilterCount}
-                  onToggle={toggleFilter}
-                  onClear={() => clearFilters(["role", "gender"])}
+                  onToggle={toggleGroupFilter}
+                  onClear={() =>
+                    clearFilters(["role", "gender", "deleted_at"])
+                  }
                 />
               </>
             }
@@ -216,8 +275,11 @@ function RouteComponent() {
                   activeFilterCount > 0 ? (
                     <Button
                       variant="outline"
-                      onClick={() => clearFilters(["role", "gender"])}
+                      onClick={() =>
+                        clearFilters(["role", "gender", "deleted_at"])
+                      }
                     >
+                      <FilterOff />
                       {tc("searchQuery.clear")}
                     </Button>
                   ) : undefined
@@ -230,6 +292,7 @@ function RouteComponent() {
                 onToggle={toggleExpanded}
                 canEdit={canEdit}
                 canDelete={canDelete}
+                canRestore={canRestore}
                 canViewSessions={canViewSessions}
                 canRevokeSessions={canRevokeSessions}
                 currentUser={currentUser}
@@ -265,7 +328,7 @@ function RouteComponent() {
                     >
                       {t("users.table.created")}
                     </SortableHead>
-                    {canEdit || canDelete ? (
+                    {(canEdit || canDelete || canRestore) ? (
                       <TableHead className="w-[104px] px-3 text-right">
                         <span className="sr-only">
                           {t("users.table.actions")}
@@ -280,6 +343,9 @@ function RouteComponent() {
                   {users.map((user, index) => {
                     const isExpanded = expandedId === user.id
                     const isSelf = user.id === currentUser?.id
+                    // Sessions are already revoked by the delete flow, so
+                    // their rows carry no expander, click target, or panel.
+                    const isDeleted = user.deleted_at !== null
                     const panelId = `user-sessions-${user.id}`
                     // Bulk revoke on your own row would sign you out; offer it
                     // only for other people's accounts.
@@ -289,7 +355,7 @@ function RouteComponent() {
                       <Fragment key={user.id}>
                         <TableRow
                           onClick={
-                            canViewSessions
+                            canViewSessions && !isDeleted
                               ? (e) => {
                                   // Ignore clicks on the row's own controls
                                   // (edit, delete, expander); outer row only.
@@ -308,13 +374,13 @@ function RouteComponent() {
                           // expanded sessions row is a sibling `<tr>`, so a
                           // selector-based stripe would shift on expand.
                           className={cn(
-                            canViewSessions && "cursor-pointer",
+                            canViewSessions && !isDeleted && "cursor-pointer",
                             index % 2 === 1 && "bg-muted/29",
                           )}
                         >
                           <TableCell className="px-3">
                             <div className="flex items-center gap-3">
-                              {canViewSessions && (
+                              {canViewSessions && !isDeleted && (
                                 <Button
                                   variant="ghost"
                                   size="icon-sm"
@@ -334,7 +400,10 @@ function RouteComponent() {
                                 </Button>
                               )}
                               <Avatar
-                                className="size-8 shrink-0"
+                                className={cn(
+                                  "size-8 shrink-0",
+                                  isDeleted && "opacity-40 grayscale",
+                                )}
                                 key={user.profile_picture || "fallback"}
                               >
                                 {user.profile_picture && (
@@ -348,12 +417,22 @@ function RouteComponent() {
                                   {user.name.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm">{user.name}</p>
+                              <div className="min-w-0 flex-1">
+                                <p
+                                  className={cn(
+                                    "truncate text-sm",
+                                    isDeleted && "text-muted-foreground",
+                                  )}
+                                >
+                                  {user.name}
+                                </p>
                                 <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                                   {user.email}
                                 </p>
                               </div>
+                              {isDeleted && user.deleted_at && (
+                                <DeletedBadge deletedAt={user.deleted_at} />
+                              )}
                             </div>
                           </TableCell>
                           <TableCell className="px-3">
@@ -379,11 +458,21 @@ function RouteComponent() {
                               timeStyle: "short",
                             })}
                           </TableCell>
-                          {(canEdit || canDelete) && !isSelf ? (
+                          {(isDeleted
+                            ? canRestore && !isSelf
+                            : (canEdit || canDelete) && !isSelf) ? (
                             <TableCell className="px-3 text-right">
                               <div className="flex justify-end gap-1">
-                                {canEdit && <EditUserDialog user={user} />}
-                                {canDelete && <DeleteUserDialog user={user} />}
+                                {isDeleted ? (
+                                  <RestoreUserDialog user={user} />
+                                ) : (
+                                  <>
+                                    {canEdit && <EditUserDialog user={user} />}
+                                    {canDelete && (
+                                      <DeleteUserDialog user={user} />
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </TableCell>
                           ) : (
@@ -391,7 +480,7 @@ function RouteComponent() {
                           )}
                         </TableRow>
 
-                        {canViewSessions && isExpanded && (
+                        {canViewSessions && !isDeleted && isExpanded && (
                           <TableRow className="hover:bg-transparent">
                             <TableCell
                               colSpan={columnCount}
@@ -439,8 +528,9 @@ function UsersLoading({ compact }: { compact: boolean }) {
   const t = useTranslations("app")
   const canEdit = useCan("user.update")
   const canDelete = useCan("user.delete")
+  const canRestore = useCan("user.restore")
   const canViewSessions = useCan("auth.view-user-sessions")
-  const showActions = canEdit || canDelete
+  const showActions = canEdit || canDelete || canRestore
 
   return (
     <>
@@ -497,7 +587,7 @@ function UsersLoading({ compact }: { compact: boolean }) {
               <TableHead className="px-3 panel-label">
                 {t("users.table.created")}
               </TableHead>
-              {canEdit || canDelete ? (
+              {showActions ? (
                 <TableHead className="w-[104px] px-3" />
               ) : null}
             </TableRow>
@@ -532,7 +622,7 @@ function UsersLoading({ compact }: { compact: boolean }) {
                 <TableCell className="px-3 py-3">
                   <Skeleton className="h-4 w-20" />
                 </TableCell>
-                {canEdit || canDelete ? (
+                {showActions ? (
                   <TableCell className="flex justify-end px-3 py-3">
                     <Skeleton className="h-8 w-8" />
                   </TableCell>
@@ -557,6 +647,7 @@ function UserRecords({
   onToggle,
   canEdit,
   canDelete,
+  canRestore,
   canViewSessions,
   canRevokeSessions,
   currentUser,
@@ -569,6 +660,7 @@ function UserRecords({
   onToggle: (id: string) => void
   canEdit: boolean
   canDelete: boolean
+  canRestore: boolean
   canViewSessions: boolean
   canRevokeSessions: boolean
   currentUser: User | undefined
@@ -579,7 +671,7 @@ function UserRecords({
   const t = useTranslations("app")
   const tc = useTranslations("common")
   const format = useFormatter()
-  const showActions = canEdit || canDelete
+  const showActions = canEdit || canDelete || canRestore
   // The list's only sortable field is created_at, so the label names the
   // ordering directly (newest/oldest) and is unambiguous in context.
   const sortLabel =
@@ -608,6 +700,9 @@ function UserRecords({
         {users.map((user, index) => {
           const isExpanded = expandedId === user.id
           const isSelf = user.id === currentUser?.id
+          // Sessions are already revoked by the delete flow, so their bays
+          // carry no expander or panel either.
+          const isDeleted = user.deleted_at !== null
           const panelId = `user-sessions-${user.id}`
           // Bulk revoke on your own row would sign you out; offer it only for
           // other people's accounts.
@@ -624,7 +719,10 @@ function UserRecords({
             >
               <div className="flex items-center gap-3 px-3 py-3">
                 <Avatar
-                  className="size-8 shrink-0"
+                  className={cn(
+                    "size-8 shrink-0",
+                    isDeleted && "opacity-40 grayscale",
+                  )}
                   key={user.profile_picture || "fallback"}
                 >
                   {user.profile_picture && (
@@ -637,15 +735,31 @@ function UserRecords({
                   <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{user.name}</p>
+                  <p
+                    className={cn(
+                      "truncate text-sm",
+                      isDeleted && "text-muted-foreground",
+                    )}
+                  >
+                    {user.name}
+                  </p>
                   <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                     {user.email}
                   </p>
                 </div>
+                {isDeleted && user.deleted_at && (
+                  <DeletedBadge deletedAt={user.deleted_at} />
+                )}
                 {showActions && !isSelf && (
                   <div className="flex shrink-0 items-center gap-1">
-                    {canEdit && <EditUserDialog user={user} />}
-                    {canDelete && <DeleteUserDialog user={user} />}
+                    {isDeleted ? (
+                      canRestore && <RestoreUserDialog user={user} />
+                    ) : (
+                      <>
+                        {canEdit && <EditUserDialog user={user} />}
+                        {canDelete && <DeleteUserDialog user={user} />}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -689,7 +803,7 @@ function UserRecords({
                 />
               </PanelRows>
 
-              {canViewSessions && (
+              {canViewSessions && !isDeleted && (
                 <button
                   type="button"
                   onClick={() => onToggle(user.id)}
@@ -709,7 +823,7 @@ function UserRecords({
                 </button>
               )}
 
-              {canViewSessions && isExpanded && (
+              {canViewSessions && !isDeleted && isExpanded && (
                 <div id={panelId} className="border-t border-border">
                   <p className="panel-label px-3 pt-3">
                     {t("users.sessions.panel")}
@@ -782,5 +896,83 @@ function DeleteUserDialog({ user }: { user: User }) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  )
+}
+
+function RestoreUserDialog({ user }: { user: User }) {
+  const t = useTranslations("app")
+  const tc = useTranslations("common")
+  const handleError = useErrorHandler()
+
+  const { mutateAsync, isPending } = useMutation(restoreUser)
+
+  const handleRestore = async () =>
+    mutateAsync(user.id, {
+      onSuccess: () => toast.success(t("users.restore.success")),
+      // The email index only covers live rows, so an account created with this
+      // address after the delete blocks the restore. Say that in the user's own
+      // terms instead of the generic conflict toast.
+      onError: (e) =>
+        handleError(e, {
+          USER_EMAIL_CONFLICT: () => toast.error(t("users.restore.emailConflict")),
+        }),
+    })
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-label={t("users.restore.action")}
+          >
+            <Restore />
+          </Button>
+        }
+      />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("users.restore.title")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("users.restore.description")}{" "}
+            <span className="font-mono text-xs text-foreground">
+              {user.email}
+            </span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending} variant="outline">
+            {tc("actions.cancel")}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            disabled={isPending}
+            loading={isPending}
+            onClick={handleRestore}
+          >
+            {t("users.restore.confirm")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+/** Marker for soft-deleted rows, shared by the table and the compact list. */
+function DeletedBadge({ deletedAt }: { deletedAt: string }) {
+  const t = useTranslations("app")
+  const format = useFormatter()
+  return (
+    <span className="flex shrink-0 flex-col items-end">
+      <StateBadge className="uppercase">
+        {t("users.status.deleted")}
+      </StateBadge>
+      <span className="mt-0.5 font-mono text-xs text-muted-foreground">
+        {format.dateTime(new Date(deletedAt), {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })}
+      </span>
+    </span>
   )
 }

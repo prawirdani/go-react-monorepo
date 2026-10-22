@@ -27,20 +27,22 @@ import (
 // gated in the auth domain (auth.register-user), so there is no user.create
 // here.
 const (
-	PermRead   rbac.Permission = "user.read"
-	PermUpdate rbac.Permission = "user.update"
-	PermDelete rbac.Permission = "user.delete"
+	PermRead    rbac.Permission = "user.read"
+	PermUpdate  rbac.Permission = "user.update"
+	PermDelete  rbac.Permission = "user.delete"
+	PermRestore rbac.Permission = "user.restore"
 
 	// Update-class actions, all gated by PermUpdate.
 	ActionUpdate               audit.Action = "user.update"
 	ActionDelete               audit.Action = "user.delete"
+	ActionRestore              audit.Action = "user.restore"
 	ActionChangeProfilePicture audit.Action = "user.change-profile-picture"
 	ActionDeleteProfilePicture audit.Action = "user.delete-profile-picture"
 )
 
 var permTables = rbac.PermissionTable{
-	rbac.RoleSystem: {PermRead: {}, PermUpdate: {}, PermDelete: {}},
-	rbac.RoleAdmin:  {PermRead: {}, PermUpdate: {}, PermDelete: {}},
+	rbac.RoleSystem: {PermRead: {}, PermUpdate: {}, PermDelete: {}, PermRestore: {}},
+	rbac.RoleAdmin:  {PermRead: {}, PermUpdate: {}, PermDelete: {}, PermRestore: {}},
 	rbac.RoleUser:   {}, // Self read and update through authorize.SelfOr
 }
 
@@ -205,6 +207,28 @@ func (s *Service) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	}
 
 	return nil
+}
+
+// RestoreUser clears a user's soft-delete marker. It is the inverse of
+// [Service.DeleteUser] but has its own admin-only permission (PermRestore):
+// restoring is never self-serve, so there is no RequireSelfOr path.
+func (s *Service) RestoreUser(ctx context.Context, userID uuid.UUID) error {
+	if err := s.authorizer.Require(ctx, PermRestore); err != nil {
+		return err
+	}
+
+	return s.transactor.Transact(ctx, func(ctx context.Context) error {
+		if err := s.userRepo.Restore(ctx, userID); err != nil {
+			return err
+		}
+
+		// No prev/next snapshot: the restore only clears deleted_at.
+		return s.audit.Record(ctx, audit.Entry{
+			Action:   ActionRestore,
+			Entity:   "user",
+			EntityID: userID.String(),
+		})
+	})
 }
 
 func (s *Service) ChangeProfilePicture(

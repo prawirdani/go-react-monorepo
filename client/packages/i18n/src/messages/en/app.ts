@@ -201,9 +201,21 @@ export default {
 		delete: {
 			action: "Delete user",
 			title: "Delete user",
-			description: "This account will be permanently removed.",
+			description: "This account will be deactivated and can be restored later.",
 			confirm: "Delete",
 			success: "User deleted",
+		},
+		restore: {
+			action: "Restore user",
+			title: "Restore user",
+			description: "This account will be reactivated and appear in the list again.",
+			confirm: "Restore",
+			success: "User restored",
+			emailConflict: "Another active account already uses this email, so this user cannot be restored.",
+		},
+		status: {
+			active: "Active",
+			deleted: "Deleted",
 		},
 		edit: {
 			action: "Edit user",

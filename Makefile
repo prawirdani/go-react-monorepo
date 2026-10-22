@@ -64,7 +64,7 @@ client\:test:
 cli:
 	@go run ./cmd/cli $(ARGS)
 
-# Print every registered permission code as a JS array (client registry).
+# Regenerate the client permission catalog from the backend's registrars.
 permissions:
 	@go run ./cmd/cli permissions
 

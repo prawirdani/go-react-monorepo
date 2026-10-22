@@ -152,7 +152,8 @@ wide interface:
   `Sorter`/`Paginator` contracts used by the generic query builder.
 - `internal/ports/storage` — `Storage`, `File` (implemented by R2 and by the
   multipart upload adapter).
-- `internal/ports/throttle` — `Throttler`, `Result`.
+- `internal/ports/throttle` — `Throttler`, `Result`, and the `Counter` used for
+  per-account login lockout.
 - `internal/ports/outbox` — `Message`, `Writer`, `Store` (transactional outbox).
 - `internal/ports/revocation` — `Checker`, `Revoker`, and their composition
   `Store`, implemented by the Redis revocation store.
@@ -217,7 +218,7 @@ internal/
     repository/        Transactor, Query, Sorting, Pagination
     revocation/        access-token revocation ports (Checker/Revoker/Store)
     storage/           object storage (Storage, File)
-    throttle/          request throttling (Throttler, Result)
+    throttle/          request throttling (Throttler, Result, Counter)
   infrastructure/
     postgres/          pgx pool, transaction wrapper, query builder, repositories (incl. outbox repo + auth event producer)
     redis/             throttle + revocation store
@@ -458,6 +459,8 @@ setting — neither is configurable through env.
 | `AUTH_SESSION_TTL` | Session / refresh-token lifetime | empty (0) | `.env.example` ships `168h` (7 days) |
 | `AUTH_PASSWORD_RECOVERY_TOKEN_TTL` | Reset-token lifetime | `5m` | `.env.example` ships `15m`; the short code default limits `?token=` URL exposure |
 | `AUTH_REGISTRATION_TOKEN_TTL` | Registration-token lifetime | `15m` | Same URL-exposure reasoning |
+| `AUTH_LOGIN_MAX_ATTEMPTS` | Failed logins allowed per account before lockout | `5` | Counted in Redis per normalized email hash; unknown emails count too, so the lockout cannot reveal which addresses exist |
+| `AUTH_LOGIN_LOCKOUT_TTL` | Lockout window for one account | `15m` | Also the counter's TTL; failures do not extend the window |
 | `AUTH_RESET_PASSWORD_FORM_ENDPOINT` | Web UI URL for the reset form | empty | Used to build the reset link |
 | `AUTH_COMPLETE_REGISTRATION_FORM_ENDPOINT` | Web UI URL for the password-creation form | empty | Used to build the invite link |
 
@@ -651,12 +654,15 @@ change into an error.
 | Scope | Mechanism | Limit |
 | --- | --- | --- |
 | Global | Fiber in-process limiter, **production only** | 20 req/min per IP |
-| `POST /api/auth/login` | Fiber in-process limiter | 5 req/min per IP |
+| `POST /api/auth/login` | Fiber in-process limiter + Redis per-account failure counter | 5 req/min per IP; after `AUTH_LOGIN_MAX_ATTEMPTS` failures the account is locked for `AUTH_LOGIN_LOCKOUT_TTL` and returns `AUTH_ACCOUNT_LOCKED` (429) |
 | `POST /api/auth/register/complete` | Fiber in-process limiter | 5 req/min per IP |
 | `POST /api/auth/password/recover` | Fiber in-process limiter + Redis per-email throttle | 5 req/min per IP + 30 s per email (shared across instances) |
 
 Login runs a dummy bcrypt comparison on unknown emails so response time does not
-reveal whether an account exists.
+reveal whether an account exists, and the failure counter is keyed by a hash of
+the normalized email, so unknown addresses are counted the same way. A locked
+account is rejected before any bcrypt work. The counter fails open: if Redis is
+unavailable the login proceeds and the error is logged.
 
 ### Passwords and token entropy
 
@@ -689,20 +695,26 @@ The complete permission set and its grants:
 | --- | :---: | :---: | :---: | --- |
 | `user.read` | yes | yes | no | `ListUser` (list) and `GetUserByID`/`GetUserByEmail` (`RequireSelfOr`) |
 | `user.update` | yes | yes | no | `UpdateUser`, profile-picture change/delete (`RequireSelfOr`) |
-| `user.delete` | yes | yes | no | `DeleteUser` (`Require`) |
+| `user.delete` | yes | yes | no | `DeleteUser` (`Require`) — soft delete |
+| `user.restore` | yes | yes | no | `RestoreUser` (`Require`) — clears `deleted_at`; never self-serve |
 | `audit.read` | yes | yes | no | `audit.Service.List` |
 | `auth.change-password` | yes | yes | no | `ChangePassword` (`RequireSelfOr`) |
 | `auth.register-user` | yes | yes | no | `Register` when `APP_INTERNAL_MODE=true` |
 | `auth.revoke-user-sessions` | yes | yes | no | bulk session revoke, and single-session revoke by a non-owner (`RequireSelfOr` against the session owner) |
 | `auth.view-user-sessions` | yes | yes | no | list a user's active sessions (`RequireSelfOr` against the target user) |
 
-Dump every registered permission code as a JavaScript array (replaying the real
-service registrations, not grepping) with:
+Regenerate the client's permission catalog (replaying the real service
+registrations, not grepping) with:
 
 ```bash
 make permissions
 # or: go run ./cmd/cli permissions
 ```
+
+That rewrites `client/packages/schemas/src/permission.ts` in place. In a
+checkout without the client (`client/` missing), the command prints the catalog
+to stdout instead, so the codes can be pasted by hand. `-out <file>` writes to
+an explicit path.
 
 ## API documentation
 
@@ -970,8 +982,8 @@ other's tests.
 | `make test` | `go test -race -v -count=1 <the Go source roots> -cover` | Full test suite |
 | `make build` | `CGO_ENABLED=0 GOOS=linux go build …` | Static Linux binaries at `./bin/api` and `./bin/worker` |
 | `make run` | `./bin/api` | Run the built binary |
-| `make cli` | `go run ./cmd/cli $(ARGS)` | Developer CLI (currently `permissions`) |
-| `make permissions` | `go run ./cmd/cli permissions` | Dump all permission codes as a JS array (stdout; the client's registry at `client/packages/schemas/src/permission.ts` is still hand-maintained) |
+| `make cli` | `go run ./cmd/cli $(ARGS)` | Developer CLI (`permissions`, `create-admin`) |
+| `make permissions` | `go run ./cmd/cli permissions` | Regenerate `client/packages/schemas/src/permission.ts` from the backend's registered codes (prints instead when there is no client tree) |
 | `make migration:status` | `goose … status` | Migration status |
 | `make migration:up` | `goose … up` | Apply migrations |
 | `make migration:down` | `goose … down` | Roll back one migration |

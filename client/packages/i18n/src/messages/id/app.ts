@@ -202,9 +202,21 @@ const app: DeepStringify<typeof en> = {
 		delete: {
 			action: "Hapus pengguna",
 			title: "Hapus pengguna",
-			description: "Akun ini akan dihapus secara permanen.",
+			description: "Akun ini akan dinonaktifkan dan dapat dipulihkan nanti.",
 			confirm: "Hapus",
 			success: "Pengguna dihapus",
+		},
+		restore: {
+			action: "Pulihkan pengguna",
+			title: "Pulihkan pengguna",
+			description: "Akun ini akan diaktifkan kembali dan muncul lagi di daftar.",
+			confirm: "Pulihkan",
+			success: "Pengguna dipulihkan",
+			emailConflict: "Akun aktif lain sudah memakai email ini, jadi pengguna ini tidak dapat dipulihkan.",
+		},
+		status: {
+			active: "Aktif",
+			deleted: "Dihapus",
 		},
 		edit: {
 			action: "Ubah pengguna",

@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  FilterOff,
   Inbox,
 } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
@@ -184,6 +185,7 @@ export function AuditPanel({ className }: { className?: string }) {
                   variant="outline"
                   onClick={() => clearFilters(["entity"])}
                 >
+                  <FilterOff />
                   {tc("searchQuery.clear")}
                 </Button>
               ) : undefined

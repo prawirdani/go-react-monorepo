@@ -29,4 +29,8 @@ type Repository interface {
 
 	// Delete deletes (soft delete) an existing user record.
 	Delete(ctx context.Context, u *User) error
+
+	// Restore clears the soft-delete marker of an existing user record.
+	// Returns [apperr.ErrNotFound] when the user does not exist or is not deleted.
+	Restore(ctx context.Context, userID uuid.UUID) error
 }

@@ -1,13 +1,22 @@
 package user
 
 import (
+	"strings"
+
 	"github.com/prawirdani/go-react-monorepo/internal/ports/repository"
 	"github.com/prawirdani/go-react-monorepo/internal/rbac"
 )
 
+// Deletion states accepted by Filter.DeletedAt.
+const (
+	DeletionStateActive  = "active"
+	DeletionStateDeleted = "deleted"
+)
+
 type Filter struct {
-	Gender []string `query:"gender" json:"gender,omitempty"`
-	Role   []string `query:"role"   json:"role,omitempty"`
+	Gender    []string `query:"gender"     json:"gender,omitempty"`
+	Role      []string `query:"role"       json:"role,omitempty"`
+	DeletedAt []string `query:"deleted_at" json:"deleted_at,omitempty"`
 }
 
 type Search struct {
@@ -37,6 +46,12 @@ func (s *Search) ApplySort(q repository.Query) {
 // and the rest are canonicalised, so the query filters on exactly the values
 // [Search.SetMeta] reports as applied. The slices stay nil when nothing
 // survives, which leaves the filter at its zero value so the metadata omits it.
+//
+// DeletedAt is a list because the UI drives a multi-select of deletion states.
+// Absent means no deletion filter at all: every row is listed, like a group
+// with no option checked. Active only (the UI default) lists live users;
+// deleted only lists tombstones; both also means all rows, so no predicate is
+// added.
 func (s *Search) ApplyFilter(q repository.Query) {
 	var validGenders []string
 
@@ -54,11 +69,34 @@ func (s *Search) ApplyFilter(q repository.Query) {
 		}
 	}
 
+	var validStates []string
+
+	seen := make(map[string]bool, len(s.DeletedAt))
+	for _, v := range s.DeletedAt {
+		state := strings.ToLower(strings.TrimSpace(v))
+		if state != DeletionStateActive && state != DeletionStateDeleted {
+			continue
+		}
+		if seen[state] {
+			continue
+		}
+		seen[state] = true
+		validStates = append(validStates, state)
+	}
+
 	s.Gender = validGenders
 	s.Role = validRoles
+	s.DeletedAt = validStates
 
 	q.WhereIn("gender", s.Gender)
 	q.WhereIn("role", s.Role)
+
+	switch {
+	case len(validStates) == 1 && validStates[0] == DeletionStateActive:
+		q.WhereNull("deleted_at")
+	case len(validStates) == 1 && validStates[0] == DeletionStateDeleted:
+		q.WhereNotNull("deleted_at")
+	}
 }
 
 func (s *Search) SetMeta(total int) {

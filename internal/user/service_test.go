@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/prawirdani/go-react-monorepo/internal/apperr"
+	"github.com/prawirdani/go-react-monorepo/internal/audit"
 	"github.com/prawirdani/go-react-monorepo/internal/rbac"
 	sharedMocks "github.com/prawirdani/go-react-monorepo/internal/testing/mocks"
 	"github.com/prawirdani/go-react-monorepo/internal/user"
@@ -524,6 +525,67 @@ func TestService_DeleteUser(t *testing.T) {
 
 		err := f.service.DeleteUser(ctx, existingUser.ID)
 		assert.ErrorIs(t, err, assert.AnError)
+	})
+}
+
+func TestService_RestoreUser(t *testing.T) {
+	t.Run("Requires the restore permission", func(t *testing.T) {
+		ctx := userCtx(uuid.New())
+		f := setupTestFixture(t)
+
+		// No transactor/repo expectations: authorization must reject before any
+		// write path runs.
+		err := f.service.RestoreUser(ctx, uuid.New())
+		assert.ErrorIs(t, err, rbac.ErrUnauthorizedPermission)
+	})
+
+	t.Run("Self is not enough", func(t *testing.T) {
+		selfID := uuid.New()
+		ctx := userCtx(selfID)
+		f := setupTestFixture(t)
+
+		// Require-style gate: targeting your own id never bypasses the check.
+		err := f.service.RestoreUser(ctx, selfID)
+		assert.ErrorIs(t, err, rbac.ErrUnauthorizedPermission)
+	})
+
+	t.Run("Not found is passed through", func(t *testing.T) {
+		ctx := adminCtx()
+		f := setupTestFixture(t)
+		userID := uuid.New()
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				f.repo.EXPECT().Restore(ctx, userID).Return(apperr.ErrNotFound)
+				return fn(ctx)
+			})
+
+		// No audit expectation: nothing changed, so nothing is recorded.
+		err := f.service.RestoreUser(ctx, userID)
+		assert.ErrorIs(t, err, apperr.ErrNotFound)
+	})
+
+	t.Run("Restores and records the audit entry in tx", func(t *testing.T) {
+		ctx := adminCtx()
+		f := setupTestFixture(t)
+		userID := uuid.New()
+
+		f.transactor.EXPECT().
+			Transact(ctx, mock.AnythingOfType("func(context.Context) error")).
+			RunAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+				f.repo.EXPECT().Restore(ctx, userID).Return(nil)
+				f.audit.EXPECT().Record(ctx, mock.MatchedBy(func(e audit.Entry) bool {
+					return e.Action == user.ActionRestore &&
+						e.Entity == "user" &&
+						e.EntityID == userID.String() &&
+						e.Prev == nil && e.Next == nil
+				})).Return(nil)
+				return fn(ctx)
+			})
+
+		err := f.service.RestoreUser(ctx, userID)
+		assert.NoError(t, err)
 	})
 }
 
