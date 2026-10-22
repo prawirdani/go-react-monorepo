@@ -30,9 +30,14 @@ import {
   changeProfilePicture,
   deleteProfilePicture,
 } from "@/lib/data-access/mutations"
+import { ImageCropperDialog } from "./-image-cropper-dialog"
 
 const dialogHandler: ReturnType<typeof CreateDropdownHandler> =
   CreateDropdownHandler()
+
+/** Guard against decoding a huge file in the browser; the export is 512x512. */
+const MAX_SOURCE_SIZE = 20 * 1024 * 1024
+const SOURCE_TYPES = ["image/jpeg", "image/png", "image/webp"]
 
 interface ProfilePictureProps extends ComponentProps<"div"> {
   user: User
@@ -45,29 +50,58 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
 
   const imageInputRef = useRef<HTMLInputElement>(null)
 
+  const [pendingImage, setPendingImage] = useState<{
+    file: File
+    url: string
+  } | null>(null)
+
   const { mutateAsync, isPending } = useMutation(changeProfilePicture)
-  const imageOnChange = async (e: ChangeEvent<HTMLInputElement>) => {
+
+  const closeEditor = () => {
+    if (pendingImage) URL.revokeObjectURL(pendingImage.url)
+    setPendingImage(null)
+  }
+
+  // Pick a file, then frame it in the editor. Nothing is uploaded here: the
+  // exported 512x512 JPEG is what leaves the browser.
+  const imageOnChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    // Reset so picking the same file again fires onChange.
+    e.target.value = ""
     if (!file) return
 
+    if (!SOURCE_TYPES.includes(file.type) || file.size > MAX_SOURCE_SIZE) {
+      toast.error(t("profile.picture.invalid"), {
+        description: t("profile.picture.editor.unsupported"),
+      })
+      return
+    }
+
+    setPendingImage({ file, url: URL.createObjectURL(file) })
+    // The dropdown can stay open behind the native picker; close it so the
+    // editor dialog is the only layer on screen.
+    dialogHandler.close()
+  }
+
+  const uploadCroppedImage = async (file: File) => {
     const result = profilePictureSchema.safeParse(file)
 
     if (!result.success) {
       toast.error(t("profile.picture.invalid"), {
         description: result.error.issues[0].message,
       })
-      e.target.value = ""
+      closeEditor()
       return
     }
-    await mutateAsync(result.data, {
-      onSuccess: async () => {
-        await router.invalidate()
-      },
-      onError: (e) => handleError(e),
-      onSettled: () => {
-        e.target.value = ""
-      },
-    })
+
+    try {
+      await mutateAsync(result.data)
+      await router.invalidate()
+    } catch (error) {
+      handleError(error)
+    } finally {
+      closeEditor()
+    }
   }
 
   return (
@@ -142,6 +176,12 @@ export function ProfilePicture({ user, ...props }: ProfilePictureProps) {
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ImageCropperDialog
+        src={pendingImage?.url ?? null}
+        onCancel={closeEditor}
+        onCropped={uploadCroppedImage}
+      />
     </div>
   )
 }

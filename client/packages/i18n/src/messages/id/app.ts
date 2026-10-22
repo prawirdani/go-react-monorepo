@@ -288,6 +288,17 @@ const app: DeepStringify<typeof en> = {
 			deleteTitle: "Hapus foto profil",
 			deleteDescription:
 				"Apakah Anda yakin ingin menghapus foto profil saat ini?",
+			editor: {
+				title: "Ubah foto profil",
+				description:
+					"Geser foto untuk memindahkannya, lalu perbesar atau putar agar pas di bingkai.",
+				zoom: "Perbesar",
+				rotate: "Putar",
+				reset: "Atur ulang putaran",
+				hint: "Disimpan sebagai JPG persegi 512 × 512.",
+				unsupported: "Pilih gambar JPEG, PNG, atau WebP di bawah 20 MB.",
+				failed: "Gambar ini tidak dapat diproses. Coba berkas lain.",
+			},
 		},
 	},
 	settings: {

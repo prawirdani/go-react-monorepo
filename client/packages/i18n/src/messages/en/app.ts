@@ -285,6 +285,17 @@ export default {
 			deleteTitle: "Delete profile picture",
 			deleteDescription:
 				"Are you sure you want to delete the current profile picture?",
+			editor: {
+				title: "Edit profile picture",
+				description:
+					"Drag the photo to reposition it, then zoom or rotate it to fit the frame.",
+				zoom: "Zoom",
+				rotate: "Rotate",
+				reset: "Reset rotation",
+				hint: "Saved as a square 512 × 512 JPG.",
+				unsupported: "Choose a JPEG, PNG or WebP image under 20 MB.",
+				failed: "Could not process this image. Try another file.",
+			},
 		},
 	},
 	settings: {
