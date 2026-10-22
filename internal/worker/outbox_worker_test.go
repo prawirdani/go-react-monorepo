@@ -78,6 +78,14 @@ func TestOutboxWorkerDrain(t *testing.T) {
 			wantFailed: map[int64]string{2: deliverErr.Error()},
 		},
 		{
+			name:       "Final attempt dead-letters but still marks failed",
+			msgs:       []outbox.Message{{Seq: 4, Topic: outbox.TopicPasswordRecovery, Payload: []byte(`{}`), Attempts: outbox.MaxAttempts - 1}},
+			topic:      outbox.TopicPasswordRecovery,
+			handlerErr: deliverErr,
+			wantCalls:  1,
+			wantFailed: map[int64]string{4: deliverErr.Error()},
+		},
+		{
 			name:       "Unknown topic marks failed without a handler call",
 			msgs:       []outbox.Message{{Seq: 3, Topic: "email.unknown", Payload: []byte(`{}`)}},
 			wantCalls:  0,

@@ -44,7 +44,7 @@ func (r *outboxRepository) Enqueue(ctx context.Context, topic string, payload an
 // skipped; they stay in the table as the dead-letter record.
 func (r *outboxRepository) FetchBatch(ctx context.Context, limit int) ([]outbox.Message, error) {
 	const query = `
-		SELECT seq, topic, payload
+		SELECT seq, topic, payload, attempts
 		FROM outbox_messages
 		WHERE attempts < $2
 		ORDER BY seq
@@ -52,9 +52,10 @@ func (r *outboxRepository) FetchBatch(ctx context.Context, limit int) ([]outbox.
 	`
 
 	var rows []struct {
-		Seq     int64  `db:"seq"`
-		Topic   string `db:"topic"`
-		Payload []byte `db:"payload"`
+		Seq      int64  `db:"seq"`
+		Topic    string `db:"topic"`
+		Payload  []byte `db:"payload"`
+		Attempts int    `db:"attempts"`
 	}
 
 	if err := pgxscan.Select(ctx, r.db.GetConn(ctx), &rows, query, limit, outbox.MaxAttempts); err != nil {
@@ -64,9 +65,10 @@ func (r *outboxRepository) FetchBatch(ctx context.Context, limit int) ([]outbox.
 	msgs := make([]outbox.Message, 0, len(rows))
 	for _, row := range rows {
 		msgs = append(msgs, outbox.Message{
-			Seq:     row.Seq,
-			Topic:   row.Topic,
-			Payload: row.Payload,
+			Seq:      row.Seq,
+			Topic:    row.Topic,
+			Payload:  row.Payload,
+			Attempts: row.Attempts,
 		})
 	}
 

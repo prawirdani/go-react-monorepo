@@ -82,13 +82,13 @@ func (w *OutboxWorker) drain(ctx context.Context) error {
 		if !ok {
 			handlerErr := errors.New("no handler for topic " + m.Topic)
 			log.ErrorCtx(ctx, "No handler for outbox topic", handlerErr, "seq", m.Seq, "topic", m.Topic)
-			_ = w.store.MarkFailed(done, m.Seq, handlerErr.Error())
+			w.recordFailure(ctx, done, m, handlerErr)
 			continue
 		}
 
 		if err := h(ctx, m.Payload); err != nil {
 			log.ErrorCtx(ctx, "Failed to handle outbox message", err, "seq", m.Seq, "topic", m.Topic)
-			_ = w.store.MarkFailed(done, m.Seq, err.Error())
+			w.recordFailure(ctx, done, m, err)
 			continue
 		}
 
@@ -101,4 +101,15 @@ func (w *OutboxWorker) drain(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// recordFailure persists the failed attempt and, when that attempt exhausts the
+// retry budget, emits a distinct dead-letter signal operators can alert on. The
+// row stays in the table as the queryable dead-letter record.
+func (w *OutboxWorker) recordFailure(ctx, done context.Context, m outbox.Message, cause error) {
+	if m.Attempts+1 >= outbox.MaxAttempts {
+		log.ErrorCtx(ctx, "Outbox message dead-lettered after exhausting retries", cause,
+			"seq", m.Seq, "topic", m.Topic, "attempts", m.Attempts+1, "max_attempts", outbox.MaxAttempts)
+	}
+	_ = w.store.MarkFailed(done, m.Seq, cause.Error())
 }

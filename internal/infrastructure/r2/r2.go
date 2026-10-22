@@ -33,7 +33,7 @@ type R2 struct {
 
 func New(cfg Config) (*R2, error) {
 	r2Cfg, err := config.LoadDefaultConfig(
-		context.TODO(),
+		context.Background(),
 		config.WithCredentialsProvider(
 			credentials.NewStaticCredentialsProvider(cfg.AccessKeyID, cfg.AccessKeySecret, ""),
 		),

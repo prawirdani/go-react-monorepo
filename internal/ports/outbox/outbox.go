@@ -14,6 +14,7 @@ const MaxAttempts = 5
 const (
 	TopicPasswordRecovery = "email.password_recovery"
 	TopicUserRegistration = "email.user_registration"
+	TopicEmailChange      = "email.email_change"
 )
 
 // Message is a pending notification read by the worker.
@@ -26,6 +27,11 @@ type Message struct {
 
 	// Payload is the JSON-encoded domain message.
 	Payload []byte
+
+	// Attempts is how many deliveries have already failed. The next failure
+	// makes it Attempts+1; when that reaches MaxAttempts the row becomes a
+	// dead-letter record and is no longer fetched.
+	Attempts int
 }
 
 // Writer persists messages on the connection carried by ctx. When a transaction
