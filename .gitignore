@@ -1,6 +1,7 @@
 tmp
 .env
 /cmd/app/main
+/cli
 /logs
 /bin
 # Local Postgres backup dumps (host-mounted volume for the backup sidecar).

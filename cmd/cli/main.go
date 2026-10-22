@@ -1,6 +1,7 @@
 // Command cli groups the project's developer utilities behind subcommands.
 //
 //	cli permissions [-out file]   dump registered permission codes as a JS array
+//	cli create-admin              interactively create an admin user
 //	cli help                      list available commands
 //
 // Run `cli help` for the current command list.
@@ -24,6 +25,7 @@ type command struct {
 // commands is the ordered subcommand registry (also the `help` listing order).
 var commands = []command{
 	permissionsCmd,
+	createAdminCmd,
 }
 
 func main() {
