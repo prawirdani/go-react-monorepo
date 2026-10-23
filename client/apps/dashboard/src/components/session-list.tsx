@@ -14,6 +14,7 @@ import {
 import { Button } from "@repo/ui/components/button"
 import { Skeleton } from "@repo/ui/components/skeleton"
 import toast from "@repo/ui/components/toast"
+import { useDelayedLoading } from "@repo/ui/hooks/use-delayed-loading"
 import { AlertTriangle, Inbox, Logout } from "@repo/ui/icons"
 import { cn } from "@repo/ui/lib/utils"
 import { parseUA } from "@repo/utils/parser"
@@ -50,8 +51,9 @@ export function SessionList({
 }: SessionListProps) {
   const t = useTranslations("common")
   const { data, isPending, isError } = useQuery(listUserSessions(userId))
+  const showSkeleton = useDelayedLoading(isPending)
 
-  if (isPending) return <SessionListLoading className={className} />
+  if (showSkeleton) return <SessionListLoading className={className} />
 
   if (isError) {
     return (
