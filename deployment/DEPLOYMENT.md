@@ -4,12 +4,21 @@ Single-host deployment with Docker Compose and Caddy. This file is both the
 step-by-step preparation gate and the deployment reference material. Backups have
 their own reference: [`BACKUP.md`](./BACKUP.md).
 
-- Architecture: `compose.yml` runs Postgres, Redis, API, worker, the one-shot
-  migrate job, Caddy, Prometheus and Grafana on one pinned network.
+- Architecture: `compose.caddy.yml` runs Postgres, Redis, API, worker, the
+  one-shot migrate job, Caddy, Prometheus and Grafana on one pinned network.
 - **Only Caddy publishes ports** (plus Grafana, bound to loopback). Everything
   else is internal-only.
 - Target shape: a VPS with a public IP, a domain, and TLS terminated by Caddy —
   optionally behind Cloudflare.
+
+> **Which compose file.** This guide assumes the self-contained Caddy stack, so
+> every `docker compose` command below takes `-f compose.caddy.yml`. The default
+> `compose.yml` is the bare API (Postgres, Redis, API, worker, migrate, backup)
+> with **no** bundled proxy, TLS, or dashboards — front it with your own proxy
+> (e.g. a host nginx) pointed at `127.0.0.1:${APP_PORT}`, and set
+> `TRUST_PROXY=true` so audit IPs come from `X-Forwarded-For`. The proxy-trust
+> and firewall notes below apply to both; the TLS, Cloudflare and Grafana
+> sections are Caddy-only.
 
 ---
 
@@ -72,19 +81,6 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 
 ## 3. Host and network preparation
 
-- [ ] **Subnet collision check.** The stack pins `APP_NET_SUBNET`
-      (default `172.28.0.0/24`). Docker allocates its own pools from
-      `172.17.0.0/16` upward, so on a busy host this can already be taken:
-
-      ```bash
-      docker network ls --format '{{.Name}}' | while read n; do
-        docker network inspect "$n" --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
-      done | grep 172.28
-      ```
-
-      If it prints anything, set `APP_NET_SUBNET` to a free range in `.env`.
-      The symptom otherwise is a hard failure:
-      `invalid pool request: Pool overlaps with other one on this address space`.
 - [ ] **Firewall.** Only `80`, `443` and SSH inbound. Note that **ufw does not
       filter Docker-published ports** — Docker writes its own iptables rules
       that are evaluated first. Use your provider's firewall (Hetzner Firewall,
@@ -300,11 +296,16 @@ Caddy at a domain that does not resolve can lock you out for an hour.
 `APP_ENV=prod` enables `Secure` cookies and HSTS, which is correct once TLS
 terminates at Caddy.
 
-The API sits behind Caddy, so it receives plain HTTP and trusts `X-Forwarded-For`
-only from `TRUSTED_PROXIES`. Compose sets that to the project's own pinned subnet
-(`APP_NET_SUBNET`, default `172.28.0.0/24`) — deliberately not Docker's whole address
-pool, because Caddy is the only hop that should be trusted — so the audit log still
-records the real client IP.
+The API sits behind Caddy, so it receives plain HTTP and resolves the client IP
+from `X-Forwarded-For` whenever `TRUST_PROXY=true` (`compose.caddy.yml` sets it;
+for the bare `compose.yml` set it once a proxy fronts the API). Fiber walks the
+header right-to-left past trusted peers (loopback / private / unix socket) and
+returns the rightmost non-trusted IP, so a client-appended entry cannot spoof the
+audit log. The trust boundary is the private socket — the API is never published,
+so only the proxy can reach it — not an address allowlist, which is why no CIDR
+needs maintaining and the same build works behind Caddy or a host nginx. With
+`TRUST_PROXY` unset or false the socket peer is used instead, which is correct
+for a directly-reachable API.
 
 ### Public surface
 
@@ -353,9 +354,10 @@ collapses the chain into a single verified client IP.
   would record Cloudflare instead of the visitor. `{client_ip}` resolves to the
   verified client IP, so a spoofed `CF-Connecting-IP` from an untrusted peer is
   ignored.
-- `TRUSTED_PROXIES` stays the project subnet: the API still trusts exactly one hop
-  (Caddy), and Caddy has already done the edge reasoning. Do not widen it to the
-  Cloudflare ranges.
+- `TRUST_PROXY` stays `true` and the API trusts the Caddy peer by class, not an
+  address list: Caddy has already done the edge reasoning and collapsed the chain
+  to the verified client. There is no CIDR to widen to the Cloudflare ranges —
+  that reasoning lives in Caddy's `trusted_proxies`, not the API.
 - Restrict the origin's 80/443 to Cloudflare's published ranges so the origin cannot
   be reached directly, bypassing CF.
 - Terminate TLS with a **Cloudflare Origin Certificate** on Caddy and set the CF

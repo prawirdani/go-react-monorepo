@@ -31,11 +31,11 @@
 		format json
 	}
 
-	# API: only /api/* reaches the Go service. Caddy sets X-Forwarded-For /
-	# -Proto / -Host automatically; the API honours them only from the CIDRs
-	# in TRUSTED_PROXIES, so the real client IP reaches the audit log.
-	# The upstream port is the container-side APP_PORT, not a host port; the
-	# API is never published directly.
+	# API: only /api/* reaches the Go service. Caddy appends the client to
+	# X-Forwarded-For automatically; the API (TRUST_PROXY=true) walks the chain
+	# right-to-left past trusted peers, so the real client reaches the audit log
+	# and a client-appended entry cannot spoof it. The upstream port is the
+	# container-side APP_PORT, not a host port; the API is never published.
 	handle /api/* {
 		reverse_proxy api:{$APP_PORT:8080} {
 			health_uri /api/healthz

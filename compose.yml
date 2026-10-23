@@ -1,19 +1,22 @@
-# Self-contained stack: Postgres, Redis, API, worker, migrate, Caddy, Prometheus
-# and Grafana all run inside this compose project. No host services are required
-# and there is no host bridge (extra_hosts / host.docker.internal) to configure.
+# Bare API stack: Postgres, Redis, API, worker, migrate and the backup sidecar.
+# No bundled reverse proxy, TLS, or dashboards — you front it yourself (a host
+# nginx, a cloud load balancer, etc.) and serve the built client however you
+# like.
 #
-# Only Caddy publishes ports, so it is the single internet-facing entry point.
-# Every service joins the pinned `app-net` bridge — which also means Caddy,
-# Prometheus and Grafana can reach the datastores. Give Postgres and Redis their
-# own `internal: true` network if you want that segmentation.
+#   docker compose up -d
 #
-# The subnet is pinned (APP_NET_SUBNET) so the API can name a deterministic
-# trusted proxy CIDR (the project's own network, not Docker's whole pool).
+# For the self-contained stack that also runs Caddy, Prometheus and Grafana,
+# use compose.caddy.yml instead.
 #
-# Every service loads .env via `env_file:`, so credentials are defined once. A
-# container's own `environment:` block still wins for the keys it must override
-# (service hostnames, ports). Note this also hands every container the entire
-# file, secrets included — see the README for the trade-off.
+# The API publishes on 127.0.0.1 only, so it is reachable from the host's own
+# proxy but never directly from the internet (Docker publishes bypass ufw, so
+# the loopback bind — not the firewall — is what keeps it private). Point your
+# proxy's upstream at 127.0.0.1:${APP_PORT}.
+#
+# Client IPs: set TRUST_PROXY=true once a reverse proxy fronts the API, so the
+# audit log records the real client from X-Forwarded-For instead of the proxy.
+# Leave it false (the default) for a directly-reachable API — trusting the
+# header with no proxy in front lets a caller forge its own IP.
 services:
   api:
     build:
@@ -28,17 +31,13 @@ services:
     environment:
       DB_HOST: postgres
       REDIS_HOST: redis
-      # Fixed exporter port, so Prometheus never has to track APP_PORT.
-      METRICS_PORT: ${METRICS_PORT:-9091}
-      # Empty in .env means "follow APP_ENV" for bare-metal; the stack always
-      # wants an exporter, so default it on here — but let .env turn it off.
-      METRICS_ENABLED: "${METRICS_ENABLED:-true}"
-      # Trust Caddy's X-Forwarded-For (the proxy sits on the same network) so
-      # the audit log records the real client IP instead of the proxy's address.
-      # This is deliberately the project's own pinned subnet, NOT Docker's whole
-      # default pool (172.16.0.0/12): Caddy is the only hop that should ever be
-      # trusted, and a wider CIDR would trust unrelated containers on the host.
-      TRUSTED_PROXIES: ${APP_NET_SUBNET:-172.28.0.0/24}
+      # Honour X-Forwarded-For from the host proxy. Opt-in: off means the socket
+      # peer is used, which is correct when nothing fronts the API.
+      TRUST_PROXY: "${TRUST_PROXY:-false}"
+    # Loopback only: your host proxy connects here. Never bind 0.0.0.0 — Docker
+    # publishes bypass ufw, which would put the API straight on the internet.
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:${APP_PORT:-8080}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -201,102 +200,10 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Builds the dashboard from client/ and serves it alongside the API. The
-  # Dockerfile lives in deployment/caddy/ but its context is client/, so every
-  # COPY in it resolves inside that directory. Bare-metal development does not
-  # use this image — `make client:dev` runs Vite directly.
-  caddy:
-    build:
-      context: ./client
-      dockerfile: ../deployment/caddy/Dockerfile
-      args:
-        # Vite inlines these into the bundle at build time. VITE_API_URL stays
-        # empty for the same-origin setup the Caddyfile provides; VITE_IMAGE_URL
-        # is the public asset base for uploads and falls back to the R2 bucket
-        # URL, which is the same server.
-        VITE_API_URL: ${VITE_API_URL:-}
-        VITE_IMAGE_URL: ${VITE_IMAGE_URL:-${R2_BUCKET_URL:-}}
-    image: go-react-monorepo-caddy:local
-    env_file:
-      - .env
-    networks: [app-net]
-    environment:
-      # ":80" (the default) serves plain HTTP on the mapped host port. Point
-      # SITE_ADDRESS at a real domain to turn on automatic HTTPS — and then
-      # publish CADDY_HTTP_PORT=80 and CADDY_HTTPS_PORT=443 on the host, or the
-      # ACME challenge cannot be answered.
-      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
-      # Upstream port in the Caddyfile; it is the API's container port, not a
-      # published one — the API is never reachable except through this proxy.
-      APP_PORT: ${APP_PORT:-8080}
-    ports:
-      - "${CADDY_HTTP_PORT:-8080}:80"
-      - "${CADDY_HTTPS_PORT:-8443}:443"
-    volumes:
-      # Caddyfile is selectable via env. Set CADDYFILE=Caddyfile.cloudflare when
-      # Cloudflare fronts the proxy (run update-cloudflare-ips.sh first).
-      - ./deployment/caddy/${CADDYFILE:-Caddyfile}:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    restart: unless-stopped
-    depends_on:
-      - api
-
-  prometheus:
-    image: prom/prometheus:v3.7.2
-    container_name: prometheus
-    env_file:
-      - .env
-    networks: [app-net]
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=15d
-    volumes:
-      - ./deployment/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
-    restart: unless-stopped
-    depends_on:
-      - api
-
-  grafana:
-    image: grafana/grafana:11.6.0
-    container_name: grafana
-    env_file:
-      - .env
-    networks: [app-net]
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-      # Hardcoded on purpose: these two are security hardening, not preferences.
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_AUTH_ANONYMOUS_ENABLED: "false"
-    volumes:
-      - ./deployment/grafana/provisioning/:/etc/grafana/provisioning
-      - ./deployment/grafana/dashboards/:/var/lib/grafana/dashboards
-      - grafana-data:/var/lib/grafana
-    ports:
-      # Loopback only: reach Grafana through an SSH tunnel instead of exposing
-      # its admin login to the internet. Docker publishes bypass ufw, so this
-      # mapping — not the host firewall — is what keeps it private.
-      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
-    restart: unless-stopped
-    depends_on:
-      - prometheus
-
 networks:
-  # Pinned subnet so the API can name a deterministic trusted proxy CIDR
-  # (${APP_NET_SUBNET}) instead of trusting Docker's whole address pool.
   app-net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: ${APP_NET_SUBNET:-172.28.0.0/24}
 
 volumes:
-  caddy-config:
-  caddy-data:
-  grafana-data:
   postgres-data:
-  prometheus-data:
   redis-data:

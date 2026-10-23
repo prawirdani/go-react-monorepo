@@ -1,48 +1,31 @@
 package config
 
 import (
-	"fmt"
-	"net"
 	"os"
-	"strings"
+	"strconv"
 )
 
-// Proxy holds trusted-reverse-proxy configuration for client IP resolution.
+// Proxy holds reverse-proxy trust configuration for client IP resolution.
 type Proxy struct {
-	// TrustedProxies is a comma-separated list of CIDRs or single IPs whose
-	// X-Forwarded-For / X-Real-IP headers are trusted. Requests arriving
-	// directly (peer not in this list) ignore forwarded headers entirely, so
-	// the header cannot be spoofed by clients.
-	TrustedProxies []*net.IPNet
+	// Trust marks that the API runs behind a reverse proxy reaching it over a
+	// trusted network hop (TRUST_PROXY). When true, the client IP is taken from
+	// X-Forwarded-For by walking the chain right-to-left and skipping trusted
+	// (loopback / private / unix-socket) peers, so a client-appended entry
+	// cannot spoof it. When false, the socket peer address is used.
+	//
+	// Keep it false for a directly-exposed API: trusting X-Forwarded-For with
+	// no proxy in front lets any client forge the audit-log IP. The trust
+	// boundary is the private socket (a container-only network, or a loopback /
+	// unix-socket bind), not an address allowlist — so this flag stays correct
+	// whether the proxy is a sidecar container or a host-level nginx.
+	Trust bool
 }
 
 func (p *Proxy) Parse() error {
-	if val := os.Getenv("TRUSTED_PROXIES"); val != "" {
-		proxiesStr := strings.Split(val, ",")
-		nets := make([]*net.IPNet, 0, len(p.TrustedProxies))
-
-		for _, s := range proxiesStr {
-			s = strings.TrimSpace(s)
-			if s == "" {
-				continue
-			}
-			if _, ipnet, err := net.ParseCIDR(s); err == nil {
-				nets = append(nets, ipnet)
-				continue
-			}
-			ip := net.ParseIP(s)
-			if ip == nil {
-				return fmt.Errorf("invalid TRUSTED_PROXIES entry %q: not an IP or CIDR", s)
-			}
-
-			bits := 128
-			if ip.To4() != nil {
-				bits = 32
-			}
-			nets = append(nets, &net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})
+	if val := os.Getenv("TRUST_PROXY"); val != "" {
+		if b, err := strconv.ParseBool(val); err == nil {
+			p.Trust = b
 		}
-
-		p.TrustedProxies = nets
 	}
 	return nil
 }

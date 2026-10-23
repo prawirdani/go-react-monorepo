@@ -242,7 +242,8 @@ deployment/
   prometheus/          scrape config
   grafana/             datasource/dashboard provisioning + api-metrics.json
 
-compose.yml            api + worker + migrate + postgres + redis + caddy + prometheus + grafana
+compose.yml            bare API: api + worker + migrate + postgres + redis + backup (bring your own proxy)
+compose.caddy.yml      self-contained: the above + caddy + prometheus + grafana
 Dockerfile             multi-stage build (distroless runtime)
 Makefile               dev/build/test/lint/migration/cli/client targets
 .air.toml              Air config for the API (excludes client/, which HMR rewrites constantly)
@@ -288,9 +289,11 @@ Start there with [`client/README.md`](./client/README.md) for the frontend stack
 
 ### 1. Start the stack
 
-`compose.yml` is self-contained: Postgres, Redis, the API, the worker, Caddy,
-Prometheus and Grafana all run in the project on one bridge network. There is no
-`host.docker.internal` and no host service to start.
+`compose.caddy.yml` is self-contained: Postgres, Redis, the API, the worker,
+Caddy, Prometheus and Grafana all run in the project on one bridge network, with
+no `host.docker.internal` and no host service to start — bring it up with
+`docker compose -f compose.caddy.yml up -d`. The default `compose.yml` is the
+bare API (no bundled proxy, TLS, or dashboards) for fronting with your own proxy.
 
 ```bash
 docker compose up -d
@@ -447,7 +450,7 @@ setting — neither is configurable through env.
 | --- | --- | --- | --- |
 | `CORS_ORIGINS` | Comma-separated allowed origins | empty | With credentials enabled, `*` or an unparseable origin fails startup |
 | `CORS_CREDENTIALS` | Send credentials | `false` | |
-| `TRUSTED_PROXIES` | Comma-separated IPs/CIDRs of proxies whose `X-Forwarded-For`/`X-Real-IP` are trusted | empty | An invalid entry aborts startup; when empty, forwarded headers are ignored |
+| `TRUST_PROXY` | Resolve the client IP from `X-Forwarded-For` when behind a reverse proxy | `false` | Trusts the proxy by peer class (private/loopback/unix socket), not an address list; when false the socket peer is used, so a directly-exposed API cannot be spoofed |
 
 **Auth**
 
@@ -495,7 +498,6 @@ Validation is split across the section parsers and `Config.Validate()`:
 | `CORS_CREDENTIALS=true` with a `*` or invalid origin | `Config.Validate()` | startup error |
 | `DB_MAXCONNS > 0` and `<= MaxInt32` | `Postgres.Parse()` | startup error |
 | `DB_MINCONNS` within `[0, DB_MAXCONNS]` | `Postgres.Parse()` | startup error |
-| `TRUSTED_PROXIES` entries parse as IP/CIDR | `Proxy.Parse()` | startup error |
 | `APP_PORT` is an integer | `App.Parse()` | startup error |
 
 Duration and integer env vars that fail to parse are silently ignored (the
@@ -774,8 +776,8 @@ sentinels (invalid path param, multipart, upload errors, rate limit) live in
 - **Actor/meta enrichment** (`Entry.FillActorMeta`, called by the repository at
   insert time): fills `actor_id` from the RBAC context and adds
   `request_id`, `ip_addr`, `user_agent`, `session_id`, and `actor_role` to
-  `meta`. `ip_addr` comes from `AuditContext` middleware, which only honors
-  forwarded headers from `TRUSTED_PROXIES`.
+  `meta`. `ip_addr` comes from `AuditContext` middleware, which honors
+  `X-Forwarded-For` only when `TRUST_PROXY=true` (otherwise the socket peer).
 - **Atomicity**: audit rows are written inside the same transaction as the
   change they record, so a committed action is never silently unaudited.
 - **Coverage** — actions declared beside their domain permissions:
