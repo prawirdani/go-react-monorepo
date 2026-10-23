@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-14T06:56:40.273Z",
+  "generatedAt": "2026-10-23T00:00:00.000Z",
   "title": "Design System: Graphite Console",
   "extensions": {
     "colorMeta": {
@@ -185,7 +185,7 @@
       },
       "data": {
         "displayName": "Data",
-        "purpose": "Figures, timestamps, IDs, paths. Opt-in via data-mono; never for prose. Face swaps per palette (Spline Sans Mono / Azeret Mono / Chivo Mono)."
+        "purpose": "Figures, timestamps, IDs, paths. Opt-in via data-mono; never for prose. Face swaps per palette (Geist Mono / Spline Sans Mono / Chivo Mono)."
       }
     },
     "shadows": [],
@@ -254,39 +254,39 @@
       {
         "id": "graphite",
         "label": "Graphite",
-        "hint": "Dark instrument console, cool blue accent.",
+        "hint": "Cool instrument console, Geist.",
         "primaryMode": "dark",
         "dataTheme": "graphite",
         "radius": "0.25rem",
-        "fontUi": "Archivo Variable",
-        "fontData": "Spline Sans Mono Variable",
+        "fontUi": "Geist Variable",
+        "fontData": "Geist Mono Variable",
         "accent": "oklch(0.72 0.14 248)",
         "accentHue": 248,
         "note": "Canonical palette. Also the :root / .light fallback, so an unknown or absent data-theme degrades to Graphite."
       },
       {
-        "id": "ledger",
-        "label": "Ledger",
-        "hint": "Cool paper, ink rules, soft corners.",
-        "primaryMode": "light",
-        "dataTheme": "ledger",
+        "id": "sea-glass",
+        "label": "Sea Glass",
+        "hint": "Muted sea mist, quiet accent, Onest.",
+        "primaryMode": "dark",
+        "dataTheme": "sea-glass",
         "radius": "0.5rem",
-        "fontUi": "Libre Franklin Variable",
-        "fontData": "Azeret Mono Variable",
-        "accent": "oklch(0.5 0.16 255)",
-        "accentHue": 255,
-        "note": "Light is its natural state; dark is the same ledger under a dim lamp."
+        "fontUi": "Onest Variable",
+        "fontData": "Spline Sans Mono Variable",
+        "accent": "oklch(0.7 0.072 200)",
+        "accentHue": 200,
+        "note": "Low-chroma world: the teal holds chroma ~0.07 in both modes. Its regular weight was chosen on extenders, not bold: Onest sets them at 1.35x x-height where IBM Plex Sans set 1.46x."
       },
       {
         "id": "ember",
         "label": "Ember",
-        "hint": "Warm near-black steel, ember accent, Chivo.",
+        "hint": "Warm steel, ember accent, Bricolage.",
         "primaryMode": "dark",
         "dataTheme": "ember",
         "radius": "0.375rem",
-        "fontUi": "Chivo Variable",
+        "fontUi": "Bricolage Grotesque Variable",
         "fontData": "Chivo Mono Variable",
-        "accent": "oklch(0.68 0.15 58)",
+        "accent": "oklch(0.74 0.14 58)",
         "accentHue": 58,
         "note": "Tightest state separation in the system: accent sits 40 degrees from warning and 40 from destructive."
       }
@@ -376,20 +376,20 @@
       "kind": "custom",
       "refersTo": "state-badge",
       "description": "Settings-only palette surface: a mode toggle plus a visible list of palettes, each row showing a swatch, label, and hint, with the selected row checked. The avatar dropdown no longer carries the palette list — it exposes only ThemeModeToggle, the ghost button that flips light/dark. The real swatch re-themes itself by carrying data-theme plus the current mode class, which is why every palette block in globals.css is self-contained; the snippet approximates that layering with host tokens, because a self-contained snippet cannot load those blocks.",
-      "html": "<div class=\"ds-picker\"><span class=\"ds-picker-label\">Mode</span><button class=\"ds-picker-mode\" type=\"button\">Mode Terang</button><span class=\"ds-picker-label\">Tema</span><div class=\"ds-picker-list\"><button class=\"ds-picker-row ds-picker-row-on\" type=\"button\" aria-pressed=\"true\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Graphite</span><span class=\"ds-picker-hint\">Dark instrument console, cool blue accent.</span></span><svg class=\"ds-picker-check\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M3.5 8.5l3 3 6-7\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><button class=\"ds-picker-row\" type=\"button\" aria-pressed=\"false\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Ledger</span><span class=\"ds-picker-hint\">Cool paper, ink rules, soft corners.</span></span></button><button class=\"ds-picker-row\" type=\"button\" aria-pressed=\"false\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Ember</span><span class=\"ds-picker-hint\">Warm near-black steel, ember accent, Chivo.</span></span></button></div></div>",
+      "html": "<div class=\"ds-picker\"><span class=\"ds-picker-label\">Mode</span><button class=\"ds-picker-mode\" type=\"button\">Mode Terang</button><span class=\"ds-picker-label\">Tema</span><div class=\"ds-picker-list\"><button class=\"ds-picker-row ds-picker-row-on\" type=\"button\" aria-pressed=\"true\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Graphite</span><span class=\"ds-picker-hint\">Cool instrument console, Geist.</span></span><svg class=\"ds-picker-check\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"M3.5 8.5l3 3 6-7\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><button class=\"ds-picker-row\" type=\"button\" aria-pressed=\"false\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Sea Glass</span><span class=\"ds-picker-hint\">Muted sea mist, quiet accent, Onest.</span></span></button><button class=\"ds-picker-row\" type=\"button\" aria-pressed=\"false\"><span class=\"ds-picker-sw\" aria-hidden=\"true\"></span><span class=\"ds-picker-text\"><span class=\"ds-picker-name\">Ember</span><span class=\"ds-picker-hint\">Warm steel, ember accent, Bricolage.</span></span></button></div></div>",
       "css": ".ds-picker{display:flex;flex-direction:column;gap:0.75rem;font-family:var(--font-ui);color:var(--foreground)} .ds-picker-label{font-size:var(--text-label-size);font-weight:600;letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--muted-foreground);line-height:1.2} .ds-picker-mode{display:flex;align-items:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:calc(var(--radius) * 0.8);background:transparent;color:var(--foreground);font:inherit;font-size:0.875rem;cursor:pointer;text-align:left} .ds-picker-mode:hover{background:var(--muted)} .ds-picker-mode:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent)} .ds-picker-list{display:flex;flex-direction:column;gap:0.25rem} .ds-picker-row{display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.375rem 0.5rem;border:1px solid var(--border);border-radius:calc(var(--radius) * 0.8);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer} .ds-picker-row:hover{background:var(--muted)} .ds-picker-row:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent)} .ds-picker-row-on{border-color:var(--primary);background:color-mix(in oklab, var(--primary) 5%, transparent)} .ds-picker-sw{flex:0 0 auto;width:1.5rem;height:1.5rem;border:1px solid var(--border);border-radius:calc(var(--radius) * 0.6);background:linear-gradient(var(--card) 0 50%,var(--primary) 50% 75%,var(--muted-foreground) 75% 100%)} .ds-picker-text{display:flex;min-width:0;flex:1;flex-direction:column} .ds-picker-name{font-size:0.875rem;font-weight:500} .ds-picker-hint{font-size:0.75rem;color:var(--muted-foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .ds-picker-check{width:1rem;height:1rem;flex:0 0 auto;color:var(--primary)}"
     }
   ],
   "narrative": {
     "northStar": "The Instrument Rack",
-    "overview": "An internal tool is equipment, not a brochure. The interface is built as a rack of bays: flat graphite modules bolted to a shared seam grid, each with a small-caps nameplate, each showing measured values. Nothing floats, nothing glows, nothing is decorated. What a border does here is structural — a 1px seam is the edge of a bay, and a lighter graphite step is one more unit of elevation.\n\nThe system is dark-first because that is the working condition it was chosen for: a console that sits open all day beside an editor, read for state at a glance rather than savoured. Its light mode is the same rack under daylight — a cool engineering surface, never cream — with the same seams and the same restraint.\n\nThe rack ships in three palettes. Graphite is the canonical one described throughout this document. Ledger re-clothes it as cool paper with ink rules and soft corners; Ember warms it to near-black steel with an ember accent. What changes between them is palette, typeface, and corner radius — and nothing else. The seams, the elevation order, the state vocabulary, and the mono-for-data rule are the world's constants. See Themes.\n\nColour is the system's most disciplined decision. Saturation is reserved exclusively for state, and it is drawn from the colours a developer already reads fluently in syntax: keyword blue, string green, value amber, error red, comment violet. A user learns the vocabulary once, in code, and it carries into the interface. The primary accent appears on a single control per view; everything else earns its colour by meaning something.",
+    "overview": "An internal tool is equipment, not a brochure. The interface is built as a rack of bays: flat graphite modules bolted to a shared seam grid, each with a small-caps nameplate, each showing measured values. Nothing floats, nothing glows, nothing is decorated. What a border does here is structural — a 1px seam is the edge of a bay, and a lighter graphite step is one more unit of elevation.\n\nThe system is dark-first because that is the working condition it was chosen for: a console that sits open all day beside an editor, read for state at a glance rather than savoured. Its light mode is the same rack under daylight — a cool engineering surface, never cream — with the same seams and the same restraint.\n\nThe rack ships in three palettes. **Graphite** is the canonical one described throughout this document. **Sea Glass** mutes it to sea-mist teal — a low-chroma accent on faintly tinted grounds, with the softest corners in the system; **Ember** warms it to near-black steel with an ember accent. What changes between them is palette, typeface, and corner radius — and nothing else. The seams, the elevation order, the state vocabulary, and the mono-for-data rule are the world's constants. See **Themes**.\n\nColour is the system's most disciplined decision. Saturation is reserved exclusively for state, and it is drawn from the colours a developer already reads fluently in syntax: keyword blue, string green, value amber, error red, comment violet. A user learns the vocabulary once, in code, and it carries into the interface. The primary accent appears on a single control per view; everything else earns its colour by meaning something.",
     "keyCharacteristics": [
       "Depth from 1px hairline seams and three measured ground steps — never from shadow",
       "Saturation spent only on state, using syntax-derived semantics",
       "Hard, instrument-panel geometry; corner radius is a per-palette decision (0.25 / 0.5 / 0.375rem)",
       "Monospace reserved for figures, IDs, and measurement — never as a technical costume",
-      "Panel headers as tracked small caps; body in a compact grotesk",
-      "Three palettes — Graphite, Ledger, Ember — each shipping light and dark; only palette, typeface, and radius vary"
+      "Panel headers as tracked small caps; body in a neutral grotesque",
+      "Three palettes — Graphite, Sea Glass, Ember — each shipping light and dark; only palette, typeface, and radius vary"
     ],
     "rules": [
       {
@@ -424,7 +424,7 @@
       },
       {
         "name": "The Self-Contained Palette Rule",
-        "body": "Every palette+mode block re-specifies every themeable token. A block that silently inherits a colour from another palette is a bug: it breaks nested previews and any future data-theme scoping. --ease-console, --text-label-size, and --tracking-label are deliberately global and inherited.",
+        "body": "Every palette+mode block re-specifies every themeable token. A block that silently inherits a colour from another palette is a bug: it breaks nested previews and any future data-theme scoping. --font-ui, --font-data, --text-label-size, and --tracking-label are all re-specified in every block for the same reason: a size or tracking tuned for one face is wrong for another. --ease-console is the one genuinely global value.",
         "section": "themes"
       },
       {
