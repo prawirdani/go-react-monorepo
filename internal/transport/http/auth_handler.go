@@ -40,20 +40,21 @@ func (h *AuthHandler) Routes(router fiber.Router, auth *authenticatorMiddleware,
 	// CGNAT address that IP covers many real users, so the limits guard request
 	// volume rather than any single account. The targeted defence lives in the
 	// auth service: a per-email login lockout and a per-email recovery throttle.
+	max, window := h.cfg.RateLimit.AuthMax, h.cfg.RateLimit.Window
 	router.Route("/auth", func(authRouter fiber.Router) {
-		authRouter.Post("/login", rl.IP("login", 20, 1*time.Minute), h.login)
+		authRouter.Post("/login", rl.IP("login", max, window), h.login)
 
 		if h.cfg.App.InternalMode {
 			authRouter.Post("/register", auth.Authenticate, h.register)
 		} else {
 			authRouter.Post("/register", h.register)
 		}
-		authRouter.Post("/register/complete", rl.IP("register-complete", 20, 1*time.Minute), h.completeRegistration)
+		authRouter.Post("/register/complete", rl.IP("register-complete", max, window), h.completeRegistration)
 		authRouter.Get("/register/:token", h.getRegistrationToken)
 
 		authRouter.Post("/refresh", h.refreshAccessToken)
 
-		authRouter.Post("/password/recover", rl.IP("password-recover", 20, 1*time.Minute), h.recoverPassword)
+		authRouter.Post("/password/recover", rl.IP("password-recover", max, window), h.recoverPassword)
 		authRouter.Get("/password/recover/:token", h.getPasswordRecoveryToken)
 		authRouter.Put("/password/reset", h.resetPassword)
 

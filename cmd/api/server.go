@@ -55,7 +55,8 @@ func NewServer(container *Container, onPostShutdown func(error) error) (*Server,
 	// per-user limiter below plus the per-email auth throttles carry the real
 	// enforcement. Production only, matching the previous behaviour.
 	if container.Config.IsProduction() {
-		app.Use(rateLimiter.IP("global", 120, 1*time.Minute))
+		rl := container.Config.RateLimit
+		app.Use(rateLimiter.IP("global", rl.GlobalMax, rl.Window))
 	}
 
 	app.Use(recoverer.New())
@@ -186,8 +187,9 @@ func (s *Server) setupHandlers() {
 
 	// Per-user budget on every authenticated route, keyed by the verified uid so
 	// one account on a shared ISP address cannot spend another's allowance.
+	rl := s.container.Config.RateLimit
 	rateLimiter := http.NewRateLimiter(s.container.RateCounter)
-	authMiddleware.WithUserRateLimit(rateLimiter.User("user", 120, 1*time.Minute))
+	authMiddleware.WithUserRateLimit(rateLimiter.User("user", rl.UserMax, rl.Window))
 
 	// Register API routes
 	s.app.Route("/api", func(router fiber.Router) {

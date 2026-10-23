@@ -16,14 +16,15 @@ const (
 )
 
 type Config struct {
-	App      App
-	Postgres Postgres
-	Redis    Redis
-	Cors     Cors
-	Auth     Auth
-	SMTP     SMTP
-	R2       R2
-	Proxy    Proxy
+	App       App
+	Postgres  Postgres
+	Redis     Redis
+	Cors      Cors
+	Auth      Auth
+	SMTP      SMTP
+	R2        R2
+	Proxy     Proxy
+	RateLimit RateLimit
 }
 
 func (c Config) IsProduction() bool {
@@ -58,6 +59,9 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 	if err := cfg.Proxy.Parse(); err != nil {
+		return nil, err
+	}
+	if err := cfg.RateLimit.Parse(); err != nil {
 		return nil, err
 	}
 

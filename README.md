@@ -451,6 +451,10 @@ setting — neither is configurable through env.
 | `CORS_ORIGINS` | Comma-separated allowed origins | empty | With credentials enabled, `*` or an unparseable origin fails startup |
 | `CORS_CREDENTIALS` | Send credentials | `false` | |
 | `TRUST_PROXY` | Resolve the client IP from `X-Forwarded-For` when behind a reverse proxy | `false` | Trusts the proxy by peer class (private/loopback/unix socket), not an address list; when false the socket peer is used, so a directly-exposed API cannot be spoofed |
+| `RATE_LIMIT_GLOBAL_MAX` | Per-IP budget on every route (production only) | `300` | Redis-counted, holds across replicas |
+| `RATE_LIMIT_USER_MAX` | Per-user budget on authenticated routes | `120` | Keyed by verified `uid` |
+| `RATE_LIMIT_AUTH_MAX` | Per-IP budget on the unauthenticated auth routes | `20` | Login lockout/recovery throttle handle per-account abuse |
+| `RATE_LIMIT_WINDOW` | Fixed window all budgets reset on | `1m` | |
 
 **Auth**
 
@@ -653,13 +657,15 @@ change into an error.
 
 ### Throttling
 
-| Scope | Mechanism | Limit |
+| Scope | Mechanism | Limit (default, configurable) |
 | --- | --- | --- |
-| Global (all routes) | Redis counter, **production only** | 120 req/min per IP |
-| Authenticated routes | Redis counter, keyed by verified `uid` | 120 req/min per user |
-| `POST /api/auth/login` | Redis counter (IP) + Redis per-account failure counter | 20 req/min per IP; after `AUTH_LOGIN_MAX_ATTEMPTS` failures the account is locked for `AUTH_LOGIN_LOCKOUT_TTL` and returns `AUTH_ACCOUNT_LOCKED` (429) |
-| `POST /api/auth/register/complete` | Redis counter (IP) | 20 req/min per IP |
-| `POST /api/auth/password/recover` | Redis counter (IP) + Redis per-email throttle | 20 req/min per IP + 30 s per email (shared across instances) |
+| Global (all routes) | Redis counter, **production only** | 300 req/min per IP (`RATE_LIMIT_GLOBAL_MAX`) |
+| Authenticated routes | Redis counter, keyed by verified `uid` | 120 req/min per user (`RATE_LIMIT_USER_MAX`) |
+| `POST /api/auth/login` | Redis counter (IP) + Redis per-account failure counter | 20 req/min per IP (`RATE_LIMIT_AUTH_MAX`); after `AUTH_LOGIN_MAX_ATTEMPTS` failures the account is locked for `AUTH_LOGIN_LOCKOUT_TTL` and returns `AUTH_ACCOUNT_LOCKED` (429) |
+| `POST /api/auth/register/complete` | Redis counter (IP) | 20 req/min per IP (`RATE_LIMIT_AUTH_MAX`) |
+| `POST /api/auth/password/recover` | Redis counter (IP) + Redis per-email throttle | 20 req/min per IP (`RATE_LIMIT_AUTH_MAX`) + 30 s per email (shared across instances) |
+
+All budgets reset on `RATE_LIMIT_WINDOW` (default `1m`).
 
 Every limiter counts in Redis, so a budget holds across API replicas instead of
 per process. The IP-keyed limits deliberately guard request volume, not a single
