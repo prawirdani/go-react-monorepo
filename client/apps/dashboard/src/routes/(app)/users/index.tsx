@@ -85,10 +85,9 @@ export const Route = createFileRoute("/(app)/users/")({
   // Fire-and-forget warmup, NOT a render gate: the component below owns its own
   // loading and error states, so the loader must not block the transition.
   // Nothing is returned on purpose — returning the promise would make the router
-  // await it. `prefetchQuery` is used rather than `ensureQueryData` because the
-  // latter rejects, and an unawaited rejection is an unhandled one.
+  // await it.
   loader: ({ context, deps }) => {
-    context.queryClient.prefetchQuery(listUser(deps))
+    context.queryClient.query(listUser(deps))
   },
   component: RouteComponent,
 })

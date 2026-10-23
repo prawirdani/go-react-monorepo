@@ -23,7 +23,7 @@ function runLoader(permissions: string[] | null) {
 
   // `can` reads the app's `queryClient` singleton, not the router context, so
   // the session has to be seeded there for the gate to be exercised at all.
-  const prefetch = vi.spyOn(queryClient, "prefetchQuery")
+  const prefetch = vi.spyOn(queryClient, "query")
   const loader = Route.options.loader as (args: {
     context: { queryClient: typeof queryClient }
     deps: Record<string, unknown>

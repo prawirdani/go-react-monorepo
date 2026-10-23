@@ -49,15 +49,14 @@ export const Route = createFileRoute("/(app)/")({
   },
   loaderDeps: ({ search }) => search,
   // Fire-and-forget warmup, not a render gate: the audit panel owns its own
-  // loading/error states. Nothing returned, so the router does not await it;
-  // `prefetchQuery` cannot reject where an unawaited `ensureQueryData` would.
+  // loading/error states. Nothing returned, so the router does not await it.
   loader: ({ context, deps }) => {
     // Gated on `audit.read` — the panel is this route's only consumer, but a
     // loader runs before render and `defaultPreload: "intent"` fires it on
     // hover, so an ungated prefetch had every non-admin pulling a 403'd audit
     // page on each dashboard visit.
     if (!can("audit.read")) return
-    context.queryClient.prefetchQuery(auditEntries(deps))
+    context.queryClient.query(auditEntries(deps))
   },
   component: Component,
 })
