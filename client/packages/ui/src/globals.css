@@ -1,11 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/archivo/wght.css";
+@import "@fontsource-variable/geist/wght.css";
+@import "@fontsource-variable/geist-mono/wght.css";
+@import "@fontsource-variable/onest/wght.css";
 @import "@fontsource-variable/spline-sans-mono/wght.css";
-@import "@fontsource-variable/libre-franklin/wght.css";
-@import "@fontsource-variable/azeret-mono/wght.css";
-@import "@fontsource-variable/chivo/wght.css";
+@import "@fontsource-variable/bricolage-grotesque/wght.css";
 @import "@fontsource-variable/chivo-mono/wght.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -16,14 +16,19 @@
    Selector shape:
      :root, .dark                Graphite dark (default, no-JS fallback)
      .light                      Graphite light (mode class alone)
-     [data-theme="ledger"].dark  Ledger dark   (0,2,0 — beats mode class)
-     [data-theme="ledger"].light Ledger light
+     [data-theme="sea-glass"].dark  Sea Glass dark (0,2,0 — beats mode class)
+     [data-theme="sea-glass"].light Sea Glass light
      [data-theme="ember"].dark   Ember dark
      [data-theme="ember"].light  Ember light
 
    Invariants across every palette: identical token names, depth from a
    1px hairline seam + measured ground step (no shadows), saturation
    only on state, mono only for data, one .panel-label treatment.
+
+   Type is calibrated per face, not shared: --text-label-size and
+   --tracking-label are measured so the uppercase nameplate lands at the
+   same cap height (~7.5px) and near-equal width in all three palettes.
+   Every mono is 0.6em advance, so the data role keeps one physical size.
    ------------------------------------------------------------------ */
 
 /* Graphite dark — the default world and the pre-hydration fallback.
@@ -65,8 +70,10 @@
 	--chart-5: oklch(0.75 0.11 205);
 	--radius: 0.25rem;
 	--overlay: oklch(0 0 0);
-	--text-label-size: 0.6875rem;
-	--tracking-label: 0.14em;
+	/* Geist: large x-height, wide caps. 10.5px + 0.12em lands the label at
+	   the 7.5px cap height the Archivo setting held. */
+	--text-label-size: 0.65625rem;
+	--tracking-label: 0.12em;
 	--sidebar: oklch(0.145 0.004 260);
 	--sidebar-foreground: oklch(0.93 0.003 260);
 	--sidebar-primary: oklch(0.72 0.14 248);
@@ -76,8 +83,8 @@
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.72 0.14 248);
 	--ease-console: cubic-bezier(0.16, 1, 0.3, 1);
-	--font-ui: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
-	--font-data: "Spline Sans Mono Variable", ui-monospace, monospace;
+	--font-ui: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-data: "Geist Mono Variable", ui-monospace, monospace;
 }
 
 /* Graphite light — daylight engineering surface: cool, never cream. */
@@ -116,6 +123,8 @@
 	--chart-5: oklch(0.47 0.11 215);
 	--radius: 0.25rem;
 	--overlay: oklch(0.2 0.01 260);
+	--text-label-size: 0.65625rem;
+	--tracking-label: 0.12em;
 	--sidebar: oklch(0.955 0.004 260);
 	--sidebar-foreground: oklch(0.22 0.01 260);
 	--sidebar-primary: oklch(0.5 0.16 252);
@@ -127,103 +136,112 @@
 	--ease-console: cubic-bezier(0.16, 1, 0.3, 1);
 	/* Self-contained so a graphite-light palette preview nested inside another
 	   theme resolves graphite's own faces, not the host theme's. */
-	--font-ui: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-ui: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-data: "Geist Mono Variable", ui-monospace, monospace;
+}
+
+/* Sea Glass — muted sea-mist teal; calm is the whole premise, so the
+   primary stays at chroma ≤0.075 and every ground is tinted a hair.
+   Dark is the primary mode. `info` stays blue and `attention` stays
+   violet so neither signal collapses into the teal primary. */
+[data-theme="sea-glass"].dark {
+	--background: oklch(0.19 0.009 205);
+	--foreground: oklch(0.93 0.008 200);
+	--card: oklch(0.222 0.01 205);
+	--card-foreground: oklch(0.93 0.008 200);
+	--popover: oklch(0.252 0.012 205);
+	--popover-foreground: oklch(0.93 0.008 200);
+	--primary: oklch(0.7 0.072 200);
+	--primary-foreground: oklch(0.17 0.02 200);
+	--secondary: oklch(0.29 0.011 205);
+	--secondary-foreground: oklch(0.93 0.008 200);
+	--muted: oklch(0.272 0.01 205);
+	--muted-foreground: oklch(0.71 0.014 205);
+	--accent: oklch(0.315 0.022 200);
+	--accent-foreground: oklch(0.95 0.012 200);
+	--destructive: oklch(0.7 0.17 27);
+	--destructive-foreground: oklch(0.16 0.03 27);
+	--border: oklch(1 0 0 / 12%);
+	--input: oklch(0.57 0.012 205);
+	--ring: oklch(0.7 0.072 200);
+	--success: oklch(0.76 0.15 155);
+	--success-foreground: oklch(0.16 0.03 155);
+	--warning: oklch(0.82 0.14 80);
+	--warning-foreground: oklch(0.18 0.03 80);
+	--info: oklch(0.72 0.13 245);
+	--info-foreground: oklch(0.16 0.02 245);
+	--attention: oklch(0.74 0.13 305);
+	--attention-foreground: oklch(0.17 0.03 305);
+	--chart-1: oklch(0.7 0.072 200);
+	--chart-2: oklch(0.76 0.15 155);
+	--chart-3: oklch(0.82 0.14 80);
+	--chart-4: oklch(0.74 0.13 305);
+	--chart-5: oklch(0.72 0.13 245);
+	--radius: 0.5rem;
+	--overlay: oklch(0 0 0);
+	/* Onest caps sit at 0.707em, so 10.625px lands the shared 7.5px cap. Its
+	   caps run wider than Plex's: 0.105em holds the same nameplate width. */
+	--text-label-size: 0.6640625rem;
+	--tracking-label: 0.105em;
+	--sidebar: oklch(0.155 0.009 205);
+	--sidebar-foreground: oklch(0.93 0.008 200);
+	--sidebar-primary: oklch(0.7 0.072 200);
+	--sidebar-primary-foreground: oklch(0.17 0.02 200);
+	--sidebar-accent: oklch(0.3 0.022 200);
+	--sidebar-accent-foreground: oklch(0.95 0.012 200);
+	--sidebar-border: oklch(1 0 0 / 10%);
+	--sidebar-ring: oklch(0.7 0.072 200);
+	--font-ui: "Onest Variable", ui-sans-serif, system-ui, sans-serif;
 	--font-data: "Spline Sans Mono Variable", ui-monospace, monospace;
 }
 
-/* Ledger — cool paper + ink rules; light is the primary mode. */
-[data-theme="ledger"].dark {
-	--background: oklch(0.19 0.006 65);
-	--foreground: oklch(0.93 0.012 85);
-	--card: oklch(0.22 0.006 65);
-	--card-foreground: oklch(0.93 0.012 85);
-	--popover: oklch(0.255 0.007 65);
-	--popover-foreground: oklch(0.93 0.012 85);
-	--primary: oklch(0.72 0.11 255);
-	--primary-foreground: oklch(0.17 0.02 255);
-	--secondary: oklch(0.29 0.008 65);
-	--secondary-foreground: oklch(0.93 0.012 85);
-	--muted: oklch(0.275 0.007 65);
-	--muted-foreground: oklch(0.71 0.015 80);
-	--accent: oklch(0.31 0.03 255);
-	--accent-foreground: oklch(0.95 0.012 255);
-	--destructive: oklch(0.7 0.18 27);
-	--destructive-foreground: oklch(0.16 0.03 27);
-	--border: oklch(1 0 0 / 12%);
-	--input: oklch(0.57 0.008 65);
-	--ring: oklch(0.72 0.11 255);
-	--success: oklch(0.76 0.14 155);
-	--success-foreground: oklch(0.16 0.03 155);
-	--warning: oklch(0.82 0.13 80);
-	--warning-foreground: oklch(0.18 0.03 80);
-	--info: oklch(0.72 0.11 255);
-	--info-foreground: oklch(0.17 0.02 255);
-	--attention: oklch(0.74 0.12 305);
-	--attention-foreground: oklch(0.17 0.03 305);
-	--chart-1: oklch(0.72 0.11 255);
-	--chart-2: oklch(0.76 0.14 155);
-	--chart-3: oklch(0.82 0.13 80);
-	--chart-4: oklch(0.74 0.12 305);
-	--chart-5: oklch(0.75 0.1 210);
-	--radius: 0.5rem;
-	--overlay: oklch(0 0 0);
-	--sidebar: oklch(0.155 0.006 65);
-	--sidebar-foreground: oklch(0.93 0.012 85);
-	--sidebar-primary: oklch(0.72 0.11 255);
-	--sidebar-primary-foreground: oklch(0.17 0.02 255);
-	--sidebar-accent: oklch(0.27 0.025 255);
-	--sidebar-accent-foreground: oklch(0.95 0.012 255);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.72 0.11 255);
-	--font-ui: "Libre Franklin Variable", ui-sans-serif, system-ui, sans-serif;
-	--font-data: "Azeret Mono Variable", ui-monospace, monospace;
-}
-
-[data-theme="ledger"].light {
-	--background: oklch(0.965 0.006 255);
-	--foreground: oklch(0.24 0.02 260);
-	--card: oklch(0.99 0.003 255);
-	--card-foreground: oklch(0.24 0.02 260);
+[data-theme="sea-glass"].light {
+	--background: oklch(0.968 0.006 200);
+	--foreground: oklch(0.24 0.02 200);
+	--card: oklch(0.995 0.002 200);
+	--card-foreground: oklch(0.24 0.02 200);
 	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.24 0.02 260);
-	--primary: oklch(0.4 0.11 255);
-	--primary-foreground: oklch(0.98 0.005 255);
-	--secondary: oklch(0.93 0.008 255);
-	--secondary-foreground: oklch(0.26 0.02 260);
-	--muted: oklch(0.94 0.006 255);
-	--muted-foreground: oklch(0.46 0.02 258);
-	--accent: oklch(0.9 0.03 255);
-	--accent-foreground: oklch(0.28 0.04 258);
+	--popover-foreground: oklch(0.24 0.02 200);
+	--primary: oklch(0.46 0.075 200);
+	--primary-foreground: oklch(0.99 0.004 200);
+	--secondary: oklch(0.93 0.008 200);
+	--secondary-foreground: oklch(0.26 0.02 200);
+	--muted: oklch(0.94 0.007 200);
+	--muted-foreground: oklch(0.47 0.018 200);
+	--accent: oklch(0.91 0.02 200);
+	--accent-foreground: oklch(0.28 0.035 200);
 	--destructive: oklch(0.5 0.2 27);
 	--destructive-foreground: oklch(0.99 0 0);
-	--border: oklch(0.24 0.02 260 / 14%);
-	--input: oklch(0.58 0.01 258);
-	--ring: oklch(0.4 0.11 255);
-	--success: oklch(0.45 0.12 155);
+	--border: oklch(0.24 0.02 200 / 14%);
+	--input: oklch(0.58 0.012 205);
+	--ring: oklch(0.46 0.075 200);
+	--success: oklch(0.46 0.13 155);
 	--success-foreground: oklch(0.99 0 0);
-	--warning: oklch(0.5 0.11 75);
+	--warning: oklch(0.5 0.12 75);
 	--warning-foreground: oklch(0.99 0 0);
-	--info: oklch(0.4 0.11 255);
-	--info-foreground: oklch(0.98 0.005 255);
-	--attention: oklch(0.44 0.15 305);
+	--info: oklch(0.45 0.14 245);
+	--info-foreground: oklch(0.99 0 0);
+	--attention: oklch(0.46 0.17 305);
 	--attention-foreground: oklch(0.99 0 0);
-	--chart-1: oklch(0.4 0.11 255);
-	--chart-2: oklch(0.45 0.12 155);
+	--chart-1: oklch(0.46 0.075 200);
+	--chart-2: oklch(0.46 0.13 155);
 	--chart-3: oklch(0.55 0.12 75);
-	--chart-4: oklch(0.44 0.15 305);
-	--chart-5: oklch(0.48 0.1 215);
+	--chart-4: oklch(0.46 0.17 305);
+	--chart-5: oklch(0.45 0.14 245);
 	--radius: 0.5rem;
-	--overlay: oklch(0.24 0.02 260);
-	--sidebar: oklch(0.94 0.007 255);
-	--sidebar-foreground: oklch(0.24 0.02 260);
-	--sidebar-primary: oklch(0.4 0.11 255);
-	--sidebar-primary-foreground: oklch(0.98 0.005 255);
-	--sidebar-accent: oklch(0.9 0.03 255);
-	--sidebar-accent-foreground: oklch(0.28 0.04 258);
-	--sidebar-border: oklch(0.24 0.02 260 / 14%);
-	--sidebar-ring: oklch(0.4 0.11 255);
-	--font-ui: "Libre Franklin Variable", ui-sans-serif, system-ui, sans-serif;
-	--font-data: "Azeret Mono Variable", ui-monospace, monospace;
+	--overlay: oklch(0.24 0.02 200);
+	--text-label-size: 0.6640625rem;
+	--tracking-label: 0.105em;
+	--sidebar: oklch(0.955 0.007 200);
+	--sidebar-foreground: oklch(0.24 0.02 200);
+	--sidebar-primary: oklch(0.46 0.075 200);
+	--sidebar-primary-foreground: oklch(0.99 0.004 200);
+	--sidebar-accent: oklch(0.91 0.02 200);
+	--sidebar-accent-foreground: oklch(0.28 0.035 200);
+	--sidebar-border: oklch(0.24 0.02 200 / 14%);
+	--sidebar-ring: oklch(0.46 0.075 200);
+	--font-ui: "Onest Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-data: "Spline Sans Mono Variable", ui-monospace, monospace;
 }
 
 /* Ember — warm near-black steel; dark is the primary mode. */
@@ -262,6 +280,10 @@
 	--chart-5: oklch(0.75 0.1 210);
 	--radius: 0.375rem;
 	--overlay: oklch(0 0 0);
+	/* Bricolage is a display face: wide ink on a short cap height, so the
+	   label grows half a pixel and sets nearly solid instead of tracked. */
+	--text-label-size: 0.71875rem;
+	--tracking-label: 0.08em;
 	--sidebar: oklch(0.14 0.008 55);
 	--sidebar-foreground: oklch(0.94 0.012 85);
 	--sidebar-primary: oklch(0.74 0.14 58);
@@ -270,7 +292,8 @@
 	--sidebar-accent-foreground: oklch(0.96 0.015 80);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.74 0.14 58);
-	--font-ui: "Chivo Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-ui:
+		"Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
 	--font-data: "Chivo Mono Variable", ui-monospace, monospace;
 }
 
@@ -309,6 +332,8 @@
 	--chart-5: oklch(0.48 0.1 210);
 	--radius: 0.375rem;
 	--overlay: oklch(0.22 0.014 60);
+	--text-label-size: 0.71875rem;
+	--tracking-label: 0.08em;
 	--sidebar: oklch(0.93 0.007 70);
 	--sidebar-foreground: oklch(0.24 0.014 60);
 	--sidebar-primary: oklch(0.52 0.15 58);
@@ -317,7 +342,8 @@
 	--sidebar-accent-foreground: oklch(0.28 0.04 58);
 	--sidebar-border: oklch(0.24 0.014 60 / 14%);
 	--sidebar-ring: oklch(0.52 0.15 58);
-	--font-ui: "Chivo Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-ui:
+		"Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
 	--font-data: "Chivo Mono Variable", ui-monospace, monospace;
 }
 

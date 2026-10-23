@@ -1,6 +1,6 @@
 ---
 name: Graphite Console
-description: A dark-first internal-tool console shipping three palettes (Graphite, Ledger, Ember), each in light and dark, where depth comes from 1px hairline seams and measured ground steps, and colour is spent only on state.
+description: A dark-first internal-tool console shipping three palettes (Graphite, Sea Glass, Ember), each in light and dark, where depth comes from 1px hairline seams and measured ground steps, and colour is spent only on state.
 colors:
   ground: "oklch(0.185 0.004 260)"
   panel: "oklch(0.215 0.004 260)"
@@ -19,24 +19,24 @@ colors:
   comment-violet: "oklch(0.74 0.13 305)"
 typography:
   title:
-    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 600
     lineHeight: 1.4
     letterSpacing: "-0.025em"
   body:
-    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.5
   label:
-    fontFamily: "Archivo Variable, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.6875rem"
+    fontFamily: "Geist Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.65625rem"
     fontWeight: 600
     lineHeight: 1.2
-    letterSpacing: "0.14em"
+    letterSpacing: "0.12em"
   data:
-    fontFamily: "Spline Sans Mono Variable, ui-monospace, monospace"
+    fontFamily: "Geist Mono Variable, ui-monospace, monospace"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.5
@@ -90,7 +90,7 @@ An internal tool is equipment, not a brochure. The interface is built as a rack 
 
 The system is dark-first because that is the working condition it was chosen for: a console that sits open all day beside an editor, read for state at a glance rather than savoured. Its light mode is the same rack under daylight — a cool engineering surface, never cream — with the same seams and the same restraint.
 
-The rack ships in three palettes. **Graphite** is the canonical one described throughout this document. **Ledger** re-clothes it as cool paper with ink rules and soft corners; **Ember** warms it to near-black steel with an ember accent. What changes between them is palette, typeface, and corner radius — and nothing else. The seams, the elevation order, the state vocabulary, and the mono-for-data rule are the world's constants. See **Themes**.
+The rack ships in three palettes. **Graphite** is the canonical one described throughout this document. **Sea Glass** mutes it to sea-mist teal — a low-chroma accent on faintly tinted grounds, with the softest corners in the system; **Ember** warms it to near-black steel with an ember accent. What changes between them is palette, typeface, and corner radius — and nothing else. The seams, the elevation order, the state vocabulary, and the mono-for-data rule are the world's constants. See **Themes**.
 
 Colour is the system's most disciplined decision. Saturation is reserved exclusively for state, and it is drawn from the colours a developer already reads fluently in syntax: keyword blue, string green, value amber, error red, comment violet. A user learns the vocabulary once, in code, and it carries into the interface. The primary accent appears on a single control per view; everything else earns its colour by meaning something.
 
@@ -100,12 +100,12 @@ Colour is the system's most disciplined decision. Saturation is reserved exclusi
 - Saturation spent only on state, using syntax-derived semantics
 - Hard, instrument-panel geometry; corner radius is a per-palette decision (0.25 / 0.5 / 0.375rem)
 - Monospace reserved for figures, IDs, and measurement — never as a technical costume
-- Panel headers as tracked small caps; body in a compact grotesk
-- Three palettes — Graphite, Ledger, Ember — each shipping light and dark; only palette, typeface, and radius vary
+- Panel headers as tracked small caps; body in a neutral grotesque
+- Three palettes — Graphite, Sea Glass, Ember — each shipping light and dark; only palette, typeface, and radius vary
 
 ## Colors
 
-A graphite ladder with a faint cool cast, interrupted only by five syntax-derived state inks. The values below are **Graphite's**; Ledger and Ember define their own equivalents under the same token names, keeping the same state vocabulary and the same AA guarantees. See **Themes** for the per-palette values.
+A graphite ladder with a faint cool cast, interrupted only by five syntax-derived state inks. The values below are **Graphite's**; Sea Glass and Ember define their own equivalents under the same token names, keeping the same state vocabulary and the same AA guarantees. See **Themes** for the per-palette values.
 
 ### Primary
 
@@ -145,17 +145,33 @@ Each palette carries its own typeface pair. The pair switches through `--font-ui
 
 | Palette | UI | Data |
 |---|---|---|
-| **Graphite** | Archivo Variable (`@fontsource-variable/archivo`) | Spline Sans Mono Variable (`@fontsource-variable/spline-sans-mono`) |
-| **Ledger** | Libre Franklin Variable (`@fontsource-variable/libre-franklin`) | Azeret Mono Variable (`@fontsource-variable/azeret-mono`) |
-| **Ember** | Chivo Variable (`@fontsource-variable/chivo`) | Chivo Mono Variable (`@fontsource-variable/chivo-mono`) |
+| **Graphite** | Geist Variable (`@fontsource-variable/geist`) | Geist Mono Variable (`@fontsource-variable/geist-mono`) |
+| **Sea Glass** | Onest Variable (`@fontsource-variable/onest`) | Spline Sans Mono Variable (`@fontsource-variable/spline-sans-mono`) |
+| **Ember** | Bricolage Grotesque Variable (`@fontsource-variable/bricolage-grotesque`) | Chivo Mono Variable (`@fontsource-variable/chivo-mono`) |
 
-**Character:** Technical workhorse pairings, deliberately under-expressive — the system's character comes from geometry and restraint, not letterform personality. Graphite is the compact industrial default; Ledger's Franklin carries real small caps and tabular figures (a bookkeeping workhorse, deliberately not a serif); Ember's Chivo superfamily gives the warm palette one coherent voice. All are self-hosted via `@fontsource-variable`, and each family is fetched only when its palette is actually applied.
+**Character:** Every palette pairs its UI face with a mono from the same voice. Graphite runs Geist, a neutral geometric grotesque, over Geist Mono — literally the same letterforms at one pitch. Sea Glass's Onest is a humanist interface face built on a large x-height and short extenders, so its 400 reads settled instead of stretched; Spline Sans Mono shares that humanist, slightly utilitarian voice, so the data reads like a printed record. Ember's Bricolage Grotesque is a high-contrast display face, so its mono stays a warm low-contrast humanist (Chivo Mono) that supports the display voice instead of competing with it. **Every mono sets 0.6em advance**, which is what keeps the data role one physical size across worlds even though the faces differ. All are self-hosted variable fonts via `@fontsource-variable`, and a family is fetched only when its palette is applied.
+
+### Calibration
+
+Type is not shared raw across the three faces: each one has different cap height, x-height, and cap width, so the same `rem` would read at three different sizes. Each block carries its own `--text-label-size` / `--tracking-label`, measured so the uppercase nameplate lands at the same cap height (≈7.5px) and near-equal width in every palette.
+
+| Palette | Face | Cap height | Label size | Tracking | Nameplate width* | Why |
+|---|---|---|---|---|---|---|
+| **Graphite** | Geist | 0.710em | `0.65625rem` (10.5px) | `0.12em` | 125px | Tallest caps and wide ink: the size drops 0.5px and the tracking 0.02em to hold Archivo's old cap height. |
+| **Sea Glass** | Onest | 0.707em | `0.6640625rem` (10.625px) | `0.105em` | 124px | Caps are shorter than Geist's but the face sets wider ink: 10.625px lands the 7.5px cap, and 0.105em pulls the wider caps back to the shared nameplate width. |
+| **Ember** | Bricolage Grotesque | 0.660em | `0.71875rem` (11.5px) | `0.08em` | 124px | Short, wide, high-contrast caps: it needs the largest size and the tightest set, or tracked caps look broken. |
+
+\*Rendered width of `ORDERS / RECORDS` at the label setting, measured in Chromium at weight 600. The three land within 1% of each other (124.9 / 124.9 / 124.1px), so a header does not change width when the palette does. Body stays `0.875rem` in all three: at 14px the prose line runs 285 / 289 / 293px — a 3% spread, tighter than the Archivo/Libre Franklin/Chivo set it replaced (≈12%) — so one base size still reads as one system.
+
+Sea Glass was picked on its **400**, not its bold: measured from the installed `woff2`, Onest sets a 0.527em x-height on extenders only 1.35× that height (IBM Plex Sans: 0.516em at 1.46×), so the same nominal size carries ~8% more ink per area with the ascenders no longer towering over the lowercase. The bold and semibold steps stay where they were — only the regular needed the swap.
+
+**Weight ceiling.** The faces do not share an upper bound: Geist reaches 900, Onest reaches 900, Bricolage 800. Nothing in the system asks for more than 700 (the label sits at 600, page titles at 600, the heaviest call site is a 700 required-asterisk), so no palette silently clamps. Treat 700 as the shared ceiling: an 800 or 900 treatment would render as different weights per palette.
 
 ### Hierarchy
 
 - **Title** (600, 1.125rem → 1.25rem at `md`, `-0.025em`): Page titles only. One per screen, sitting flush over a seam.
 - **Body** (400, 0.875rem): All UI text, form labels, table cells, prose.
-- **Label** (600, 0.6875rem, `0.14em`, uppercase): Every panel nameplate, table column head, and section marker — and the per-field labels of the small-screen record view, where a table's column heads move inline — all via the single `.panel-label` class.
+- **Label** (600, per-palette size + tracking per **Calibration**, uppercase): Every panel nameplate, table column head, and section marker — and the per-field labels of the small-screen record view, where a table's column heads move inline — all via the single `.panel-label` class.
 - **Data** (400, 0.875rem mono, `tabular-nums`): Figures, timestamps, IDs, paths. Applied by opting a cell in with `data-mono`, not by defaulting a container to mono.
 
 ### Named Rules
@@ -195,7 +211,7 @@ Hard instrument geometry, with the corner sharpened or softened per palette. The
 | Palette | `--radius` | `sm` / `md` / `lg` | Feel |
 |---|---|---|---|
 | **Graphite** | `0.25rem` | 0.15 / 0.2 / 0.25rem | Hard, instrument-panel |
-| **Ledger** | `0.5rem` | 0.3 / 0.4 / 0.5rem | Soft, paper-like |
+| **Sea Glass** | `0.5rem` | 0.3 / 0.4 / 0.5rem | Soft, restful |
 | **Ember** | `0.375rem` | 0.225 / 0.3 / 0.375rem | Softer than Graphite, warmer |
 
 Buttons, inputs, panels, badges, and menus sit in the `sm`–`md` band in every palette.
@@ -276,20 +292,20 @@ Three palettes, each in light and dark, all behind identical token names. A them
 
 **Selector contract.** `<html>` carries two independent attributes: a **mode class** (`.dark` / `.light`, set by the provider and by the pre-hydration script) and **`data-theme="<id>"`**. The mode class also carries the Graphite fallback via `:root`, so a missing or unknown palette id degrades safely to Graphite in either mode instead of rendering unstyled — which is why the inline script applies the stored id verbatim, with no whitelist.
 
-| Palette | `data-theme` | Primary mode | Typeface | `--radius` | Accent hue |
+| Palette | `data-theme` | Primary mode | Typeface (UI · data) | `--radius` | Accent hue |
 |---|---|---|---|---|---|
-| **Graphite** | `graphite` | dark | Archivo · Spline Sans Mono | `0.25rem` | 248 (cool blue) |
-| **Ledger** | `ledger` | light | Libre Franklin · Azeret Mono | `0.5rem` | 255 (ink blue) |
-| **Ember** | `ember` | dark | Chivo · Chivo Mono | `0.375rem` | 58 (ember) |
+| **Graphite** | `graphite` | dark | Geist · Geist Mono | `0.25rem` | 248 (cool blue) |
+| **Sea Glass** | `sea-glass` | dark | Onest · Spline Sans Mono | `0.5rem` | 200 (sea-mist teal) |
+| **Ember** | `ember` | dark | Bricolage Grotesque · Chivo Mono | `0.375rem` | 58 (ember) |
 
-Each palette defines both modes regardless of which one is primary; "primary mode" only names the rendition the palette was designed around. Ledger's light is its natural state, and its dark is the same ledger under a dim lamp.
+Each palette defines both modes regardless of which one is primary; "primary mode" only names the rendition the palette was designed around. Sea Glass is the low-chroma world: its teal (200) holds chroma ≈0.07 in both modes — at the very edge of reading as a hue at all — while the grounds carry only a hair of the same tint. `info` stays blue (245) and `attention` stays violet (305), so neither signal collapses into the primary, and 200 sits 45° from `success` (155) and 45° from `info`, the widest calm gap in the state wheel.
 
 **Specificity.** Themed selectors are `[data-theme="x"].dark` / `.light` at `(0,2,0)`, which beats a bare mode class at `(0,1,0)`. That is exactly what lets a nested element carry its own `data-theme` plus mode class and resolve its own palette while the host runs a different one.
 
-**State hue separation.** Primary, warning, and destructive must remain mutually distinguishable. Graphite and Ledger separate them by more than 130°; Ember, whose accent is orange, sits at 40° from warning and 40° from destructive — the tightest margin in the system. If Ember's accent moves, re-check both gaps.
+**State hue separation.** Primary, warning, and destructive must remain mutually distinguishable. Graphite separates them by more than 130°, and Sea Glass by 120° to warning and 173° to destructive; Ember, whose accent is orange, sits at 40° from warning and 40° from destructive — the tightest margin in the system. If Ember's accent moves, re-check both gaps. Sea Glass buys its separation with chroma as well as hue: its primary never exceeds ≈0.075, so even its nearest ink (`success` at 155, 45° away) runs at roughly twice its chroma and cannot be mistaken for it.
 
 ### Named Rules
 
-**The Self-Contained Palette Rule.** Every palette+mode block re-specifies every themeable token. A block that silently inherits a colour from another palette is a bug: it breaks nested previews and any future `data-theme` scoping. `--ease-console`, `--text-label-size`, and `--tracking-label` are deliberately global and inherited.
+**The Self-Contained Palette Rule.** Every palette+mode block re-specifies every themeable token. A block that silently inherits a colour from another palette is a bug: it breaks nested previews and any future `data-theme` scoping. `--font-ui`, `--font-data`, `--text-label-size`, and `--tracking-label` are all re-specified in every block for the same reason: a size or tracking tuned for one face is wrong for another. `--ease-console` is the one genuinely global value.
 
 **The Two-Axis Rule.** Mode and palette are independent. No palette is "the dark one" or "the light one" — every palette ships both, so a new palette defines two blocks, never one.

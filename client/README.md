@@ -113,9 +113,9 @@ The UI is one committed visual world — **Graphite Console** — not stock comp
 
 | Palette | `data-theme` | Typeface (UI · mono) | `--radius` | Primary mode |
 | --- | --- | --- | --- | --- |
-| Graphite | `graphite` | Archivo · Spline Sans Mono | `0.25rem` | dark |
-| Ledger | `ledger` | Libre Franklin · Azeret Mono | `0.5rem` | light |
-| Ember | `ember` | Chivo · Chivo Mono | `0.375rem` | dark |
+| Graphite | `graphite` | Geist · Geist Mono | `0.25rem` | dark |
+| Sea Glass | `sea-glass` | Onest · Spline Sans Mono | `0.5rem` | dark |
+| Ember | `ember` | Bricolage Grotesque · Chivo Mono | `0.375rem` | dark |
 
 **Selector contract.** `<html>` carries two independent attributes: a mode class (`.dark` / `.light`) and `data-theme="<id>"`. Themed blocks are written `[data-theme="x"].dark` / `.light` — specificity `(0,2,0)`, so they beat the bare mode class. An unknown or absent id degrades to Graphite, which is why the pre-hydration script in `index.html` applies the stored id verbatim with no whitelist.
 

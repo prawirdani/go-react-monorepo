@@ -1,4 +1,4 @@
-export type ThemeId = "graphite" | "ledger" | "ember"
+export type ThemeId = "graphite" | "sea-glass" | "ember"
 
 export type ThemeDefinition = {
   id: ThemeId
@@ -14,17 +14,17 @@ export const themes: ThemeDefinition[] = [
   {
     id: "graphite",
     label: "Graphite",
-    hint: "Dark instrument console, cool blue accent.",
+    hint: "Cool instrument console, Geist.",
   },
   {
-    id: "ledger",
-    label: "Ledger",
-    hint: "Cool paper, ink rules, soft corners.",
+    id: "sea-glass",
+    label: "Sea Glass",
+    hint: "Muted sea mist, quiet accent, Onest.",
   },
   {
     id: "ember",
     label: "Ember",
-    hint: "Warm near-black steel, ember accent, Chivo.",
+    hint: "Warm steel, ember accent, Bricolage.",
   },
 ]
 
