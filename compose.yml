@@ -165,7 +165,7 @@ services:
     # One-shot: never restart, and a failure must block the app tier.
     restart: "no"
 
-  # Nightly logical backups, offsite-only. Built on the rclone image (Alpine)
+  # Twice-daily logical backups, offsite-only. Built on the rclone image (Alpine)
   # with postgresql18-client from apk — ~100MB vs ~300MB for the postgres image
   # plus apt rclone, and rclone is preinstalled. One busybox-crond job streams
   # `pg_dump -Fc | rclone copyto` straight to a private R2 bucket; there is no
@@ -190,7 +190,7 @@ services:
       # .env sets DB_HOST=localhost for bare-metal; inside compose the database
       # is the `postgres` service.
       DB_HOST: postgres
-      # cron fires in the container's local time; pin it so "03:15" is a known
+      # cron fires in the container's local time; pin it so "03:15" and "15:15" are known
       # wall clock rather than UTC.
       TZ: ${TZ:-Asia/Jakarta}
     # No published ports and no volumes: the sidecar only reaches the database

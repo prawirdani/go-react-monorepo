@@ -175,20 +175,24 @@ Reference: [`BACKUP.md`](./BACKUP.md).
       `BACKUP_R2_BUCKET`, `BACKUP_R2_ACCESS_KEY_ID`,
       `BACKUP_R2_SECRET_ACCESS_KEY` (and `BACKUP_R2_ACCOUNT_ID` if it differs
       from `R2_ACCOUNT_ID`).
-- [ ] Run one manual backup and confirm the dump lands:
+- [ ] Run one manual backup and confirm the dump lands in the bucket:
 
       ```bash
-      docker compose run --rm --entrypoint sh backup /backup-postgres.sh
-      ls -lh backups/daily/
+      docker compose run --rm --entrypoint sh backup -c backup-postgres.sh
+      docker compose run --rm --entrypoint sh backup -c \
+        'set -a; . /etc/backup.env; set +a; rclone ls "r2:$BACKUP_R2_BUCKET/${BACKUP_PREFIX:-postgres}"'
       ```
+- [ ] **Set the R2 lifecycle rule** on the `postgres/` prefix (30 days) — the
+      script never deletes, so without it dumps accumulate forever.
 - [ ] **Run the restore drill** ([`BACKUP.md` → Restore drill](./BACKUP.md#restore-drill)). An
       untested backup is a hope, not a backup.
-- [ ] Confirm the schedule fires: check `docker logs backup` the day after
-      deployment (03:15 container-local; containers run UTC).
+- [ ] Confirm the schedule fires: check `docker logs backup` after the next
+      03:15/15:15 container-local run.
 - [ ] Enable **provider volume snapshots** as the coarse second layer: atomic,
       crash-consistent, no downtime, and it covers what a logical dump cannot
       (whole cluster, roles/globals).
-- [ ] Watch disk: `pg_wal`, `backups/` and Prometheus TSDB all grow.
+- [ ] Watch disk: `pg_wal` and the Prometheus TSDB grow (dumps live in R2, not
+      on the host).
 
 ---
 
@@ -248,7 +252,7 @@ applies to a host with an existing `postgres-data` volume.
 - [ ] Schema: migrations are additive, so an older binary usually runs against a
       newer schema — but verify per release rather than assuming.
 - [ ] Data damage: restore a dump ([`BACKUP.md` → Restore runbook](./BACKUP.md#restore-runbook)).
-      Note the RPO: you can roll back to the last nightly dump, not to
+      Note the RPO: you can roll back to the last dump (up to 12 h old), not to
       "one minute before the bad deploy".
 
 ---
@@ -397,7 +401,7 @@ docker compose up -d --build           # deploy
 docker compose ps                      # service state
 docker compose logs -f caddy           # TLS issuance, access log
 docker compose logs migrate            # migration result
-docker compose run --rm --entrypoint sh backup /backup-postgres.sh   # manual backup
+docker compose run --rm --entrypoint sh backup -c backup-postgres.sh  # manual backup
 ./deployment/caddy/update-cloudflare-ips.sh                          # refresh CF ranges
 ssh -L 3000:127.0.0.1:3000 user@host   # reach Grafana
 ```

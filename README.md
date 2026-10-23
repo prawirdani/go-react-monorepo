@@ -944,8 +944,8 @@ The `make migration:*` targets require the `goose` CLI and read `DB_*` from
 
 ## Backups
 
-Nightly `pg_dump -Fc` with local GFS retention, run by the `backup` sidecar, plus an
-optional offsite copy to a private R2 bucket.
+Twice-daily `pg_dump -Fc` streamed by the `backup` sidecar to a private R2 bucket
+(no local copy), with a 30-day retention window enforced by an R2 lifecycle rule.
 
 Full pipeline, retention table, restore runbook and restore drill:
 [`deployment/BACKUP.md`](./deployment/BACKUP.md).
