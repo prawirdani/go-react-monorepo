@@ -8,6 +8,7 @@ import (
 	"github.com/prawirdani/go-react-monorepo/internal/infrastructure/r2"
 	redisInfra "github.com/prawirdani/go-react-monorepo/internal/infrastructure/redis"
 	"github.com/prawirdani/go-react-monorepo/internal/ports/revocation"
+	"github.com/prawirdani/go-react-monorepo/internal/ports/throttle"
 	"github.com/prawirdani/go-react-monorepo/internal/rbac"
 	"github.com/prawirdani/go-react-monorepo/internal/user"
 	"github.com/redis/go-redis/v9"
@@ -30,6 +31,10 @@ type Container struct {
 
 	// RevocationStore backs the access-token revocation middleware.
 	RevocationStore revocation.Store
+
+	// RateCounter backs the HTTP rate-limit middleware. It is the same Redis
+	// counter the auth service uses for login lockout, namespaced by key.
+	RateCounter throttle.Counter
 }
 
 // NewContainer initializes all dependencies
@@ -86,6 +91,7 @@ func NewContainer(
 		pg:              pg,
 		rdb:             rdb,
 		RevocationStore: revocationStore,
+		RateCounter:     loginCounter,
 		Services: &Services{
 			UserService:  userSvc,
 			AuthService:  authSvc,

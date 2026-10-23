@@ -8,7 +8,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/helmet"
-	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/prawirdani/go-react-monorepo/internal/audit"
 	"github.com/prawirdani/go-react-monorepo/internal/auth"
@@ -26,6 +25,9 @@ type authenticatorMiddleware struct {
 	jwtSecret  string
 	checker    revocation.Checker
 	failClosed bool
+	// userLimit runs per verified user id after authentication, so one account
+	// cannot exhaust the budget of others sharing an ISP address. Nil disables it.
+	userLimit fiber.Handler
 }
 
 func NewAuthenticatorMiddleware(
@@ -38,6 +40,16 @@ func NewAuthenticatorMiddleware(
 		checker:    checker,
 		failClosed: failClosed,
 	}
+}
+
+// WithUserRateLimit installs the per-user limiter that runs once the token is
+// verified and the rbac context is set. It must be attached here rather than as
+// an app-level middleware: the global limiter runs before authentication, when
+// only the client IP is known, and keying on an unverified token would let a
+// caller forge their own budget.
+func (am *authenticatorMiddleware) WithUserRateLimit(h fiber.Handler) *authenticatorMiddleware {
+	am.userLimit = h
+	return am
 }
 
 func (am *authenticatorMiddleware) Authenticate(c fiber.Ctx) error {
@@ -101,17 +113,12 @@ func (am *authenticatorMiddleware) Authenticate(c fiber.Ctx) error {
 	)
 
 	c.SetContext(ctx)
-	return c.Next()
-}
 
-func RateLimit(max int, exp time.Duration) fiber.Handler {
-	return limiter.New(limiter.Config{
-		Max:        max,
-		Expiration: exp,
-		LimitReached: func(c fiber.Ctx) error {
-			return ErrRateLimit
-		},
-	})
+	// Per-user limit, after the token is verified and uid is in the context.
+	if am.userLimit != nil {
+		return am.userLimit(c)
+	}
+	return c.Next()
 }
 
 // SecurityHeaders applies Fiber's helmet middleware with an API-appropriate

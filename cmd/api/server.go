@@ -47,8 +47,15 @@ func NewServer(container *Container, onPostShutdown func(error) error) (*Server,
 		}
 	}))
 
+	rateLimiter := http.NewRateLimiter(container.RateCounter)
+
+	// Coarse IP flood guard for every route, authenticated or not. It runs before
+	// authentication, so IP is the only identity available here; it is set
+	// deliberately loose because many users can share one CGNAT address, and the
+	// per-user limiter below plus the per-email auth throttles carry the real
+	// enforcement. Production only, matching the previous behaviour.
 	if container.Config.IsProduction() {
-		app.Use(http.RateLimit(20, 1*time.Minute))
+		app.Use(rateLimiter.IP("global", 120, 1*time.Minute))
 	}
 
 	app.Use(recoverer.New())
@@ -177,9 +184,14 @@ func (s *Server) setupHandlers() {
 		s.container.Config.Auth.RevocationFailClosed,
 	)
 
+	// Per-user budget on every authenticated route, keyed by the verified uid so
+	// one account on a shared ISP address cannot spend another's allowance.
+	rateLimiter := http.NewRateLimiter(s.container.RateCounter)
+	authMiddleware.WithUserRateLimit(rateLimiter.User("user", 120, 1*time.Minute))
+
 	// Register API routes
 	s.app.Route("/api", func(router fiber.Router) {
-		authHandler.Routes(router, authMiddleware)
+		authHandler.Routes(router, authMiddleware, rateLimiter)
 		userHandler.Routes(router, authMiddleware)
 		auditHandler.Routes(router, authMiddleware)
 	})

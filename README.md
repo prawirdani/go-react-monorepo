@@ -655,10 +655,20 @@ change into an error.
 
 | Scope | Mechanism | Limit |
 | --- | --- | --- |
-| Global | Fiber in-process limiter, **production only** | 20 req/min per IP |
-| `POST /api/auth/login` | Fiber in-process limiter + Redis per-account failure counter | 5 req/min per IP; after `AUTH_LOGIN_MAX_ATTEMPTS` failures the account is locked for `AUTH_LOGIN_LOCKOUT_TTL` and returns `AUTH_ACCOUNT_LOCKED` (429) |
-| `POST /api/auth/register/complete` | Fiber in-process limiter | 5 req/min per IP |
-| `POST /api/auth/password/recover` | Fiber in-process limiter + Redis per-email throttle | 5 req/min per IP + 30 s per email (shared across instances) |
+| Global (all routes) | Redis counter, **production only** | 120 req/min per IP |
+| Authenticated routes | Redis counter, keyed by verified `uid` | 120 req/min per user |
+| `POST /api/auth/login` | Redis counter (IP) + Redis per-account failure counter | 20 req/min per IP; after `AUTH_LOGIN_MAX_ATTEMPTS` failures the account is locked for `AUTH_LOGIN_LOCKOUT_TTL` and returns `AUTH_ACCOUNT_LOCKED` (429) |
+| `POST /api/auth/register/complete` | Redis counter (IP) | 20 req/min per IP |
+| `POST /api/auth/password/recover` | Redis counter (IP) + Redis per-email throttle | 20 req/min per IP + 30 s per email (shared across instances) |
+
+Every limiter counts in Redis, so a budget holds across API replicas instead of
+per process. The IP-keyed limits deliberately guard request volume, not a single
+account: on a shared CGNAT address (common with Indonesian ISPs) one public IP
+can front many users, so they stay loose and the per-email login lockout and
+recovery throttle carry the targeted enforcement. Authenticated traffic is keyed
+by the verified user id once the token is checked, so users sharing an address
+do not spend each other's budget. A limiter error (Redis down) fails open and is
+logged — rate limiting is volume protection, not authorization.
 
 Login runs a dummy bcrypt comparison on unknown emails so response time does not
 reveal whether an account exists, and the failure counter is keyed by a hash of
