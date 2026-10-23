@@ -40,7 +40,11 @@ export function Page(props: PageProps) {
           {title}
         </h1>
         {description && (
-          <p className="max-w-[70ch] text-sm text-muted-foreground">
+          // A rem measure, not `ch`: `ch` is the width of the face's zero, so the
+          // line length drifted with the palette's typeface (Geist's zero is ~16%
+          // wider than Archivo's, which pushed this from ~86 to ~93 characters).
+          // 30rem keeps every palette's description inside the 65-75 band.
+          <p className="max-w-[30rem] text-sm text-muted-foreground">
             {description}
           </p>
         )}

@@ -163,6 +163,8 @@ Type is not shared raw across the three faces: each one has different cap height
 
 \*Rendered width of `ORDERS / RECORDS` at the label setting, measured in Chromium at weight 600. The three land within 1% of each other (124.9 / 124.9 / 124.1px), so a header does not change width when the palette does. Body stays `0.875rem` in all three: at 14px the prose line runs 285 / 289 / 293px — a 3% spread, tighter than the Archivo/Libre Franklin/Chivo set it replaced (≈12%) — so one base size still reads as one system.
 
+**Measure.** Page descriptions cap at `30rem`, never `ch`. A `ch` measure is the width of the face's zero, so it silently re-scales with the palette: Geist's zero is ~16% wider than Archivo's, which took the old `70ch` cap from ≈86 to ≈93 characters and out of the 65–75 band. `30rem` holds every palette inside it.
+
 Sea Glass was picked on its **400**, not its bold: measured from the installed `woff2`, Onest sets a 0.527em x-height on extenders only 1.35× that height (IBM Plex Sans: 0.516em at 1.46×), so the same nominal size carries ~8% more ink per area with the ascenders no longer towering over the lowercase. The bold and semibold steps stay where they were — only the regular needed the swap.
 
 **Weight ceiling.** The faces do not share an upper bound: Geist reaches 900, Onest reaches 900, Bricolage 800. Nothing in the system asks for more than 700 (the label sits at 600, page titles at 600, the heaviest call site is a 700 required-asterisk), so no palette silently clamps. Treat 700 as the shared ceiling: an 800 or 900 treatment would render as different weights per palette.
