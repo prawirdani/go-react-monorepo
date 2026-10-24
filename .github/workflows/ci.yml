@@ -41,7 +41,8 @@ jobs:
           cache: true
 
       # Pin the same major the Makefile and .golangci.yml target (v2).
-      - uses: golangci/golangci-lint-action@v6
+      # Action v7+ is required for golangci-lint v2.
+      - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2
           # The Makefile scopes packages (GO_PACKAGES) so node_modules under
