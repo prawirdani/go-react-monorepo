@@ -342,6 +342,10 @@ func (s *Service) asyncDeleteImage(ctx context.Context, path string, reason stri
 	logger := log.GetFromContext(ctx).With("image_path", path, "reason", reason)
 	//nolint:gosec // G118: the cleanup goroutine intentionally outlives the request context
 	go func() {
+		// Detached goroutine: a panic here has no request-recover frame above it,
+		// so without this it would crash the whole process.
+		defer log.Recover(logger)
+
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 

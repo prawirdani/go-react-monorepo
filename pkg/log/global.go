@@ -2,8 +2,10 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
+	"runtime/debug"
 )
 
 // global is the package-level default logger instance.
@@ -40,6 +42,28 @@ func InfoCtx(ctx context.Context, msg string, args ...any)  { global.InfoCtx(ctx
 func WarnCtx(ctx context.Context, msg string, args ...any)  { global.WarnCtx(ctx, msg, args...) }
 func ErrorCtx(ctx context.Context, msg string, err error, args ...any) {
 	global.ErrorCtx(ctx, msg, err, args...)
+}
+
+// Recover stops a panic from killing the process and logs it with its stack.
+// Defer it as the first statement in any detached goroutine (one whose panic no
+// request-recover middleware would catch):
+//
+//	go func() {
+//		defer log.Recover(logger)
+//		...
+//	}()
+//
+// A nil logger falls back to the package global. It recovers only an actual
+// panic, so a clean return logs nothing.
+func Recover(logger Logger) {
+	p := recover()
+	if p == nil {
+		return
+	}
+	if logger == nil {
+		logger = global
+	}
+	logger.Error("recovered from panic", fmt.Errorf("panic: %v", p), "stack", string(debug.Stack()))
 }
 
 // group represents a nested log object.
