@@ -1,19 +1,18 @@
 # Golang REST API
 
-A production-shaped REST API template in Go. It ships an opinionated clean/onion
-architecture (Handler → Service → Repository), stateless JWT access tokens with
-server-side sessions, a transactional outbox for asynchronous email delivery,
-PostgreSQL via `pgx` with raw SQL, Cloudflare R2 object storage, and Prometheus
-metrics.
+A production-shaped REST API template in Go: clean/onion layering
+(Handler → Service → Repository), stateless JWT access tokens with server-side
+sessions, a transactional outbox for asynchronous email, PostgreSQL via `pgx`
+with raw SQL, Cloudflare R2 object storage, and Prometheus metrics.
 
-The goal is a reference implementation you can rename and extend: strict layer
-boundaries, interface-driven dependencies, manual dependency injection, and
-tests that never touch a real database, Redis, or SMTP server.
+The point is a reference you can rename and extend: strict layer boundaries,
+interface-driven dependencies, manual dependency injection, and tests that never
+touch a real database, Redis, or SMTP server.
 
-The dashboard this API serves lives in the same repository, under [`client/`](./client/README.md): a
-self-contained bun + Turborepo monorepo holding `apps/dashboard` and the packages it shares. One
-commit therefore changes both halves, and when a request/response shape, a JSON field name, or an
-error code moves, the client's zod schemas move with it — see [Client](#client).
+The dashboard this API serves lives in the same repository under
+[`client/`](./client/README.md) — a bun + Turborepo monorepo — so one commit
+changes both halves. A request/response shape, JSON field name, or error code is
+not finished until the client's zod schemas agree; see [Client](#client).
 
 - Module: `github.com/prawirdani/go-react-monorepo`
 - Go: `1.26.5` (see `go.mod`)
@@ -26,26 +25,12 @@ error code moves, the client's zod schemas move with it — see [Client](#client
 - [Highlights](#highlights)
 - [Tech stack](#tech-stack)
 - [Architecture](#architecture)
-  - [Layers and dependency direction](#layers-and-dependency-direction)
-  - [Where interfaces live](#where-interfaces-live)
-  - [Dependency injection](#dependency-injection)
-  - [Request flow](#request-flow)
 - [Project layout](#project-layout)
 - [Client](#client)
 - [Getting started](#getting-started)
 - [Deployment](#deployment)
 - [Configuration](#configuration)
-  - [Startup validation](#startup-validation)
 - [Authentication and sessions](#authentication-and-sessions)
-  - [Access token](#access-token)
-  - [Refresh token and session](#refresh-token-and-session)
-  - [Token delivery and cookies](#token-delivery-and-cookies)
-  - [Access-token revocation](#access-token-revocation)
-  - [Registration (invitation flow)](#registration-invitation-flow)
-  - [Password recovery](#password-recovery)
-  - [Password change](#password-change)
-  - [Throttling](#throttling)
-  - [Passwords and token entropy](#passwords-and-token-entropy)
 - [Authorization (RBAC)](#authorization-rbac)
 - [API documentation](#api-documentation)
 - [Error handling](#error-handling)
@@ -64,23 +49,21 @@ error code moves, the client's zod schemas move with it — see [Client](#client
 ## Highlights
 
 - **Clean/onion layering** with a one-way dependency graph: domain packages know
-  nothing about PostgreSQL, Redis, R2, or Fiber; infrastructure implements the
-  interfaces the domain declares.
-- **Split-token auth**: HS256 JWT access tokens (short TTL) plus opaque,
-  rotating refresh tokens persisted server-side as SHA-256 hashes.
-- **Access-token revocation without stateful tokens**: a Redis marker store
-  invalidates stateless JWTs for logout, single-session revoke, password
-  change/reset, admin wipe, and user deletion.
+  nothing about PostgreSQL, Redis, R2, or Fiber.
+- **Split-token auth**: short-lived HS256 JWT access tokens plus opaque, rotating
+  refresh tokens stored server-side as SHA-256 hashes.
+- **Revocation without stateful tokens**: a Redis marker store invalidates
+  stateless JWTs on logout, session revoke, password change/reset, admin wipe,
+  and user deletion.
 - **Invitation-based registration**: no account row exists until the invitee
-  consumes the emailed, single-use token and sets a password.
-- **Async email delivery** via a transactional outbox polled by the worker:
-  at-least-once delivery with bounded retries and a dead-letter row for the
-  operator to inspect.
+  consumes the emailed single-use token and sets a password.
+- **Async email** via a transactional outbox polled by the worker: at-least-once
+  delivery, bounded retries, and a dead-letter row for the operator.
 - **Audit trail** written inside the same transaction as the change it records.
 - **Typed error kernel** (`apperr`) mapped to HTTP status codes in one place.
 - **Generic list query DSL**: pagination, allow-listed sorting, enum-validated
-  filters, and the applied query echoed back in the response `meta`.
-- **Hermetic unit tests** using `testify` + `mockery`; no real infrastructure.
+  filters, and the applied query echoed back in `meta`.
+- **Hermetic unit tests** with `testify` + `mockery`.
 
 ## Tech stack
 
@@ -90,105 +73,70 @@ error code moves, the client's zod schemas move with it — see [Client](#client
 | HTTP | [Fiber v3](https://github.com/gofiber/fiber) (`github.com/gofiber/fiber/v3` v3.5.0) |
 | Database | PostgreSQL via [pgx v5](https://github.com/jackc/pgx) (raw SQL, no ORM) + [scany/v2](https://github.com/georgysavva/scany) for struct scanning |
 | Migrations | [goose](https://github.com/pressly/goose) (SQL files in `migrations/`) |
-| Cache / throttle | Redis via [go-redis v9](https://github.com/redis/go-redis): `SET NX` throttle, revocation markers |
+| Cache / throttle | Redis via [go-redis v9](https://github.com/redis/go-redis): counters, revocation markers |
 | Object storage | Cloudflare R2 through the AWS SDK v2 S3 client |
 | Auth | [golang-jwt/jwt v5](https://github.com/golang-jwt/jwt), `golang.org/x/crypto/bcrypt` |
 | Validation | [go-playground/validator v10](https://github.com/go-playground/validator) |
 | Config | `.env` via [godotenv](https://github.com/joho/godotenv) |
-| Logging | stdlib `log/slog` and [zerolog](https://github.com/rs/zerolog) behind a swappable `log.Logger` |
+| Logging | [zerolog](https://github.com/rs/zerolog) behind a swappable `log.Logger` |
 | Metrics | [Prometheus client_golang](https://github.com/prometheus/client_golang) |
 | Mail | [gomail.v2](https://pkg.go.dev/gopkg.in/gomail.v2) |
 | Testing | [testify](https://github.com/stretchr/testify) + [mockery](https://github.com/vektra/mockery) |
 | Tooling | [Air](https://github.com/cosmtrek/air) hot reload, [golangci-lint v2](https://github.com/golangci/golangci-lint) |
 
-Direct dependencies (from `go.mod`) include `github.com/aws/aws-sdk-go-v2`
-(plus `config`, `credentials`, `service/s3`), `github.com/georgysavva/scany/v2`,
-`github.com/go-playground/validator/v10`, `github.com/gofiber/fiber/v3`,
-`github.com/golang-jwt/jwt/v5`, `github.com/google/uuid`, `github.com/jackc/pgx/v5`,
-`github.com/joho/godotenv`, `github.com/prometheus/client_golang`,
-`github.com/redis/go-redis/v9`, `github.com/stretchr/testify`, `golang.org/x/crypto`,
-`golang.org/x/sync`, `golang.org/x/text`, `gopkg.in/gomail.v2`, and
-`github.com/rs/zerolog`.
-
-The dashboard under `client/` carries its own stack and toolchain — React 19, Vite, TanStack
-Router/Query/Form, Tailwind with a small design system, and Biome — described in
-[`client/README.md`](./client/README.md). Nothing in this API's tooling depends on it.
+The dashboard under `client/` carries its own stack (React 19, Vite, TanStack
+Router/Query/Form, Tailwind, Biome) — see [`client/README.md`](./client/README.md).
+Nothing in the API's tooling depends on it.
 
 ## Architecture
 
-The codebase follows a clean/onion model. Each layer has a single
-responsibility and may only depend on the layer beneath it.
+Each layer has a single responsibility and may only depend on the layer beneath
+it:
 
 > **Handler** (HTTP only) → **Service** (business logic) → **Repository** (data access)
 
-### Layers and dependency direction
+| Layer | Location | May import |
+| --- | --- | --- |
+| Transport | `internal/transport/http` | Domain packages, `pkg/` |
+| Domain | `internal/auth`, `internal/user`, `internal/audit`, `internal/rbac` | Other domain packages and `internal/ports/*`; **never** `internal/infrastructure/*` or Fiber |
+| Ports | `internal/ports/*` | Stdlib and small value types only |
+| Infrastructure | `internal/infrastructure/*` (`postgres`, `redis`, `r2`) | Domain/ports |
+| Shared | `pkg/*` (`log`, `mailer`, `metrics`, `nullable`, `strings`, `validator`) | Stdlib and third-party libs |
+| Composition roots | `cmd/api`, `cmd/worker`, `cmd/cli` | Everything |
 
-| Layer | Location | Responsibility | May import |
-| --- | --- | --- | --- |
-| Transport | `internal/transport/http` | Parse/validate requests, call services, serialize responses, cookies, middleware | Domain packages, `pkg/` |
-| Domain (entities) | `internal/auth`, `internal/user`, `internal/audit`, `internal/rbac` | Models, business rules, service implementations, consumer-side interfaces, errors | Other domain packages and `internal/ports/*`; **never** `internal/infrastructure/*` or Fiber |
-| Ports | `internal/ports/*` | Interfaces the domain and infrastructure agree on (transactor, storage, throttle, outbox, revocation) | Stdlib and small value types only |
-| Infrastructure | `internal/infrastructure/*` | Concrete implementations: `postgres`, `redis`, `r2` | Domain/ports |
-| Shared | `pkg/*` | Framework-agnostic helpers (`log`, `mailer`, `metrics`, `nullable`, `strings`, `validator`) | Stdlib and third-party libs |
-| Composition roots | `cmd/api`, `cmd/worker`, `cmd/cli` | Wire everything, start processes, expose routes | Everything |
+The rule that keeps this honest: **entity packages import no infrastructure.** A
+service depends on the interface it needs, injected from the composition root.
 
-The rule that keeps this honest: **entity packages import no infrastructure.**
-A service depends on the interface it needs, and the concrete implementation is
-injected from the composition root.
-
-### Where interfaces live
-
-Interfaces are declared next to their consumers, split by use rather than one
-wide interface:
+**Where interfaces live** — next to their consumers, split by use:
 
 - `internal/auth/interfaces.go` — `Repository` (composed from `SessionReader`,
   `SessionWriter`, `TokenReader`, `TokenWriter`), a narrow `UserRepository`, and
   `EventProducer`.
-- `internal/user/repository.go` — `Repository` for user persistence. The service
-  also declares a local `SessionRevoker` (implemented by the auth repository) so
-  the user service can revoke sessions inside its own transaction without an
-  import cycle into `internal/auth`.
-- `internal/ports/repository` — `Transactor`, plus the `Query`/`Filterer`/
-  `Sorter`/`Paginator` contracts used by the generic query builder.
-- `internal/ports/storage` — `Storage`, `File` (implemented by R2 and by the
-  multipart upload adapter).
-- `internal/ports/throttle` — `Throttler`, `Result`, and the `Counter` used for
-  per-account login lockout.
-- `internal/ports/outbox` — `Message`, `Writer`, `Store` (transactional outbox).
-- `internal/ports/revocation` — `Checker`, `Revoker`, and their composition
-  `Store`, implemented by the Redis revocation store.
+- `internal/user/repository.go` — `Repository`, plus a local `SessionRevoker`
+  implemented by the auth repository (no import cycle).
+- `internal/ports/*` — `Transactor` and the `Query`/`Filterer`/`Sorter`/`Paginator`
+  contracts, `Storage`/`File`, `Throttler`/`Result`/`Counter`, the outbox
+  `Message`/`Writer`/`Store`, and revocation `Checker`/`Revoker`/`Store`.
 
-### Dependency injection
+**Dependency injection** — `cmd/api/container.go` is the only place production
+dependencies are assembled: R2 client, Redis throttler and revocation store,
+PostgreSQL repositories, in-memory authorizer, then the services. `server.go`
+builds handlers and middleware and mounts routes. No framework, no service
+locator.
 
-`cmd/api/container.go` is the only place production dependencies are assembled.
-`NewContainer(cfg, pg, rdb)` builds the R2 client, the Redis throttler and
-revocation store, the PostgreSQL repositories, the in-memory authorizer, and
-then the services (`user.Service`, `auth.Service`, `audit.Service`). The
-resulting `*Container` exposes the services plus the revocation store that the
-auth middleware needs. `cmd/api/server.go` then constructs handlers and the
-authenticator middleware and mounts routes. There is no DI framework and no
-service locator.
+**Request flow** for `GET /api/auth/me`:
 
-### Request flow
-
-For an authenticated request such as `GET /api/auth/me`:
-
-1. Global middleware runs, in order: production rate limit (production only),
-   panic recoverer, request-metrics instrumentation, security headers, request
-   logger, request-id, audit-context injection, compression, weak ETag, CORS.
-2. chi-style routing resolves the route; the `authenticatorMiddleware` runs for
-   protected routes. It reads the access token from the `access_token` cookie or
-   `Authorization: Bearer`, verifies the JWT signature/`exp`/`iat`/`sid`, checks
-   the Redis revocation markers, and injects the RBAC actor + session id and
-   request-scoped log fields into the request context.
-3. The handler (`AuthHandler.getCurrentUser`) pulls the actor from context,
-   calls `user.Service.GetUserByID`, and the service enforces
+1. Global middleware: rate limit (production only), panic recoverer, metrics,
+   security headers, request logger, request-id, audit context, compression,
+   ETag, CORS.
+2. The authenticator verifies the JWT signature/`exp`/`iat`/`sid`, checks Redis
+   revocation markers, and injects the RBAC actor, session id, and request-scoped
+   log fields into the context.
+3. The handler calls `user.Service.GetUserByID`, which enforces
    `RequireSelfOr(user.read)`.
-4. The repository calls `db.GetConn(ctx)`, which returns the pool or, inside a
-   transaction, the `pgx.Tx` stored in the context. Inside a transaction the
-   repository adds `FOR UPDATE` to the read.
-5. The handler returns `Body{Data: ...}`; Fiber serializes it. Any returned
-   error goes through the `ErrorHandler` → `ParseError` → status mapping.
+4. The repository calls `db.GetConn(ctx)` — the pool, or the `pgx.Tx` stored in
+   the context (adding `FOR UPDATE` on transactional reads).
+5. The handler returns `Body{Data: ...}`; errors go through `ParseError`.
 
 ## Project layout
 
@@ -198,631 +146,357 @@ cmd/
     main.go            config, postgres, redis, graceful shutdown
     container.go       manual DI wiring
     server.go          middleware chain, routes, health, metrics exporter
-  worker/              background entrypoint (polls the outbox and delivers due messages)
-  cli/                 developer CLI (`permissions` subcommand, extensible)
+  worker/              background entrypoint (polls the outbox)
+  cli/                 developer CLI (`permissions`, `create-admin`)
 
 config/                env-based config structs, parsed and validated at startup
-  config.go            LoadConfig + Validate
-  app.go postgres.go redis.go cors.go auth.go smtp.go r2.go proxy.go
 
 internal/
   apperr/              typed error kernel: Kind, Error, constructors
   audit/               audit Entry, request context, Recorder/Reader, service
   auth/                access tokens, sessions, crypto, models, service
-    mocks/             entity-scoped auth mocks
   user/                user model, service, repository interface, search DSL
-    mocks/             entity-scoped user mocks
   rbac/                roles, permissions, authorizer, actor context
   ports/               interfaces implemented by infrastructure
-    outbox/            transactional outbox port (Message, Writer, Store)
-    repository/        Transactor, Query, Sorting, Pagination
-    revocation/        access-token revocation ports (Checker/Revoker/Store)
-    storage/           object storage (Storage, File)
-    throttle/          request throttling (Throttler, Result, Counter)
+    outbox/ repository/ revocation/ storage/ throttle/
   infrastructure/
-    postgres/          pgx pool, transaction wrapper, query builder, repositories (incl. outbox repo + auth event producer)
+    postgres/          pgx pool, transaction wrapper, query builder, repositories
     redis/             throttle + revocation store
     r2/                Cloudflare R2 storage (S3 API)
-  transport/
-    http/              Fiber handlers, middleware, error normalization, router
-  worker/              outbox poll worker + AuthWorker (renders and sends auth emails)
-  testing/mocks/       shared infrastructure mocks (Transactor, Storage, ...)
+  transport/http/      Fiber handlers, middleware, error normalization, router
+  worker/              outbox poll worker + AuthWorker (renders and sends email)
+  testing/mocks/       shared infrastructure mocks
 
-pkg/                   framework-agnostic helpers
-  log/                 swappable Logger (slog + zerolog adapters), context logging
-  mailer/              gomail wrapper with a bounded send
-  metrics/             Prometheus registry + Fiber instrumentation middleware
-  nullable/            nullable column helper
-  strings/             string helpers
-  validator/           validation kernel over go-playground/validator
+pkg/                   framework-agnostic helpers (log, mailer, metrics,
+                       nullable, strings, validator)
 
 migrations/            goose SQL migrations (additive only)
-deployment/
-  caddy/               Caddyfiles + the dashboard Dockerfile the caddy service builds
-  prometheus/          scrape config
-  grafana/             datasource/dashboard provisioning + api-metrics.json
-
-compose.yml            bare API: api + worker + migrate + postgres + redis + backup (bring your own proxy)
-compose.caddy.yml      self-contained: the above + caddy + prometheus + grafana
+deployment/            caddy/ prometheus/ grafana/ backup/ + runbooks
+compose.yml            bare API: api, worker, migrate, postgres, redis, backup
+compose.caddy.yml      the above + caddy, prometheus, grafana
 Dockerfile             multi-stage build (distroless runtime)
 Makefile               dev/build/test/lint/migration/cli/client targets
-.air.toml              Air config for the API (excludes client/, which HMR rewrites constantly)
-.air.worker.toml       Air config for the worker, same exclusion
-.golangci.yml          golangci-lint v2 config; `make lint` scopes its package paths
+.air.toml .air.worker.toml   Air configs (both exclude client/)
 
-client/                the dashboard: a self-contained bun + Turborepo monorepo
-  apps/dashboard/      Vite + React 19 app (TanStack Router/Query/Form, Biome)
-  packages/            api (fetch client), schemas (zod), queries, ui, utils, i18n, config
-  package.json turbo.json bun.lock
+client/                the dashboard: bun + Turborepo monorepo
+  apps/dashboard/      Vite + React 19 app
+  packages/            api, schemas (zod), queries, ui, utils, i18n, config
   AGENTS.md            conventions for working in the client half
 ```
 
 ## Client
 
-`client/` is a bun 1.4 + Turborepo workspace, independent of the Go module: it has its own
-`package.json` and lockfile, and Turborepo only ever orchestrates packages that have a
-`package.json`, so the API is not a Turbo task and Go is not a Turbo package. The `make client:*`
-targets are the bridge.
-
-The client consumes this API's contract. A change to a request/response shape, a JSON field name
-(`access_token`, `entity_id`, …), or an error code is not finished until the zod schemas in
-`client/packages/schemas` and the client in `client/packages/api` agree with it — that is the whole
-reason the two live in one repository. Error codes and the response envelope are described in
-[Error handling](#error-handling).
-
-Start there with [`client/README.md`](./client/README.md) for the frontend stack and
-[`client/AGENTS.md`](./client/AGENTS.md) for its conventions.
+`client/` is independent of the Go module: its own `package.json` and lockfile,
+so the API is not a Turbo task and Go is not a Turbo package. The `make client:*`
+targets are the bridge. Start with [`client/README.md`](./client/README.md) and
+[`client/AGENTS.md`](./client/AGENTS.md).
 
 ## Getting started
 
-### Prerequisites
+**Prerequisites:** Go `1.26.5`+, PostgreSQL and Redis (`compose.yml` provides
+both), the [goose](https://github.com/pressly/goose) CLI for `make migration:*`,
+optional Air and `golangci-lint` v2, and bun 1.4 for the dashboard.
 
-- Go `1.26.5` or newer (matching `go.mod`).
-- PostgreSQL and Redis. `compose.yml` provides both (nothing on the host is
-  required); for bare-metal `make dev` you run them yourself.
-- The [goose](https://github.com/pressly/goose) CLI on your `PATH` for the
-  `make migration:*` targets.
-- Optional: [Air](https://github.com/cosmtrek/air) for `make dev` /
-  `make dev:worker`, and `golangci-lint` v2 for `make lint`.
-- For the dashboard: bun 1.4. Only needed if you
-  work on `client/`.
-
-### 1. Start the stack
-
-`compose.caddy.yml` is self-contained: Postgres, Redis, the API, the worker,
-Caddy, Prometheus and Grafana all run in the project on one bridge network, with
-no `host.docker.internal` and no host service to start — bring it up with
-`docker compose -f compose.caddy.yml up -d`. The default `compose.yml` is the
-bare API (no bundled proxy, TLS, or dashboards) for fronting with your own proxy.
+**1. Start the stack.** `compose.caddy.yml` is self-contained (Postgres, Redis,
+API, worker, Caddy, Prometheus, Grafana on one bridge network). The default
+`compose.yml` is the bare API for fronting with your own proxy.
 
 ```bash
-docker compose up -d
+docker compose up -d          # add -f compose.caddy.yml for the full stack
 ```
 
-Every service loads `.env` via `env_file:`, so credentials are defined once. A
-service's own `environment:` block still wins where a value must differ — `api`
-and `worker` override `DB_HOST=postgres` and `REDIS_HOST=redis`, so the
-`DB_HOST=localhost` values in `.env` keep working for bare-metal `make dev`.
+Every service loads `.env` via `env_file:`, so credentials live in one place;
+`api` and `worker` override `DB_HOST`/`REDIS_HOST` so `DB_HOST=localhost` keeps
+working for bare-metal `make dev`. That also means **every container, Caddy
+included, receives the whole file, secrets and all** — the deliberate trade-off
+for a single source of credentials. Narrow it by dropping `env_file:` from a
+service and listing only what it needs under `environment:`. Caddy serves the API
+on `:8080`, Grafana on `:3000` (`GRAFANA_ADMIN_USER`/`_PASSWORD`, default
+`admin`); Prometheus and the datastores stay internal. Postgres and Redis data
+live in named volumes — `docker compose down -v` resets them.
 
-Because `env_file:` injects the whole file, **every container — Caddy included —
-receives all of it, secrets included**. That is the deliberate trade-off for a
-single source of credentials. To narrow it, drop `env_file:` from a service and
-list only what it needs under `environment:`; Caddy, for instance, needs just
-`SITE_ADDRESS` and `APP_PORT`, and Prometheus needs nothing.
-Caddy proxies `http://localhost:8080` to the API, Grafana is on
-`http://localhost:3000` (`GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD`, both
-`admin` by default), and
-Prometheus and the datastores stay internal to the network.
-
-Postgres and Redis data live in named volumes (`postgres-data`, `redis-data`);
-`docker compose down -v` resets them.
-
-### 2. Configure the environment
+**2. Configure the environment.**
 
 ```bash
 cp .env.example .env
-# edit .env — at minimum set AUTH_JWT_SECRET (>= 32 chars) and DB_* values
+# at minimum: AUTH_JWT_SECRET (>= 32 chars) and DB_*
 ```
 
 `config.LoadConfig()` calls `godotenv.Load()`, so a local `.env` is read
-automatically in development. `AUTH_JWT_SECRET` is required and must be at
-least 32 characters; startup fails otherwise.
+automatically in development.
 
-### 3. Apply migrations
+**3. Apply migrations.** With compose there is nothing to run by hand: the
+one-shot `migrate` service applies goose migrations once Postgres is healthy, and
+both API and worker wait on `service_completed_successfully`, so a failed
+migration blocks the app tier instead of serving a half-built schema. For
+bare-metal, run `make migration:up`.
 
-With compose there is nothing to run by hand: the one-shot `migrate` service
-applies goose migrations once Postgres is healthy, and both the API and the
-worker wait for it to complete (`service_completed_successfully`). A failed
-migration therefore blocks the app tier instead of letting it serve against a
-half-built schema.
-
-For bare-metal development, run goose directly:
+**4. Run the API and the worker** — separate processes:
 
 ```bash
-make migration:up
-```
-
-Migrations are additive only; see [Database and migrations](#database-and-migrations).
-
-### 4. Run the API and the worker
-
-They are separate processes:
-
-```bash
-make dev          # API server with hot reload (Air)
+make dev          # API with hot reload (Air)
 make dev:worker   # outbox poll worker, hot reload (Air)
 ```
 
-The worker opens its own PostgreSQL pool and does not block startup on Postgres:
-the poll loop retries its reads until the database is reachable.
+The worker opens its own pool and does not block startup on Postgres; the poll
+loop retries until the database is reachable.
 
-### 5. Build a binary
+**5. Build a binary.**
 
 ```bash
 make build        # CGO_ENABLED=0 GOOS=linux -> ./bin/api and ./bin/worker
 make run          # run ./bin/api
 ```
 
-`make build` produces static Linux binaries at `./bin/api` and `./bin/worker`;
-the `Dockerfile` copies both into a distroless runtime image. The API is the
-default `CMD`; the `worker` compose service overrides it with `./worker`.
+The `Dockerfile` copies both into a distroless runtime image; the API is the
+default `CMD`, the `worker` service overrides it.
 
-### 6. Run the dashboard (optional)
-
-The dashboard is a separate process with its own toolchain, so it gets its own terminal:
+**6. Run the dashboard (optional).**
 
 ```bash
 make client:install                                      # bun install, once
 cp client/apps/dashboard/example.env client/apps/dashboard/.env
-make client:dev                                          # Vite on :$VITE_PORT, default 3001
+make client:dev                                          # Vite on :$VITE_PORT
 ```
 
-It talks to the API at a relative `/api`, and in development Vite proxies that to
-`VITE_PROXY_TARGET` from `client/apps/dashboard/.env` (default `http://localhost:8080`). That is why
-`VITE_API_URL` stays empty locally — same origin, no CORS to configure. Set it to an absolute
-origin only when the API is deployed on a different domain; `example.env` documents both cases.
-
-In production the dashboard is built and served by the Caddy image: it is compiled from
-`client/` at image build time and served at `/srv`, so it sits at the same origin as
-`/api` and gets the same TLS and Cloudflare treatment. The client is not hot-reloaded —
-a frontend change needs a rebuild of the caddy image.
+It talks to a relative `/api`; in development Vite proxies that to
+`VITE_PROXY_TARGET` (default `http://localhost:8080`), which is why `VITE_API_URL`
+stays empty locally — same origin, no CORS. In production Caddy builds and serves
+the dashboard at `/srv`, so a frontend change needs a rebuild of the caddy image.
 
 ## Deployment
 
-Single-host Docker Compose + Caddy. The step-by-step checklist and the deployment
-reference material (TLS/domain, production flip, public surface, Cloudflare) live in
+Single-host Docker Compose + Caddy. The step-by-step checklist and reference
+material (TLS/domain, production flip, public surface, Cloudflare) live in
 [`deployment/DEPLOYMENT.md`](./deployment/DEPLOYMENT.md).
 
-The compose stack is deployment-ready as-is; production only changes the Caddy site
-address, the published ports, and `APP_ENV`. Caddy builds and serves the dashboard, so
-a frontend change needs a rebuild of the caddy image.
+The stack is deployment-ready as-is; production changes only the Caddy site
+address, the published ports, and `APP_ENV`.
 
 ## Configuration
 
 All configuration comes from environment variables, optionally loaded from
-`.env`. Parsing happens in `config/*.go`; `config.LoadConfig()` parses every
-section and then calls `Config.Validate()`.
+`.env`. Parsing happens in `config/*.go`; `LoadConfig()` parses every section then
+calls `Validate()`.
 
 ### Environment variables
 
-**Application**
+[`.env.example`](./.env.example) is the canonical, commented list — copy it to
+`.env` and edit. The settings whose meaning is not obvious from the name:
 
-| Variable | Purpose | Code default | Notes |
-| --- | --- | --- | --- |
-| `APP_NAME` | Service name | empty | Informational |
-| `APP_VERSION` | Version string | empty | Label on `app_info` metric |
-| `APP_PORT` | API listen port | empty (0) | Non-integer aborts startup |
-| `APP_ENV` | Environment | empty | Must be `dev` or `prod`; anything else fails validation |
-| `APP_INTERNAL_MODE` | Registration becomes admin-only | `false` | Parsed with `strconv.ParseBool` |
-| `METRICS_ENABLED` | Serve the `/metrics` sidecar | `APP_ENV=prod` | Unset follows the environment; an explicit `true`/`false` wins. Compose sets it so the local stack is scrapable |
-
-**PostgreSQL**
-
-| Variable | Purpose | Code default | Notes |
-| --- | --- | --- | --- |
-| `DB_USER` | DB user | empty | |
-| `DB_PASSWORD` | DB password | empty | |
-| `DB_HOST` | DB host | empty | Compose overrides this to `postgres` |
-| `DB_PORT` | DB port | empty (0) | |
-| `DB_NAME` | DB name | empty | |
-| `DB_MINCONNS` | Pool minimum connections | `0` | Must be `>= 0` and `<= DB_MAXCONNS` |
-| `DB_MAXCONNS` | Pool maximum connections | **required** | Must be `> 0` and `<= 2147483647` |
-| `DB_WORKER_MAXCONNS` | Worker pool maximum connections | empty (0) | `0` shares `DB_MAXCONNS`; must be `<= DB_MAXCONNS`. The worker pool is created without a startup ping |
-| `DB_MAXCONN_LIFETIME` | Max connection lifetime | empty (0) | Go duration (e.g. `60m`); zero keeps the pgx default |
-
-The pool also hardcodes `MaxConnIdleTime = 5m` and `HealthCheckPeriod = 1m`;
-these are not configurable.
-
-**Redis**
-
-| Variable | Purpose | Code default | Notes |
-| --- | --- | --- | --- |
-| `REDIS_HOST` | Redis host | empty | Compose overrides this to `redis` |
-| `REDIS_PORT` | Redis port | empty (0) | |
-| `REDIS_PASSWORD` | Redis password | empty | |
-
-The Redis client always uses DB index `0` and there is no connection-pool size
-setting — neither is configurable through env.
-
-**CORS and proxy**
-
-| Variable | Purpose | Code default | Notes |
-| --- | --- | --- | --- |
-| `CORS_ORIGINS` | Comma-separated allowed origins | empty | With credentials enabled, `*` or an unparseable origin fails startup |
-| `CORS_CREDENTIALS` | Send credentials | `false` | |
-| `TRUST_PROXY` | Resolve the client IP from `X-Forwarded-For` when behind a reverse proxy | `false` | Trusts the proxy by peer class (private/loopback/unix socket), not an address list; when false the socket peer is used, so a directly-exposed API cannot be spoofed |
-| `RATE_LIMIT_GLOBAL_MAX` | Per-IP budget on every route (production only) | `300` | Redis-counted, holds across replicas |
-| `RATE_LIMIT_USER_MAX` | Per-user budget on authenticated routes | `120` | Keyed by verified `uid` |
-| `RATE_LIMIT_AUTH_MAX` | Per-IP budget on the unauthenticated auth routes | `20` | Login lockout/recovery throttle handle per-account abuse |
-| `RATE_LIMIT_WINDOW` | Fixed window all budgets reset on | `1m` | |
-
-**Auth**
-
-| Variable | Purpose | Code default | Notes |
-| --- | --- | --- | --- |
-| `AUTH_JWT_SECRET` | HS256 signing key | **required** | Must be at least 32 characters; rotating it invalidates all access tokens |
-| `AUTH_JWT_TTL` | Access-token lifetime | `15m` | Short TTL bounds revocation exposure (revocation checks fail open) |
-| `AUTH_REVOCATION_FAIL_CLOSED` | Deny access when the revocation store errors | `false` | When false the middleware fails open and logs a warning |
-| `AUTH_SESSION_TTL` | Session / refresh-token lifetime | empty (0) | `.env.example` ships `168h` (7 days) |
-| `AUTH_PASSWORD_RECOVERY_TOKEN_TTL` | Reset-token lifetime | `5m` | `.env.example` ships `15m`; the short code default limits `?token=` URL exposure |
-| `AUTH_REGISTRATION_TOKEN_TTL` | Registration-token lifetime | `15m` | Same URL-exposure reasoning |
-| `AUTH_LOGIN_MAX_ATTEMPTS` | Failed logins allowed per account before lockout | `5` | Counted in Redis per normalized email hash; unknown emails count too, so the lockout cannot reveal which addresses exist |
-| `AUTH_LOGIN_LOCKOUT_TTL` | Lockout window for one account | `15m` | Also the counter's TTL; failures do not extend the window |
-| `AUTH_RESET_PASSWORD_FORM_ENDPOINT` | Web UI URL for the reset form | empty | Used to build the reset link |
-| `AUTH_COMPLETE_REGISTRATION_FORM_ENDPOINT` | Web UI URL for the password-creation form | empty | Used to build the invite link |
-
-**SMTP**
-
-| Variable | Purpose | Code default | Notes |
-| --- | --- | --- | --- |
-| `SMTP_HOST` | SMTP host | empty | |
-| `SMTP_PORT` | SMTP port | empty (0) | |
-| `SMTP_SENDER_NAME` | `From` header | empty | e.g. `Example <example@mail.com>` |
-| `SMTP_AUTH_EMAIL` | SMTP username | empty | |
-| `SMTP_AUTH_PASSWORD` | SMTP password | empty | |
-
-**Cloudflare R2**
-
-| Variable | Purpose | Code default | Notes |
-| --- | --- | --- | --- |
-| `R2_BUCKET_URL` | Public bucket base URL | empty | Leave empty for a private bucket |
-| `R2_BUCKET` | Bucket name | empty | |
-| `R2_ACCOUNT_ID` | Cloudflare account id | empty | Builds the R2 S3 endpoint |
-| `R2_ACCESS_KEY_ID` | R2 access key | empty | |
-| `R2_ACCESS_KEY_SECRET` | R2 secret | empty | |
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `APP_ENV` | empty | `dev` or `prod`; anything else fails validation |
+| `APP_INTERNAL_MODE` | `false` | Registration becomes admin-only (`auth.register-user`) |
+| `METRICS_ENABLED` / `METRICS_PORT` | `APP_ENV=prod` / `APP_PORT + 1` | Unset follows the environment; compose pins `9091` |
+| `TRUST_PROXY` | `false` | Read the client IP from `X-Forwarded-For`. Trusts the proxy by peer class (private/loopback/unix socket), not an address list. Leave false for a directly-reachable API: there the socket peer is used, so a header cannot be forged |
+| `RATE_LIMIT_GLOBAL_MAX` / `_USER_MAX` / `_AUTH_MAX` / `_WINDOW` | `300` / `120` / `20` / `1m` | See [Throttling](#throttling) |
+| `CORS_ORIGINS` / `CORS_CREDENTIALS` | empty / `false` | With credentials, `*` or an unparseable origin fails startup |
+| `AUTH_JWT_SECRET` | **required** | `>= 32` chars; rotating it invalidates all access tokens |
+| `AUTH_JWT_TTL` / `AUTH_SESSION_TTL` | `15m` / empty | Short access TTL bounds revocation exposure |
+| `AUTH_REVOCATION_FAIL_CLOSED` | `false` | When false a store error fails open and logs a warning |
+| `AUTH_LOGIN_MAX_ATTEMPTS` / `AUTH_LOGIN_LOCKOUT_TTL` | `5` / `15m` | Per-account lockout, counted by hashed email |
+| `DB_MINCONNS` / `DB_MAXCONNS` / `DB_WORKER_MAXCONNS` | `0` / **required** / `0` | `DB_WORKER_MAXCONNS=0` shares `DB_MAXCONNS`; the worker pool is created without a startup ping |
 
 ### Startup validation
 
-Validation is split across the section parsers and `Config.Validate()`:
+| Check | Where |
+| --- | --- |
+| `APP_ENV` is `dev` or `prod` | `Config.Validate()` |
+| `AUTH_JWT_SECRET` length `>= 32` | `Config.Validate()` |
+| `CORS_CREDENTIALS=true` with `*` or an invalid origin | `Config.Validate()` |
+| `DB_MAXCONNS > 0` and `<= MaxInt32` | `Postgres.Parse()` |
+| `DB_MINCONNS` within `[0, DB_MAXCONNS]` | `Postgres.Parse()` |
+| `APP_PORT` is an integer | `App.Parse()` |
 
-| Check | Where | Failure |
-| --- | --- | --- |
-| `APP_ENV` is `dev` or `prod` | `Config.Validate()` | startup error |
-| `AUTH_JWT_SECRET` length `>= 32` | `Config.Validate()` | startup error |
-| `CORS_CREDENTIALS=true` with a `*` or invalid origin | `Config.Validate()` | startup error |
-| `DB_MAXCONNS > 0` and `<= MaxInt32` | `Postgres.Parse()` | startup error |
-| `DB_MINCONNS` within `[0, DB_MAXCONNS]` | `Postgres.Parse()` | startup error |
-| `APP_PORT` is an integer | `App.Parse()` | startup error |
-
-Duration and integer env vars that fail to parse are silently ignored (the
-field keeps its default) — except `APP_PORT`, which returns the parse error.
+All of these abort startup. Duration and integer env vars that fail to parse are
+silently ignored (the field keeps its default) — except `APP_PORT`.
 
 ## Authentication and sessions
 
-The auth design is a split-token scheme: short-lived stateless JWT access
-tokens plus long-lived opaque refresh tokens backed by server-side session rows.
+Split-token scheme: short-lived stateless JWT access tokens plus long-lived
+opaque refresh tokens backed by server-side session rows.
 
-### Access token
+**Access token** — HS256 with `AUTH_JWT_SECRET`; claims `sub`, `sid`, `role`,
+`iat`, `exp`. `exp` is required, since a token without one makes revocation TTLs
+meaningless. A missing `iat`/`sid`, an unknown signing method, or a bad signature
+is `AUTH_INVALID`; expired is `AUTH_EXPIRED`. Both map to **401**, never 500.
+Delivered in the `access_token` cookie or `Authorization: Bearer`, and echoed in
+the login/refresh body.
 
-- JWT signed with **HS256** using `AUTH_JWT_SECRET`.
-- Claims: `sub` (user id, parsed into `UserID`), `sid` (session id), `role`, plus
-  registered `iat` and `exp`.
-- `exp` is required (`jwt.WithExpirationRequired()`) — a token without an
-  expiry would make revocation TTLs meaningless.
-- A token missing `iat` or `sid`, or with an unparseable/unknown signing method,
-  is rejected as `AUTH_INVALID`. Expired tokens are rejected as `AUTH_EXPIRED`.
-  Both map to **401**, never 500.
-- Delivered in the `access_token` cookie or the `Authorization: Bearer` header.
-  It is also echoed in the login/refresh response body.
+**Refresh token and session** — 256-bit opaque, `rt_` prefixed; only its SHA-256
+hash is stored (`sessions.refresh_token_hash`, unique). A session row holds
+`user_id`, `refresh_token_hash`, `user_agent`, `ip_addr`, timestamps, and
+`revoked_at`. Each refresh mints a new access **and** refresh token, replaces the
+hash, and updates `accessed_at`/`ip_addr`/`user_agent` in one transaction; the old
+token dies. Presenting a refresh token whose session is already revoked logs a WARN
+reuse signal and returns `AUTH_INVALID_SESSION` (401). Expired and revoked sessions
+are indistinguishable.
 
-### Refresh token and session
+**Cookies** — login and refresh set `access_token` and `refresh_token` with
+`HttpOnly` always, `Secure` in production, `SameSite=Lax`, `Path=/`, and an
+`Expires` matching the token TTL. Logout clears both.
 
-- 256-bit random opaque token, base64url-encoded with an `rt_` prefix.
-- Only its SHA-256 hash is stored, in `sessions.refresh_token_hash` (unique).
-- A session row holds `user_id`, `refresh_token_hash`, `user_agent`, `ip_addr`,
-  `created_at`, `accessed_at`, `expires_at`, and `revoked_at`.
-- **Rotation**: each refresh mints a new access token and a new refresh token,
-  replaces the hash, and updates `accessed_at`/`ip_addr`/`user_agent` in one
-  transaction. The old refresh token becomes unusable.
-- **Reuse detection**: presenting a refresh token whose session is already
-  revoked logs a WARN reuse signal (with user/session ids) and returns
-  `AUTH_INVALID_SESSION` (401). There is no token-family history tracking.
-- Expired sessions and revoked sessions are both rejected with the same 401.
-
-### Token delivery and cookies
-
-Login and refresh set both cookies via `setTokenCookies`:
-
-| Attribute | Value |
-| --- | --- |
-| Names | `access_token`, `refresh_token` |
-| `HttpOnly` | always on |
-| `Secure` | production only |
-| `SameSite` | `Lax` |
-| `Path` | `/` |
-| `Expires` | access = now + `AUTH_JWT_TTL`; refresh = now + `AUTH_SESSION_TTL` |
-
-Logout clears both cookies.
-
-### Access-token revocation
-
-Access tokens are stateless, so a signature-valid token would otherwise stay
-valid until it expires. To revoke before expiry, a Redis store holds two kinds
-of **marker** (never a raw JWT or secret):
+**Revocation.** Access tokens are stateless, so a Redis store holds two kinds of
+marker (never a raw JWT or secret):
 
 | Key | Value | Written by |
 | --- | --- | --- |
 | `revoked:user:<uid>` | `UnixNano` watermark of the revocation instant | user deletion, admin bulk wipe, password change/reset |
 | `revoked:sess:<sid>` | `"1"` (presence) | logout, single-session revoke |
 
-Both markers expire after `AUTH_JWT_TTL + 5s` (`revocationSkew`). If the
-access-token TTL is non-positive the store treats tokens as already expired and
-skips writes.
+Both expire after `AUTH_JWT_TTL + 5s`. The check runs **after**
+`VerifyAccessToken` succeeds — never before, since unverified claims are
+attacker-controlled — as a single `MGET` bounded by 300 ms. A session marker wins;
+otherwise a token is revoked when `iat <= watermark + 5s`, which over-revokes
+across clock skew (the safe direction) and briefly rejects a login within 5 s of a
+revocation. A corrupt watermark errors rather than failing open.
 
-The auth middleware's check runs **after** `VerifyAccessToken` succeeds — never
-before, since unverified claims are attacker-controlled — and performs a single
-`MGET` of both keys, bounded by a **300 ms** timeout:
+Session rows are revoked inside the transaction and the marker written after
+commit: best-effort (logged, request still succeeds) for logout and password
+change/reset, a returned error for explicit session/user revokes.
 
-- Session marker present → revoked (session precedence).
-- Otherwise the user watermark is parsed and compared: a token is revoked when
-  `iat <= watermark + 5s`. Extending the revoked window past the watermark
-  compensates for cross-instance clock skew and over-revokes, the safe
-  direction. A brand-new login within 5 s of a revocation is briefly rejected
-  too — deliberate.
-- A corrupt or non-positive watermark returns an error rather than silently
-  failing open.
+**Registration (invitation).** `POST /api/auth/register` with `name` + `email`
+rejects an existing email (409), revokes any prior outstanding token (latest
+invite wins), and stores a single-use token (256-bit, `regt_`, SHA-256,
+`AUTH_REGISTRATION_TOKEN_TTL`) with an audit row and the outbox event in one
+transaction. `GET /api/auth/register/:token` exposes expiry/`used_at`/`revoked_at`.
+`POST /api/auth/register/complete` validates the token (any bad state → 401
+`AUTH_INVALID_REGISTRATION_TOKEN`), then hashes the password, creates the user,
+and marks the token used — one transaction. The password is hashed only after the
+token validates, so garbage cannot force a bcrypt on an unauthenticated route.
+With `APP_INTERNAL_MODE=true` the route is authenticated and additionally requires
+`auth.register-user`.
 
-Revoked tokens and fail-closed store errors both produce **401**
-(`AUTH_INVALID_SESSION`). Expired and malformed tokens are also 401 but carry
-their own codes (`AUTH_EXPIRED`, `AUTH_INVALID`), so the HTTP status never
-reveals whether a token was revoked even though the `code` names the reason. On
-a store error the middleware logs a WARN and **fails open by default**, because
-the short access-token TTL bounds the exposure; set
-`AUTH_REVOCATION_FAIL_CLOSED=true` to deny instead.
+**Password recovery.** `POST /api/auth/password/recover` runs a 30 s per-email
+Redis throttle, stores a hashed 256-bit token with a TTL plus an audit row, and
+enqueues the outbox event — one transaction. `PUT /api/auth/password/reset`
+consumes the token, updates the password, revokes all sessions, audits, and waters
+the user's access tokens after commit. Unknown email → 404, kept deliberately.
 
-Where revocation is triggered:
-
-| Action | Session rows | Access-token marker |
-| --- | --- | --- |
-| `DELETE /api/auth/logout` | revoke current session in tx | session marker after commit (best-effort; failure logged, still 200) |
-| `DELETE /api/auth/sessions/:id` | revoke one session in tx | session marker after commit; failure is returned |
-| `DELETE /api/auth/sessions/users/:userID` | revoke all user sessions in tx | user watermark after commit; failure is returned |
-| `DELETE /api/users/:id` | revoke all user sessions in tx | user watermark after commit; failure is returned |
-| `PUT /api/auth/password/change` | revoke all user sessions in tx | user watermark after commit (best-effort; still succeeds) |
-| `PUT /api/auth/password/reset` | revoke all user sessions in tx | user watermark after commit (best-effort; still succeeds) |
-
-### Registration (invitation flow)
-
-Registration is invitation-based; no account exists until the invitee sets a
-password.
-
-1. `POST /api/auth/register` with `name` + `email`.
-   - If the email already exists → `user.ErrEmailConflict` (409).
-   - Any prior outstanding token for the email is revoked (latest invite wins;
-     `revoked_at` is distinct from `used_at`).
-   - A single-use token is created (256-bit, `regt_` prefix, SHA-256 stored,
-     `AUTH_REGISTRATION_TOKEN_TTL`) and committed with an audit row.
-2. The event is enqueued to the transactional outbox in the same transaction
-   (it commits or rolls back with the token). The worker polls the outbox under
-   the `email.user_registration` topic and renders and sends the completion link.
-3. `GET /api/auth/register/:token` lets the completion form inspect expiry,
-   `used_at`, and `revoked_at`.
-4. `POST /api/auth/register/complete` with `token` + `password` validates the
-   token (missing/expired/revoked/used all return **401**
-   `AUTH_INVALID_REGISTRATION_TOKEN`), hashes the password, creates the user,
-   and marks the token used — all in one transaction. The password is hashed
-   only after the token validates, so a garbage token cannot force an expensive
-   bcrypt on this unauthenticated route.
-
-When `APP_INTERNAL_MODE=true`, `POST /api/auth/register` is mounted behind
-authentication and `auth.Service.Register` additionally requires the
-`auth.register-user` permission (admin/system). The created user gets the
-default `user` role and `email_verified_at` set.
-
-### Password recovery
-
-1. `POST /api/auth/password/recover` with `email` → per-email Redis throttle
-   (30 s) → looks up the user.
-2. A 256-bit opaque token is generated, its SHA-256 hash stored in
-   `password_recovery_tokens` with a TTL (`AUTH_PASSWORD_RECOVERY_TOKEN_TTL`),
-   and an audit row is written in the same transaction.
-3. An `email.password_recovery` event is enqueued to the outbox in the same
-   transaction; the worker polls it and sends the reset email.
-4. `GET /api/auth/password/recover/:token` exposes status.
-5. `PUT /api/auth/password/reset` with `token` + `new_password` consumes the
-   token, updates the password, revokes all sessions, writes an audit row, and
-   (after commit) waters the user's access tokens. A used/expired/unknown token
-   returns **401**.
-
-An unknown email propagates `apperr.ErrNotFound` → **404** (enumeration-as-feature,
-kept deliberately).
-
-### Password change
-
-`PUT /api/auth/password/change` (authenticated) verifies the current password,
-updates the password, revokes **all** sessions for the user (including the
-current one), and writes an audit row. The user watermark is written after
-commit as best-effort, so a Redis failure does not turn a completed password
-change into an error.
+**Password change.** `PUT /api/auth/password/change` verifies the current
+password, revokes **all** sessions (including the current one), and audits. The
+watermark is written after commit as best-effort, so a Redis failure does not turn
+a completed change into an error.
 
 ### Throttling
 
-| Scope | Mechanism | Limit (default, configurable) |
+| Scope | Mechanism | Limit (default) |
 | --- | --- | --- |
 | Global (all routes) | Redis counter, **production only** | 300 req/min per IP (`RATE_LIMIT_GLOBAL_MAX`) |
 | Authenticated routes | Redis counter, keyed by verified `uid` | 120 req/min per user (`RATE_LIMIT_USER_MAX`) |
-| `POST /api/auth/login` | Redis counter (IP) + Redis per-account failure counter | 20 req/min per IP (`RATE_LIMIT_AUTH_MAX`); after `AUTH_LOGIN_MAX_ATTEMPTS` failures the account is locked for `AUTH_LOGIN_LOCKOUT_TTL` and returns `AUTH_ACCOUNT_LOCKED` (429) |
-| `POST /api/auth/register/complete` | Redis counter (IP) | 20 req/min per IP (`RATE_LIMIT_AUTH_MAX`) |
-| `POST /api/auth/password/recover` | Redis counter (IP) + Redis per-email throttle | 20 req/min per IP (`RATE_LIMIT_AUTH_MAX`) + 30 s per email (shared across instances) |
+| `POST /api/auth/login` | Redis counter (IP) + per-account failure counter | 20 req/min per IP (`RATE_LIMIT_AUTH_MAX`); after `AUTH_LOGIN_MAX_ATTEMPTS` failures the account locks for `AUTH_LOGIN_LOCKOUT_TTL` → `AUTH_ACCOUNT_LOCKED` (429) |
+| `POST /api/auth/register/complete` | Redis counter (IP) | 20 req/min per IP |
+| `POST /api/auth/password/recover` | Redis counter (IP) + per-email throttle | 20 req/min per IP + 30 s per email |
 
-All budgets reset on `RATE_LIMIT_WINDOW` (default `1m`).
-
-Every limiter counts in Redis, so a budget holds across API replicas instead of
-per process. The IP-keyed limits deliberately guard request volume, not a single
-account: on a shared CGNAT address (common with Indonesian ISPs) one public IP
-can front many users, so they stay loose and the per-email login lockout and
-recovery throttle carry the targeted enforcement. Authenticated traffic is keyed
-by the verified user id once the token is checked, so users sharing an address
-do not spend each other's budget. A limiter error (Redis down) fails open and is
+All budgets reset on `RATE_LIMIT_WINDOW` (default `1m`) and count in Redis, so
+they hold across replicas. IP-keyed limits guard request *volume*, not one
+account: on a shared CGNAT address one IP can front many users, so they stay loose
+and the per-email login lockout and recovery throttle carry the targeted
+enforcement. Authenticated traffic is keyed by the verified uid, so users sharing
+an address do not spend each other's budget. A limiter error fails open and is
 logged — rate limiting is volume protection, not authorization.
 
-Login runs a dummy bcrypt comparison on unknown emails so response time does not
-reveal whether an account exists, and the failure counter is keyed by a hash of
-the normalized email, so unknown addresses are counted the same way. A locked
-account is rejected before any bcrypt work. The counter fails open: if Redis is
-unavailable the login proceeds and the error is logged.
+Login runs a dummy bcrypt compare on unknown emails so timing does not reveal
+whether an account exists, and counts failures by hashed email so unknown
+addresses are counted the same way. A locked account is rejected before any bcrypt
+work.
 
-### Passwords and token entropy
-
-- Passwords are hashed with **bcrypt cost 12**.
-- Password inputs validate `min=8,max=72` bytes; bcrypt truncates beyond 72.
-- Refresh tokens: 32 random bytes (`rt_` prefix).
-- Registration tokens: 32 random bytes (`regt` prefix).
-- Password-recovery tokens: 32 random bytes (no prefix).
+**Passwords and entropy** — bcrypt cost 12; inputs validate `min=8,max=72` bytes
+(bcrypt truncates beyond 72); refresh, registration, and recovery tokens are 32
+random bytes.
 
 ## Authorization (RBAC)
 
-Authorization is role-based, code-defined, and in-memory. There are no
-permission tables to keep in sync; each entity declares its own role→permission
-table and registers it at startup from its `NewService` constructor.
+Role-based, code-defined, and in-memory — no permission tables to keep in sync.
+Each entity declares its own role→permission table and registers it from its
+`NewService` constructor.
 
-- Roles (`rbac.Role`): `admin`, `user`, `system` (background/worker actions).
-  The `users.role` column has a SQL `CHECK` constraint as a backstop.
-- Permissions use the `"<entity>.<verb>"` grammar, e.g. `user.update`.
-- Services enforce with `Require(ctx, perms...)` (the role must hold **all**
-  given permissions) or `RequireSelfOr(ctx, userID, perm)` (passes if the actor
-  is the target user, otherwise falls back to the permission check). The actor
-  (`UserID`, `Role`) and `SessionID` are injected into the request context by the
-  authenticator middleware.
-- `RoleUser` holds no permissions in any table; a plain user reaches their own
-  record only through `RequireSelfOr`.
+- Roles: `admin`, `user`, `system` (background/worker actions). `users.role` has a
+  SQL `CHECK` constraint as a backstop.
+- Permissions use the `"<entity>.<verb>"` grammar (`user.update`,
+  `auth.revoke-user-sessions`, …). The authoritative list is the registered tables
+  in `internal/*/service.go`.
+- Services enforce with `Require(ctx, perms...)` (must hold **all**) or
+  `RequireSelfOr(ctx, userID, perm)` (self, else the permission check). The
+  authenticator injects the actor (`UserID`, `Role`) and `SessionID`.
+- `RoleUser` holds no permissions anywhere; a plain user reaches their own record
+  only through `RequireSelfOr`.
 
-The complete permission set and its grants:
-
-| Permission | RoleAdmin | RoleSystem | RoleUser | Enforced by |
-| --- | :---: | :---: | :---: | --- |
-| `user.read` | yes | yes | no | `ListUser` (list) and `GetUserByID`/`GetUserByEmail` (`RequireSelfOr`) |
-| `user.update` | yes | yes | no | `UpdateUser`, profile-picture change/delete (`RequireSelfOr`) |
-| `user.delete` | yes | yes | no | `DeleteUser` (`Require`) — soft delete |
-| `user.restore` | yes | yes | no | `RestoreUser` (`Require`) — clears `deleted_at`; never self-serve |
-| `audit.read` | yes | yes | no | `audit.Service.List` |
-| `auth.change-password` | yes | yes | no | `ChangePassword` (`RequireSelfOr`) |
-| `auth.register-user` | yes | yes | no | `Register` when `APP_INTERNAL_MODE=true` |
-| `auth.revoke-user-sessions` | yes | yes | no | bulk session revoke, and single-session revoke by a non-owner (`RequireSelfOr` against the session owner) |
-| `auth.view-user-sessions` | yes | yes | no | list a user's active sessions (`RequireSelfOr` against the target user) |
-
-Regenerate the client's permission catalog (replaying the real service
-registrations, not grepping) with:
-
-```bash
-make permissions
-# or: go run ./cmd/cli permissions
-```
-
-That rewrites `client/packages/schemas/src/permission.ts` in place. In a
-checkout without the client (`client/` missing), the command prints the catalog
-to stdout instead, so the codes can be pasted by hand. `-out <file>` writes to
-an explicit path.
+`make permissions` regenerates `client/packages/schemas/src/permission.ts` by
+replaying the real service registrations (not grepping). Without a `client/` tree
+it prints the catalog to stdout; `-out <file>` writes elsewhere.
 
 ## API documentation
 
-Route reference, request/response shapes and examples are not duplicated here:
-an OpenAPI spec is planned. Until it lands, `cmd/api/server.go` is the source of
-truth for the mounted routes and `internal/transport/http/` for the handler
-contracts.
+An OpenAPI spec is planned. Until then `cmd/api/server.go` is the source of truth
+for mounted routes and `internal/transport/http/` for handler contracts. The
+dashboard mirrors those contracts by hand, which is why both halves live in one
+repository; nothing checks the two sides against each other yet — a generated
+contract test is the intended next step.
 
-The dashboard in `client/` mirrors those contracts by hand — zod schemas in
-`client/packages/schemas`, the fetch client in `client/packages/api`. That mirror is the reason both
-halves live in one repository, and the reason a shape, field-name or error-code change is only
-finished once the client agrees with it. Nothing checks the two sides against each other yet; a
-generated contract test is the intended next step.
-
-All application routes are mounted under the `/api` prefix. Authenticated
-routes accept the access token from the `access_token` cookie or the
-`Authorization: Bearer <token>` header. Request bodies are limited to 5 MB
-globally (`MaxBodySize`).
+All application routes are under `/api`. Authenticated routes accept the
+`access_token` cookie or `Authorization: Bearer`. Request bodies are capped at
+5 MB.
 
 ## Error handling
 
-Services return typed errors from the `apperr` kernel. Handlers return them
-unchanged; Fiber's `ErrorHandler` (`internal/transport/http/router.go`) calls
-`ParseError`, which normalizes everything into:
+Services return typed `apperr` errors; handlers return them unchanged; the Fiber
+`ErrorHandler` calls `ParseError`, which normalizes everything to:
 
 ```json
 { "error": { "message": "...", "details": null, "code": "..." } }
 ```
 
-Status mapping:
+| Source | HTTP status |
+| --- | --- |
+| `KindValidation` | 422 |
+| `KindNotFound` | 404 |
+| `KindConflict` | 409 |
+| `KindUnauthorized` | 401 |
+| `KindForbidden` | 403 |
+| `KindThrottled` | 429 |
+| `*fiber.Error` 413 | 413 |
+| `context.DeadlineExceeded` | 504 |
+| `context.Canceled` | 499 |
+| malformed JSON body | 400 |
+| everything else | 500 |
 
-| Source | Kind / case | HTTP status |
-| --- | --- | --- |
-| `apperr.KindValidation` | validation | 422 |
-| `apperr.KindNotFound` | not found | 404 |
-| `apperr.KindConflict` | conflict | 409 |
-| `apperr.KindUnauthorized` | authentication missing/invalid | 401 |
-| `apperr.KindForbidden` | authenticated but not permitted | 403 |
-| `apperr.KindThrottled` | rate limited | 429 |
-| `*fiber.Error` with code 413 | body too large | 413 |
-| `context.DeadlineExceeded` | timeout | 504 |
-| `context.Canceled` | client closed request | 499 |
-| malformed JSON body | bind error | 400 |
-| everything else | unmapped | 500 |
-
-`apperr.Error` is immutable-returning (`SetMessage`/`WithDetails` produce
-copies) and comparable with `errors.Is` by `Kind` + `Code`. Handler-level
-sentinels (invalid path param, multipart, upload errors, rate limit) live in
+`apperr.Error` is immutable-returning (`SetMessage`/`WithDetails` copy) and
+comparable with `errors.Is` by `Kind` + `Code`. Handler-level sentinels (bad path
+param, multipart, upload, rate limit) live in
 `internal/transport/http/error.go` and `uploader.go`.
 
 ## Audit logging
 
 `audit_logs` records user-initiated state changes for compliance and forensics.
 
-- **Columns**: `actor_id` (NULL for system actions), `action`, `entity`,
-  `entity_id`, `prev`/`next` JSONB snapshots, `meta` JSONB, `created_at`.
-- **Actor/meta enrichment** (`Entry.FillActorMeta`, called by the repository at
-  insert time): fills `actor_id` from the RBAC context and adds
-  `request_id`, `ip_addr`, `user_agent`, `session_id`, and `actor_role` to
-  `meta`. `ip_addr` comes from `AuditContext` middleware, which honors
-  `X-Forwarded-For` only when `TRUST_PROXY=true` (otherwise the socket peer).
-- **Atomicity**: audit rows are written inside the same transaction as the
-  change they record, so a committed action is never silently unaudited.
-- **Coverage** — actions declared beside their domain permissions:
-  - auth: `auth.register`, `auth.complete-registration`, `auth.login`,
-    `auth.logout`, `auth.change-password`, `auth.reset-password`,
-    `auth.password-recovery-request`, `auth.revoke-user-sessions`,
-    `auth.revoke-session`.
-  - user: `user.update`, `user.delete`, `user.change-profile-picture`,
-    `user.delete-profile-picture`.
-- **Not audited**: refused attempts (failed login) and refresh-token reuse are
-  security *events*, not state changes. They are emitted as structured WARN logs
-  so the table stays clean and the unauthenticated login path takes no write.
-- `GET /api/audit/` lists entries (requires `audit.read`). It accepts
-  `entity`, `actor`, `date`/`from`/`to`, `tz`, `sort`/`order` and `page`/`limit`,
-  and reports the applied query in `meta`. `actor` matches `actor_id` exactly when
-  it is a full UUID and otherwise matches the actor's name with `ILIKE`. The date
-  bounds are bare calendar dates (`2006-01-02`) read in `tz`; `from` is inclusive
-  and `to` covers its whole day, so
-  `from=2026-09-01&to=2026-09-28&tz=Asia/Jakarta` selects through the end of the
-  28th in Jakarta. An absent or unknown zone falls back to UTC, and `meta` reports
-  the zone actually used. `date` is the single-day shortcut and wins over
-  `from`/`to`.
+- **Columns**: `actor_id` (NULL for system), `action`, `entity`, `entity_id`,
+  `prev`/`next` JSONB, `meta` JSONB, `created_at`.
+- **Enrichment**: `Entry.FillActorMeta` fills `actor_id` from the RBAC context and
+  adds `request_id`, `ip_addr`, `user_agent`, `session_id`, `actor_role`. `ip_addr`
+  honors `X-Forwarded-For` only when `TRUST_PROXY=true`.
+- **Atomicity**: the row is written inside the same transaction as the change, so
+  a committed action is never silently unaudited.
+- **Coverage**: auth (`register`, `complete-registration`, `login`, `logout`,
+  `change-password`, `reset-password`, `password-recovery-request`,
+  `revoke-user-sessions`, `revoke-session`) and user (`update`, `delete`,
+  `change-profile-picture`, `delete-profile-picture`).
+- **Not audited**: refused attempts and refresh-token reuse — security *events*,
+  not state changes; they are WARN logs so the unauthenticated login path takes no
+  write.
+- `GET /api/audit/` (requires `audit.read`) accepts `entity`, `actor`,
+  `date`/`from`/`to`, `tz`, `sort`/`order`, `page`/`limit`, and echoes the applied
+  query in `meta`. `actor` matches `actor_id` for a full UUID, otherwise the name
+  with `ILIKE`. Dates are calendar dates read in `tz` (`from` inclusive, `to`
+  covers its whole day); an unknown zone falls back to UTC and `meta` reports the
+  zone used. `date` wins over `from`/`to`.
 
 ## Messaging and the worker
 
 Email delivery is decoupled from HTTP response time with a **transactional
-outbox**. The service writes the event row inside the same transaction as the
-business state; the worker polls the table and delivers it later, so a crash
-between commit and delivery cannot lose the email.
+outbox**: the service writes the event inside the same transaction as the business
+state, so a crash between commit and delivery cannot lose it.
 
 ```text
 HTTP request
@@ -834,228 +508,140 @@ HTTP request
                           └─ failure ─▶ MarkFailed (attempts + 1, last_error)
 ```
 
-Topics and payloads:
-
-| Topic | Payload | Enqueued by |
-| --- | --- | --- |
-| `email.password_recovery` | `auth.PasswordRecoveryMessage` | `RecoverPassword` |
-| `email.user_registration` | `auth.CompleteRegistrationMessage` | `Register` |
-
-The producer marshals the domain message as JSON into `outbox_messages.payload`
-(`internal/infrastructure/postgres/outbox_repository.go`); the worker unmarshals
-it per topic in `cmd/worker` and hands it to `worker.AuthWorker`. Delivery is
-**at-least-once**: a crash after the SMTP send and before `MarkDone` resends that
-one message, so handlers must be idempotent (a duplicate email is acceptable,
-losing one is not).
-
-Reliability features (`internal/worker/outbox_worker.go`):
+Topics: `email.password_recovery` and `email.user_registration`, both produced by
+`auth` and rendered by `worker.AuthWorker`. Delivery is **at-least-once**: a crash
+after the SMTP send and before `MarkDone` resends one message, so handlers must be
+idempotent (a duplicate email is fine, a lost one is not).
 
 - **Retries**: a handler error increments `attempts` and writes `last_error`; the
-  row is retried on later ticks until `outbox.MaxAttempts` (5), after which it is
-  skipped but left in the table as a dead-letter record to inspect with SQL.
-- **Ordering**: batches are read oldest-first by the identity `seq`.
-- **Bounded operations**: the SMTP send is capped at 10 s (`pkg/mailer`);
-  `MarkDone`/`MarkFailed` run on `context.WithoutCancel` so bookkeeping survives
-  graceful shutdown.
-- **Crash isolation**: `cmd/worker` runs the poll loop under the process signal
-  context; stopping the process simply pauses delivery until it restarts.
+  row is retried until `outbox.MaxAttempts` (5), then left in the table as a
+  dead-letter record to inspect with SQL.
+- **Ordering**: batches are read oldest-first by identity `seq`.
+- **Bounded**: the SMTP send is capped at 10 s; `MarkDone`/`MarkFailed` run on
+  `context.WithoutCancel` so bookkeeping survives shutdown.
+- **Crash isolation**: the poll loop runs under the process signal context, so
+  stopping the worker pauses delivery until restart.
 
-Run the worker separately from the API: `make dev:worker`.
+Run it separately: `make dev:worker`.
 
 ## Observability and health
 
-- **Metrics** (`pkg/metrics`), all under the `app_` namespace:
-  - `app_info{version,environment}` — build identity.
-  - `app_request_total{path,method,status_code}` and
-    `app_request_duration{path,method,status_code}` (HTTP-tuned buckets) — the
-    RED pair.
-  - `app_requests_in_flight{method}` — concurrency.
-  - `app_request_size_bytes{route,method}` / `app_response_size_bytes{route,method}`
-    — payload shape.
-  - `app_errors_total{code}` — error responses by **stable application error
-    code** (`AUTH_CREDENTIALS`, `RBAC_UNAUTHORIZED_PERM`, `VALIDATION`, ...),
-    which is far more actionable than a flat 4xx/5xx rate.
-  - `app_panics_total` — recovered panics.
-  - `app_db_pool_{acquired,idle,total,max}_conns`, plus
-    `app_db_pool_new_conns_total` and `app_db_pool_canceled_acquire_total` for
-    churn, emitted by a `pgxpool.Stat` collector.
-
-  `path`/`route` use the matched route template, never the raw path, so label
-  cardinality stays bounded; the Go runtime and process collectors come from
-  `promhttp`. The instrumentation middleware resolves status **and** error code
-  from a returned error (Fiber assigns the final status only after the chain
-  unwinds), and recovers panics to count them, record the implied 500, and then
-  re-panic to the outer recoverer.
-- **Exporter**: gated by `METRICS_ENABLED` (default: production), a separate
-  Fiber app serves `/metrics` on `METRICS_PORT` (default `APP_PORT + 1`; compose
-  pins `9091` so the scrape target is stable and never tracks `APP_PORT`). The
-  API binds every interface on `APP_PORT`; what is reachable from outside is
-  decided solely by the compose `ports:` mapping — only Caddy publishes. The
-  metrics sidecar is intentionally excluded from graceful shutdown.
-- **Health**: `GET /api/healthz` pings Postgres and Redis with a 2 s timeout.
-  Any failure returns **503** with a `dependencies` map of the failing services;
-  success returns `{"status":"ok","internal_mode":<bool>}`. Because it doubles
-  as a probe, a sustained dependency outage also fails liveness — split the
-  endpoints if your platform restarts unhealthy instances.
-- **Security headers**: Fiber `helmet` with a deny-by-default CSP, `X-Frame-Options: DENY`,
-  a strict-origin-when-cross-origin referrer policy, and a restrictive
-  permissions policy. HSTS is configured in production and emitted only on
-  secure requests.
-- **Graceful shutdown** (API): after `SIGINT`/`SIGTERM` the process waits 5 s to
-  let load balancers drain, then shuts the server down with a 25 s deadline.
-- **Dashboards**: Prometheus scrape config and Grafana provisioning/dashboards
-  (`deployment/grafana/dashboards/api-metrics.json`) are checked into
-  `deployment/` and wired by `compose.yml`.
+- **Metrics** (`pkg/metrics`, `app_` namespace): `app_info`, the RED pair
+  (`app_request_total`, `app_request_duration`), `app_requests_in_flight`,
+  request/response sizes, `app_errors_total{code}` (keyed by stable application
+  error code, far more actionable than a flat 4xx/5xx rate), `app_panics_total`,
+  and `app_db_pool_*` from a `pgxpool.Stat` collector. Labels use the matched route
+  template, never the raw path, so cardinality stays bounded. The middleware
+  resolves status **and** error code from a returned error (Fiber assigns the
+  final status only after the chain unwinds) and re-panics after counting a
+  recovered panic.
+- **Exporter**: gated by `METRICS_ENABLED`, a separate Fiber app serves `/metrics`
+  on `METRICS_PORT` (default `APP_PORT + 1`; compose pins `9091`). The API binds
+  every interface on `APP_PORT`; what is reachable is decided solely by the compose
+  `ports:` mapping — only Caddy publishes. The sidecar is excluded from graceful
+  shutdown.
+- **Health**: `GET /api/healthz` pings Postgres and Redis with a 2 s timeout;
+  any failure returns 503 with a `dependencies` map. Because it doubles as a probe,
+  a sustained dependency outage also fails liveness — split the endpoints if your
+  platform restarts unhealthy instances.
+- **Security headers**: `helmet` with deny-by-default CSP, `X-Frame-Options: DENY`,
+  strict-origin-when-cross-origin referrer policy, restrictive permissions policy;
+  HSTS in production, on secure requests only.
+- **Graceful shutdown** (API): 5 s drain, then a 25 s server shutdown deadline.
+- **Dashboards**: Prometheus scrape config and Grafana provisioning/dashboards in
+  `deployment/`, wired by `compose.caddy.yml`.
 
 ## Database and migrations
 
-- PostgreSQL, accessed through `pgx` (`pgxpool` for the pool) with **raw SQL**.
-- `goose` migrations live in `migrations/` and are **additive only**:
+PostgreSQL through `pgx` (`pgxpool`) with **raw SQL**. Goose migrations in
+`migrations/` are **additive only**, one table per file (`registration_tokens`,
+`users`, `sessions`, `password_recovery_tokens`, `audit_logs`,
+`outbox_messages`).
 
-  | Migration | Table |
-  | --- | --- |
-  | `00001_create_registration_tokens_table.sql` | `registration_tokens` |
-  | `00002_create_users_table.sql` | `users` |
-  | `00003_create_sessions_table.sql` | `sessions` |
-  | `00004_create_password_recovery_tokens_table.sql` | `password_recovery_tokens` |
-  | `00005_create_audit_logs_table.sql` | `audit_logs` |
-  | `00006_create_outbox_messages_table.sql` | `outbox_messages` |
-
-- **Rollout order**: the outbox `INSERT` is on the auth critical path, so apply
-  `00006` → deploy the worker → deploy the API. `00006` is additive, so the old
-  binary is unaffected. The worker polls any rows already in the table on its
-  first tick, so no reconciliation step is needed.
+- **Rollout order**: the outbox `INSERT` is on the auth critical path, so apply the
+  outbox migration → deploy the worker → deploy the API. It is additive, so the old
+  binary is unaffected, and the worker picks up pre-existing rows on its first tick.
 - `users` has a partial unique index on `email` (`WHERE deleted_at IS NULL`) so a
   soft-deleted email can be reused; `role` and `gender` are `CHECK`-constrained.
-- `sessions.user_id` and `audit_logs.actor_id` reference `users(id)` with
-  `ON DELETE CASCADE` / `ON DELETE SET NULL` respectively.
-- Transactions are implemented by `postgres.DB.Transact`: the `pgx.Tx` is stored
-  in the context, and repositories fetch it with `db.GetConn(ctx)` (adding
-  `FOR UPDATE` on transactional reads). Rollback/commit run on a
-  `context.WithoutCancel` + 5 s timeout so a cancelled request context cannot
-  leave a transaction (and its locks) hanging or churn the pool.
-
-Create and apply migrations:
+- `sessions.user_id` cascades on user delete; `audit_logs.actor_id` is set NULL.
+- Transactions run through `postgres.DB.Transact`: the `pgx.Tx` lives in the
+  context and repositories fetch it with `db.GetConn(ctx)`, adding `FOR UPDATE` on
+  transactional reads. Rollback/commit use `context.WithoutCancel` + a 5 s timeout,
+  so a cancelled request cannot leave locks hanging or churn the pool.
 
 ```bash
-make migration:create   # prompts for a name, writes a goose SQL file
-make migration:up       # apply all pending
-make migration:status   # show current version
+make migration:create   # scaffold a goose SQL file
+make migration:up       # apply pending
+make migration:status   # current version
 make migration:down     # roll back one
-make migration:clear    # roll back all (down-to 0)
+make migration:clear    # roll back all
 ```
 
-The `make migration:*` targets require the `goose` CLI and read `DB_*` from
-`.env`.
+These targets need the `goose` CLI and read `DB_*` from `.env`.
 
 ## Backups
 
 Twice-daily `pg_dump -Fc` streamed by the `backup` sidecar to a private R2 bucket
 (no local copy), with a 30-day retention window enforced by an R2 lifecycle rule.
 
-Full pipeline, retention table, restore runbook and restore drill:
+Pipeline, retention, restore runbook and restore drill:
 [`deployment/BACKUP.md`](./deployment/BACKUP.md).
 
 ## Testing
 
 Unit tests only; they never touch a real database, Redis, or SMTP server.
 
-- **Framework**: `testify` (`assert` for continuing checks, `require` for setup
-  that must not continue) with table-driven `TestService_<Method>` +
-  `t.Run("case", ...)` subtests.
-- **Mocks**: generated by `mockery` from `.mockery.yml`.
-  - Entity-scoped: `internal/auth/mocks/`, `internal/user/mocks/`.
-  - Shared infrastructure: `internal/testing/mocks/` (`Transactor`, `Storage`,
-    `File`, `Throttler`, `Recorder`, revocation `Checker`/`Revoker`/`Store`).
-  - Regenerate after any interface change:
+- **Framework**: `testify` (`assert` for continuing checks, `require` for setup)
+  with table-driven `TestService_<Method>` + `t.Run` subtests.
+- **Mocks**: generated by `mockery` from `.mockery.yml` — entity-scoped in
+  `internal/<entity>/mocks/`, shared infrastructure in `internal/testing/mocks/`.
+  Run `mockery` after any interface change.
+- **Fixture pattern**: `setupTestFixture(t)` builds every mock with `t` (an
+  unexpected call fails the test), constructs the service, and registers
+  `t.Cleanup` to assert expectations. Transactor expectations are registered
+  inside `RunAndReturn`, before the closure runs.
+- **Hermetic**: tests set what they need with `t.Setenv` and pass without a local
+  `.env`.
 
-    ```bash
-    mockery
-    ```
-
-- **Fixture pattern**: `setupTestFixture(t)` builds every mock with `t` (so an
-  unexpected call fails the test), constructs the service under test, and
-  registers `t.Cleanup` to run `AssertExpectations` on every mock. Transactor
-  expectations are registered inside `RunAndReturn` because the inner
-  expectations must exist before the closure runs.
-- **Hermetic**: tests set what they need with `t.Setenv` (see
-  `config/config_test.go`) and pass without a local `.env`.
-- Run the suite:
-
-  ```bash
-  make test   # go test -race -v -count=1 <the Go source roots> -cover
-  ```
-
-The dashboard has its own suite — `make client:test` (vitest) — and neither toolchain runs the
-other's tests.
+```bash
+make test          # go test -race -count=1 <Go source roots> -cover
+make client:test   # vitest, dashboard only
+```
 
 ## Development tooling
 
-| Target | Command | Purpose |
-| --- | --- | --- |
-| `make dev` | `air -c .air.toml` | API server with hot reload |
-| `make dev:worker` | `air -c .air.worker.toml` | worker with hot reload |
-| `make tidy` | `go mod tidy` | Tidy modules |
-| `make lint` | `golangci-lint run <the Go source roots>` | Lint (v2 config in `.golangci.yml`) |
-| `make test` | `go test -race -v -count=1 <the Go source roots> -cover` | Full test suite |
-| `make build` | `CGO_ENABLED=0 GOOS=linux go build …` | Static Linux binaries at `./bin/api` and `./bin/worker` |
-| `make run` | `./bin/api` | Run the built binary |
-| `make cli` | `go run ./cmd/cli $(ARGS)` | Developer CLI (`permissions`, `create-admin`) |
-| `make permissions` | `go run ./cmd/cli permissions` | Regenerate `client/packages/schemas/src/permission.ts` from the backend's registered codes (prints instead when there is no client tree) |
-| `make migration:status` | `goose … status` | Migration status |
-| `make migration:up` | `goose … up` | Apply migrations |
-| `make migration:down` | `goose … down` | Roll back one migration |
-| `make migration:clear` | `goose … down-to 0` | Roll back everything |
-| `make migration:create` | `goose … create <name> sql` | Scaffold a migration |
+The `Makefile` is the entry point — read it for the exact commands. Targets group
+into `dev` / `dev:worker`, `build` / `run`, `test`, `lint`, `tidy`, `cli` +
+`permissions`, `migration:*`, and `client:*` (install, dev, lint, build, test).
 
-`make lint` and `make test` take their package paths from `GO_PACKAGES` in the Makefile
-(`./cmd/... ./internal/... ./pkg/... ./config/...`) rather than `./...`, because the module root now
-also holds `client/`: `./...` walks it, and bun's symlinked `node_modules` would be walked too.
-Add a new top-level Go directory to that variable.
+Tools: **Air** for hot reload, **golangci-lint v2** for lint, **goose** for
+migrations, **mockery** for mocks, **bun + Turborepo** for the client, Docker
+Compose for the stack.
 
-`golangci-lint` must be **v2.x**; the config header recommends:
-
-```bash
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
-```
-
-### Client targets
-
-| Target | Purpose |
-| --- | --- |
-| `make client:install` | `bun install` in `client/` |
-| `make client:dev` | dashboard dev server (Vite, proxies `/api` to the API) |
-| `make client:lint` | Biome |
-| `make client:build` | Turborepo build (`vite build` + `tsc` per app) |
-| `make client:test` | vitest |
+`make lint` and `make test` take their package paths from `GO_PACKAGES`
+(`./cmd/... ./internal/... ./pkg/... ./config/...`) rather than `./...`, because
+the module root also holds `client/` and `./...` would walk bun's symlinked
+`node_modules`. Add a new top-level Go directory to that variable.
 
 ## Conventions
 
-- **Contract changes ship with the client.** A request/response shape, a JSON field name, or an
-  error code is half a change until `client/packages/schemas` and `client/packages/api` match it.
-  Both halves are in this repository so that happens in one commit.
-- **Import aliases are fixed**: `redisInfra` for
-  `internal/infrastructure/redis`, `strs` for `pkg/strings`, and `sharedMocks`
-  for `internal/testing/mocks`. `internal/transport/http` is `package http` and
-  is imported unaliased.
-- **Naming**: packages are short, lowercase, single-word; files are
-  `snake_case`; constructors are `New<Name>()`; sentinel errors use an `Err`
-  prefix; constants are PascalCase.
+- **Contract changes ship with the client.** A shape, field name, or error code is
+  half a change until `client/packages/schemas` and `client/packages/api` match it.
+- **Import aliases are fixed**: `redisInfra`, `strs`, `sharedMocks`.
+  `internal/transport/http` is `package http` and imported unaliased.
+- **Naming**: short lowercase single-word packages, `snake_case` files,
+  `New<Name>()` constructors, `Err`-prefixed sentinels, PascalCase constants.
 - **Documentation**: every package has a package-level godoc comment and every
-  exported symbol has a doc comment.
+  exported symbol a doc comment.
 - **Interfaces are consumer-side and narrow**; implementations live in
   `internal/infrastructure/`.
-- **Adding a feature** follows a fixed order: model + interface in
-  `internal/<entity>/` → repository in `internal/infrastructure/postgres/` →
-  service → handler → wire in `cmd/api/container.go` and routes in
-  `cmd/api/server.go` → migration → update `.mockery.yml` + run `mockery` →
-  tests.
-- **Errors bubble up unchanged**; only add logging where it adds context, and
-  avoid log-and-return pairs.
-- **Multi-step writes** use `Transactor.Transact`. Events are written to the
-  transactional outbox **inside** the closure (so they commit with the state);
-  post-commit side effects such as storage cleanup and access-token revocation
-  run outside the closure.
+- **Adding a feature**: model + interface → repository → service → handler → wire
+  in `container.go` and routes in `server.go` → migration → `.mockery.yml` +
+  `mockery` → tests.
+- **Errors bubble up unchanged**; log only where it adds context.
+- **Multi-step writes** use `Transactor.Transact`; outbox events go inside the
+  closure (they commit with the state), while post-commit side effects such as
+  storage cleanup and token revocation run outside it.
 
 Project-specific skills under `.agents/skills/` (architecture, errors, handlers,
 repositories, services, testing) encode these rules in more detail.
