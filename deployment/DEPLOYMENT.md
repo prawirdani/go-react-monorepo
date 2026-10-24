@@ -4,18 +4,18 @@ Single-host deployment with Docker Compose and Caddy. This file is both the
 step-by-step preparation gate and the deployment reference material. Backups have
 their own reference: [`BACKUP.md`](./BACKUP.md).
 
-- Architecture: `compose.caddy.yml` runs Postgres, Redis, API, worker, the
-  one-shot migrate job, Caddy, Prometheus and Grafana on one pinned network.
+- Architecture: `compose.yml` runs Postgres, Redis, API, worker, the one-shot
+  migrate job, Caddy, Prometheus and Grafana on one pinned network.
 - **Only Caddy publishes ports** (plus Grafana, bound to loopback). Everything
   else is internal-only.
 - Target shape: a VPS with a public IP, a domain, and TLS terminated by Caddy —
   optionally behind Cloudflare.
 
-> **Which compose file.** This guide assumes the self-contained Caddy stack, so
-> every `docker compose` command below takes `-f compose.caddy.yml`. The default
-> `compose.yml` is the bare API (Postgres, Redis, API, worker, migrate, backup)
-> with **no** bundled proxy, TLS, or dashboards — front it with your own proxy
-> (e.g. a host nginx) pointed at `127.0.0.1:${APP_PORT}`, and set
+> **Which compose file.** This guide assumes the self-contained Caddy stack,
+> which is the default `compose.yml` — the commands below take no `-f`.
+> `compose.minimal.yml` is the bare API (Postgres, Redis, API, worker, migrate,
+> backup) with **no** bundled proxy, TLS, or dashboards — front it with your
+> own proxy (e.g. a host nginx) pointed at `127.0.0.1:${APP_PORT}`, and set
 > `TRUST_PROXY=true` so audit IPs come from `X-Forwarded-For`. The proxy-trust
 > and firewall notes below apply to both; the TLS, Cloudflare and Grafana
 > sections are Caddy-only.
@@ -301,8 +301,8 @@ Caddy at a domain that does not resolve can lock you out for an hour.
 terminates at Caddy.
 
 The API sits behind Caddy, so it receives plain HTTP and resolves the client IP
-from `X-Forwarded-For` whenever `TRUST_PROXY=true` (`compose.caddy.yml` sets it;
-for the bare `compose.yml` set it once a proxy fronts the API). Fiber walks the
+from `X-Forwarded-For` whenever `TRUST_PROXY=true` (`compose.yml` sets it;
+for the bare `compose.minimal.yml` set it once a proxy fronts the API). Fiber walks the
 header right-to-left past trusted peers (loopback / private / unix socket) and
 returns the rightmost non-trusted IP, so a client-appended entry cannot spoof the
 audit log. The trust boundary is the private socket — the API is never published,

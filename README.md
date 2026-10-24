@@ -172,8 +172,8 @@ pkg/                   framework-agnostic helpers (log, mailer, metrics,
 
 migrations/            goose SQL migrations (additive only)
 deployment/            caddy/ prometheus/ grafana/ backup/ + runbooks
-compose.yml            bare API: api, worker, migrate, postgres, redis, backup
-compose.caddy.yml      the above + caddy, prometheus, grafana
+compose.yml            full stack: the API tier + caddy, prometheus, grafana
+compose.minimal.yml    bare API: api, worker, migrate, postgres, redis, backup
 Dockerfile             multi-stage build (distroless runtime)
 Makefile               dev/build/test/lint/migration/cli/client targets
 .air.toml .air.worker.toml   Air configs (both exclude client/)
@@ -197,12 +197,13 @@ targets are the bridge. Start with [`client/README.md`](./client/README.md) and
 both), the [goose](https://github.com/pressly/goose) CLI for `make migration:*`,
 optional Air and `golangci-lint` v2, and bun 1.4 for the dashboard.
 
-**1. Start the stack.** `compose.caddy.yml` is self-contained (Postgres, Redis,
-API, worker, Caddy, Prometheus, Grafana on one bridge network). The default
-`compose.yml` is the bare API for fronting with your own proxy.
+**1. Start the stack.** `compose.yml` is self-contained (Postgres, Redis, API,
+worker, Caddy, Prometheus, Grafana on one bridge network). `compose.minimal.yml`
+is the bare API for fronting with your own proxy.
 
 ```bash
-docker compose up -d          # add -f compose.caddy.yml for the full stack
+docker compose up -d                          # full stack
+docker compose -f compose.minimal.yml up -d   # bare API
 ```
 
 Every service loads `.env` via `env_file:`, so credentials live in one place;
@@ -549,7 +550,7 @@ Run it separately: `make dev:worker`.
   HSTS in production, on secure requests only.
 - **Graceful shutdown** (API): 5 s drain, then a 25 s server shutdown deadline.
 - **Dashboards**: Prometheus scrape config and Grafana provisioning/dashboards in
-  `deployment/`, wired by `compose.caddy.yml`.
+  `deployment/`, wired by `compose.yml`.
 
 ## Database and migrations
 
