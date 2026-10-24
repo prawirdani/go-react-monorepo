@@ -146,9 +146,9 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 
 ## 6. Post-boot verification
 
-- [ ] Health through the proxy: `curl -fsS https://api.example.com/api/healthz`
+- [ ] Readiness through the proxy: `curl -fsS https://api.example.com/api/healthz`
       → `{"status":"ok","internal_mode":false}`. A `503` names the failing
-      dependency in its body.
+      dependency in its body. Liveness is `/api/livez` (process up, deps ignored).
 - [ ] **End-to-end auth:** register a user, complete registration from the
       emailed link, log in. That exercises API → outbox → worker → SMTP, which
       no unit test covers.
@@ -266,7 +266,9 @@ applies to a host with an existing `postgres-data` volume.
       notifies you. Check `docker logs backup` or the `backups/` directory age.
 - [ ] **No container healthcheck for `api`/`worker`.** The runtime image is
       distroless (no shell, no HTTP client), so a healthcheck cannot be
-      expressed. Caddy performs an active health check on `/api/healthz`.
+      expressed. Caddy performs an active health check on `/api/healthz`
+      (readiness); `/api/livez` is liveness for a platform that restarts on a
+      failing probe.
 - [ ] Application images are built locally - `go-react-monorepo:local` (api/worker)
       and the caddy image - with no registry, so every host builds its own. The
       dashboard's bun toolchain is pulled inside the Docker build, so the host

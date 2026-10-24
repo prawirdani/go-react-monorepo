@@ -541,10 +541,11 @@ Run it separately: `make dev:worker`.
   every interface on `APP_PORT`; what is reachable is decided solely by the compose
   `ports:` mapping - only Caddy publishes. The sidecar is excluded from graceful
   shutdown.
-- **Health**: `GET /api/healthz` pings Postgres and Redis with a 2 s timeout;
-  any failure returns 503 with a `dependencies` map. Because it doubles as a probe,
-  a sustained dependency outage also fails liveness - split the endpoints if your
-  platform restarts unhealthy instances.
+- **Health**: `GET /api/healthz` is readiness - it pings Postgres and Redis with
+  a 2 s timeout and returns 503 with a `dependencies` map on any failure, so a
+  load balancer stops routing until they recover. `GET /api/livez` is liveness -
+  process up, dependencies ignored - so a dependency outage never trips a
+  restart-on-failure probe. Both return `internal_mode`.
 - **Security headers**: `helmet` with deny-by-default CSP, `X-Frame-Options: DENY`,
   strict-origin-when-cross-origin referrer policy, restrictive permissions policy;
   HSTS in production, on secure requests only.

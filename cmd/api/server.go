@@ -103,7 +103,13 @@ func NewServer(container *Container, onPostShutdown func(error) error) (*Server,
 		metricsApp: metricsApp,
 	}
 
-	// Health check: verifies the server's dependencies are reachable.
+	// Liveness: the process is up and serving. Never checks dependencies, so a
+	// dependency outage cannot trip a liveness probe into restarting an
+	// otherwise-healthy process.
+	app.Get("/api/livez", svr.live)
+	// Readiness: dependencies are reachable. Returns 503 when one is down so a
+	// load balancer (or Caddy's active health check) stops routing here until it
+	// recovers.
 	app.Get("/api/healthz", svr.health)
 
 	// Setup API routes
@@ -144,11 +150,16 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.app.ShutdownWithContext(ctx)
 }
 
-// health reports service health, including whether dependencies are reachable.
+// live reports liveness: the process is up and able to serve. It never touches
+// dependencies, so a platform that restarts on a failing probe does so only
+// when the process itself is wedged, not when Postgres or Redis is briefly down.
+func (s *Server) live(c fiber.Ctx) error {
+	return c.JSON(fiber.Map{"status": "ok", "internal_mode": s.container.Config.App.InternalMode})
+}
+
+// health reports readiness: whether the server's dependencies are reachable.
 // A failing dependency returns 503 so load balancers stop routing here until it
-// recovers. Note: because this doubles as a probe, a sustained dependency
-// outage will also fail liveness checks - split the endpoints if the platform
-// restarts unhealthy instances.
+// recovers. For liveness (process up, deps ignored) use /api/livez.
 func (s *Server) health(c fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.Context(), 2*time.Second)
 	defer cancel()
