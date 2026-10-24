@@ -14,14 +14,14 @@ import (
 // (args ...any), which must alternate between string keys and values of any type.
 //
 // Implementations should ensure that the log output preserves both temporal and
-// semantic fidelity — timestamps, caller metadata, and structured fields should
+// semantic fidelity - timestamps, caller metadata, and structured fields should
 // remain intact across different backends.
 //
 // Available Levels:
-//   - Debug — verbose diagnostic information.
-//   - Info  — high-level application state changes.
-//   - Warn  — non-fatal anomalies or recoverable errors.
-//   - Error — unexpected failures or error states.
+//   - Debug - verbose diagnostic information.
+//   - Info  - high-level application state changes.
+//   - Warn  - non-fatal anomalies or recoverable errors.
+//   - Error - unexpected failures or error states.
 type Logger interface {
 	// Basic logging methods (no context)
 	Debug(msg string, args ...any)

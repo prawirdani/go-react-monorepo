@@ -10,7 +10,7 @@ interface-driven dependencies, manual dependency injection, and tests that never
 touch a real database, Redis, or SMTP server.
 
 The dashboard this API serves lives in the same repository under
-[`client/`](./client/README.md) — a bun + Turborepo monorepo — so one commit
+[`client/`](./client/README.md) - a bun + Turborepo monorepo - so one commit
 changes both halves. A request/response shape, JSON field name, or error code is
 not finished until the client's zod schemas agree; see [Client](#client).
 
@@ -85,7 +85,7 @@ not finished until the client's zod schemas agree; see [Client](#client).
 | Tooling | [Air](https://github.com/cosmtrek/air) hot reload, [golangci-lint v2](https://github.com/golangci/golangci-lint) |
 
 The dashboard under `client/` carries its own stack (React 19, Vite, TanStack
-Router/Query/Form, Tailwind, Biome) — see [`client/README.md`](./client/README.md).
+Router/Query/Form, Tailwind, Biome) - see [`client/README.md`](./client/README.md).
 Nothing in the API's tooling depends on it.
 
 ## Architecture
@@ -107,18 +107,18 @@ it:
 The rule that keeps this honest: **entity packages import no infrastructure.** A
 service depends on the interface it needs, injected from the composition root.
 
-**Where interfaces live** — next to their consumers, split by use:
+**Where interfaces live** - next to their consumers, split by use:
 
-- `internal/auth/interfaces.go` — `Repository` (composed from `SessionReader`,
+- `internal/auth/interfaces.go` - `Repository` (composed from `SessionReader`,
   `SessionWriter`, `TokenReader`, `TokenWriter`), a narrow `UserRepository`, and
   `EventProducer`.
-- `internal/user/repository.go` — `Repository`, plus a local `SessionRevoker`
+- `internal/user/repository.go` - `Repository`, plus a local `SessionRevoker`
   implemented by the auth repository (no import cycle).
-- `internal/ports/*` — `Transactor` and the `Query`/`Filterer`/`Sorter`/`Paginator`
+- `internal/ports/*` - `Transactor` and the `Query`/`Filterer`/`Sorter`/`Paginator`
   contracts, `Storage`/`File`, `Throttler`/`Result`/`Counter`, the outbox
   `Message`/`Writer`/`Store`, and revocation `Checker`/`Revoker`/`Store`.
 
-**Dependency injection** — `cmd/api/container.go` is the only place production
+**Dependency injection** - `cmd/api/container.go` is the only place production
 dependencies are assembled: R2 client, Redis throttler and revocation store,
 PostgreSQL repositories, in-memory authorizer, then the services. `server.go`
 builds handlers and middleware and mounts routes. No framework, no service
@@ -134,7 +134,7 @@ locator.
    log fields into the context.
 3. The handler calls `user.Service.GetUserByID`, which enforces
    `RequireSelfOr(user.read)`.
-4. The repository calls `db.GetConn(ctx)` — the pool, or the `pgx.Tx` stored in
+4. The repository calls `db.GetConn(ctx)` - the pool, or the `pgx.Tx` stored in
    the context (adding `FOR UPDATE` on transactional reads).
 5. The handler returns `Body{Data: ...}`; errors go through `ParseError`.
 
@@ -209,12 +209,12 @@ docker compose -f compose.minimal.yml up -d   # bare API
 Every service loads `.env` via `env_file:`, so credentials live in one place;
 `api` and `worker` override `DB_HOST`/`REDIS_HOST` so `DB_HOST=localhost` keeps
 working for bare-metal `make dev`. That also means **every container, Caddy
-included, receives the whole file, secrets and all** — the deliberate trade-off
+included, receives the whole file, secrets and all** - the deliberate trade-off
 for a single source of credentials. Narrow it by dropping `env_file:` from a
 service and listing only what it needs under `environment:`. Caddy serves the API
 on `:8080`, Grafana on `:3000` (`GRAFANA_ADMIN_USER`/`_PASSWORD`, default
 `admin`); Prometheus and the datastores stay internal. Postgres and Redis data
-live in named volumes — `docker compose down -v` resets them.
+live in named volumes - `docker compose down -v` resets them.
 
 **2. Configure the environment.**
 
@@ -232,7 +232,7 @@ both API and worker wait on `service_completed_successfully`, so a failed
 migration blocks the app tier instead of serving a half-built schema. For
 bare-metal, run `make migration:up`.
 
-**4. Run the API and the worker** — separate processes:
+**4. Run the API and the worker** - separate processes:
 
 ```bash
 make dev          # API with hot reload (Air)
@@ -262,7 +262,7 @@ make client:dev                                          # Vite on :$VITE_PORT
 
 It talks to a relative `/api`; in development Vite proxies that to
 `VITE_PROXY_TARGET` (default `http://localhost:8080`), which is why `VITE_API_URL`
-stays empty locally — same origin, no CORS. In production Caddy builds and serves
+stays empty locally - same origin, no CORS. In production Caddy builds and serves
 the dashboard at `/srv`, so a frontend change needs a rebuild of the caddy image.
 
 ## Deployment
@@ -282,7 +282,7 @@ calls `Validate()`.
 
 ### Environment variables
 
-[`.env.example`](./.env.example) is the canonical, commented list — copy it to
+[`.env.example`](./.env.example) is the canonical, commented list - copy it to
 `.env` and edit. The settings whose meaning is not obvious from the name:
 
 | Variable | Default | Notes |
@@ -311,21 +311,21 @@ calls `Validate()`.
 | `APP_PORT` is an integer | `App.Parse()` |
 
 All of these abort startup. Duration and integer env vars that fail to parse are
-silently ignored (the field keeps its default) — except `APP_PORT`.
+silently ignored (the field keeps its default) - except `APP_PORT`.
 
 ## Authentication and sessions
 
 Split-token scheme: short-lived stateless JWT access tokens plus long-lived
 opaque refresh tokens backed by server-side session rows.
 
-**Access token** — HS256 with `AUTH_JWT_SECRET`; claims `sub`, `sid`, `role`,
+**Access token** - HS256 with `AUTH_JWT_SECRET`; claims `sub`, `sid`, `role`,
 `iat`, `exp`. `exp` is required, since a token without one makes revocation TTLs
 meaningless. A missing `iat`/`sid`, an unknown signing method, or a bad signature
 is `AUTH_INVALID`; expired is `AUTH_EXPIRED`. Both map to **401**, never 500.
 Delivered in the `access_token` cookie or `Authorization: Bearer`, and echoed in
 the login/refresh body.
 
-**Refresh token and session** — 256-bit opaque, `rt_` prefixed; only its SHA-256
+**Refresh token and session** - 256-bit opaque, `rt_` prefixed; only its SHA-256
 hash is stored (`sessions.refresh_token_hash`, unique). A session row holds
 `user_id`, `refresh_token_hash`, `user_agent`, `ip_addr`, timestamps, and
 `revoked_at`. Each refresh mints a new access **and** refresh token, replaces the
@@ -334,7 +334,7 @@ token dies. Presenting a refresh token whose session is already revoked logs a W
 reuse signal and returns `AUTH_INVALID_SESSION` (401). Expired and revoked sessions
 are indistinguishable.
 
-**Cookies** — login and refresh set `access_token` and `refresh_token` with
+**Cookies** - login and refresh set `access_token` and `refresh_token` with
 `HttpOnly` always, `Secure` in production, `SameSite=Lax`, `Path=/`, and an
 `Expires` matching the token TTL. Logout clears both.
 
@@ -347,8 +347,8 @@ marker (never a raw JWT or secret):
 | `revoked:sess:<sid>` | `"1"` (presence) | logout, single-session revoke |
 
 Both expire after `AUTH_JWT_TTL + 5s`. The check runs **after**
-`VerifyAccessToken` succeeds — never before, since unverified claims are
-attacker-controlled — as a single `MGET` bounded by 300 ms. A session marker wins;
+`VerifyAccessToken` succeeds - never before, since unverified claims are
+attacker-controlled - as a single `MGET` bounded by 300 ms. A session marker wins;
 otherwise a token is revoked when `iat <= watermark + 5s`, which over-revokes
 across clock skew (the safe direction) and briefly rejects a login within 5 s of a
 revocation. A corrupt watermark errors rather than failing open.
@@ -364,14 +364,14 @@ invite wins), and stores a single-use token (256-bit, `regt_`, SHA-256,
 transaction. `GET /api/auth/register/:token` exposes expiry/`used_at`/`revoked_at`.
 `POST /api/auth/register/complete` validates the token (any bad state → 401
 `AUTH_INVALID_REGISTRATION_TOKEN`), then hashes the password, creates the user,
-and marks the token used — one transaction. The password is hashed only after the
+and marks the token used - one transaction. The password is hashed only after the
 token validates, so garbage cannot force a bcrypt on an unauthenticated route.
 With `APP_INTERNAL_MODE=true` the route is authenticated and additionally requires
 `auth.register-user`.
 
 **Password recovery.** `POST /api/auth/password/recover` runs a 30 s per-email
 Redis throttle, stores a hashed 256-bit token with a TTL plus an audit row, and
-enqueues the outbox event — one transaction. `PUT /api/auth/password/reset`
+enqueues the outbox event - one transaction. `PUT /api/auth/password/reset`
 consumes the token, updates the password, revokes all sessions, audits, and waters
 the user's access tokens after commit. Unknown email → 404, kept deliberately.
 
@@ -396,20 +396,20 @@ account: on a shared CGNAT address one IP can front many users, so they stay loo
 and the per-email login lockout and recovery throttle carry the targeted
 enforcement. Authenticated traffic is keyed by the verified uid, so users sharing
 an address do not spend each other's budget. A limiter error fails open and is
-logged — rate limiting is volume protection, not authorization.
+logged - rate limiting is volume protection, not authorization.
 
 Login runs a dummy bcrypt compare on unknown emails so timing does not reveal
 whether an account exists, and counts failures by hashed email so unknown
 addresses are counted the same way. A locked account is rejected before any bcrypt
 work.
 
-**Passwords and entropy** — bcrypt cost 12; inputs validate `min=8,max=72` bytes
+**Passwords and entropy** - bcrypt cost 12; inputs validate `min=8,max=72` bytes
 (bcrypt truncates beyond 72); refresh, registration, and recovery tokens are 32
 random bytes.
 
 ## Authorization (RBAC)
 
-Role-based, code-defined, and in-memory — no permission tables to keep in sync.
+Role-based, code-defined, and in-memory - no permission tables to keep in sync.
 Each entity declares its own role→permission table and registers it from its
 `NewService` constructor.
 
@@ -433,7 +433,7 @@ it prints the catalog to stdout; `-out <file>` writes elsewhere.
 An OpenAPI spec is planned. Until then `cmd/api/server.go` is the source of truth
 for mounted routes and `internal/transport/http/` for handler contracts. The
 dashboard mirrors those contracts by hand, which is why both halves live in one
-repository; nothing checks the two sides against each other yet — a generated
+repository; nothing checks the two sides against each other yet - a generated
 contract test is the intended next step.
 
 All application routes are under `/api`. Authenticated routes accept the
@@ -483,7 +483,7 @@ param, multipart, upload, rate limit) live in
   `change-password`, `reset-password`, `password-recovery-request`,
   `revoke-user-sessions`, `revoke-session`) and user (`update`, `delete`,
   `change-profile-picture`, `delete-profile-picture`).
-- **Not audited**: refused attempts and refresh-token reuse — security *events*,
+- **Not audited**: refused attempts and refresh-token reuse - security *events*,
   not state changes; they are WARN logs so the unauthenticated login path takes no
   write.
 - `GET /api/audit/` (requires `audit.read`) accepts `entity`, `actor`,
@@ -539,11 +539,11 @@ Run it separately: `make dev:worker`.
 - **Exporter**: gated by `METRICS_ENABLED`, a separate Fiber app serves `/metrics`
   on `METRICS_PORT` (default `APP_PORT + 1`; compose pins `9091`). The API binds
   every interface on `APP_PORT`; what is reachable is decided solely by the compose
-  `ports:` mapping — only Caddy publishes. The sidecar is excluded from graceful
+  `ports:` mapping - only Caddy publishes. The sidecar is excluded from graceful
   shutdown.
 - **Health**: `GET /api/healthz` pings Postgres and Redis with a 2 s timeout;
   any failure returns 503 with a `dependencies` map. Because it doubles as a probe,
-  a sustained dependency outage also fails liveness — split the endpoints if your
+  a sustained dependency outage also fails liveness - split the endpoints if your
   platform restarts unhealthy instances.
 - **Security headers**: `helmet` with deny-by-default CSP, `X-Frame-Options: DENY`,
   strict-origin-when-cross-origin referrer policy, restrictive permissions policy;
@@ -594,7 +594,7 @@ Unit tests only; they never touch a real database, Redis, or SMTP server.
 
 - **Framework**: `testify` (`assert` for continuing checks, `require` for setup)
   with table-driven `TestService_<Method>` + `t.Run` subtests.
-- **Mocks**: generated by `mockery` from `.mockery.yml` — entity-scoped in
+- **Mocks**: generated by `mockery` from `.mockery.yml` - entity-scoped in
   `internal/<entity>/mocks/`, shared infrastructure in `internal/testing/mocks/`.
   Run `mockery` after any interface change.
 - **Fixture pattern**: `setupTestFixture(t)` builds every mock with `t` (an
@@ -611,7 +611,7 @@ make client:test   # vitest, dashboard only
 
 ## Development tooling
 
-The `Makefile` is the entry point — read it for the exact commands. Targets group
+The `Makefile` is the entry point - read it for the exact commands. Targets group
 into `dev` / `dev:worker`, `build` / `run`, `test`, `lint`, `tidy`, `cli` +
 `permissions`, `migration:*`, and `client:*` (install, dev, lint, build, test).
 
@@ -649,4 +649,4 @@ repositories, services, testing) encode these rules in more detail.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). Copyright (c) 2024 Adil Prawirdani.
+MIT - see [`LICENSE`](LICENSE). Copyright (c) 2024 Adil Prawirdani.

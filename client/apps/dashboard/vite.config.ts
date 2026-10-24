@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => {
       viteReact(),
       // React Compiler runs first in the Babel pipeline. plugin-react v6 dropped
       // its `babel` option, so the compiler now arrives as a Rolldown Babel
-      // preset instead — order matters: `viteReact()` then `babel()`.
+      // preset instead - order matters: `viteReact()` then `babel()`.
       babel({ presets: [reactCompilerPreset()] }),
       tailwindcss(),
     ],

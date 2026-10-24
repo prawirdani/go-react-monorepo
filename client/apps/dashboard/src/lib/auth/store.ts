@@ -1,7 +1,7 @@
 import type { APIErrorCodes } from "@repo/api/errors"
 import { create } from "zustand"
 
-// The presented session is dead — stop and re-authenticate. Covers an expired
+// The presented session is dead - stop and re-authenticate. Covers an expired
 // or absent session, and a token the backend has revoked or blacklisted
 // (`AUTH_INVALID`).
 export const REDIRECT_ERROR_CODES = new Set<APIErrorCodes>([
@@ -20,7 +20,7 @@ type AuthStateStatus =
 
 /**
  * Session *lifecycle* only. Identity and permissions are server data and live
- * in `getSession` (`@/lib/data-access/queries`) — holding a second copy here is
+ * in `getSession` (`@/lib/data-access/queries`) - holding a second copy here is
  * how the two end up disagreeing (e.g. `expired` beside a live identity).
  */
 type AuthState = {

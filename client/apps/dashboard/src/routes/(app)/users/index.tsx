@@ -84,7 +84,7 @@ export const Route = createFileRoute("/(app)/users/")({
   loaderDeps: ({ search }) => search,
   // Fire-and-forget warmup, NOT a render gate: the component below owns its own
   // loading and error states, so the loader must not block the transition.
-  // Nothing is returned on purpose — returning the promise would make the router
+  // Nothing is returned on purpose - returning the promise would make the router
   // await it.
   loader: ({ context, deps }) => {
     context.queryClient.query(listUser(deps))
@@ -353,7 +353,7 @@ function RouteComponent() {
                                   aria-controls={
                                     isExpanded ? panelId : undefined
                                   }
-                                  aria-label={`${t("users.sessions.toggle")} — ${user.name}`}
+                                  aria-label={`${t("users.sessions.toggle")} - ${user.name}`}
                                   onClick={() => toggleExpanded(user.id)}
                                 >
                                   <ChevronRight
@@ -407,12 +407,12 @@ function RouteComponent() {
                             data-mono
                             className="px-3 text-xs text-muted-foreground"
                           >
-                            {user.phone ?? "—"}
+                            {user.phone ?? "-"}
                           </TableCell>
                           <TableCell className="px-3 text-sm text-muted-foreground">
                             {user.gender
                               ? tc(GENDER_LABEL_KEYS[user.gender])
-                              : "—"}
+                              : "-"}
                           </TableCell>
                           <TableCell
                             data-mono
@@ -603,7 +603,7 @@ function UsersLoading({ compact }: { compact: boolean }) {
 
 /**
  * Below `lg`, one bay per user: identity, then attribute seams, then actions.
- * No card chrome — the panel is already a panel; a record is a bay on the rack.
+ * No card chrome - the panel is already a panel; a record is a bay on the rack.
  * Seams come from `PanelRows`; the single small-caps label is `.panel-label`.
  */
 function UserRecords({
@@ -743,7 +743,7 @@ function UserRecords({
                       {t("users.table.phone")}
                     </span>
                   }
-                  value={user.phone ?? "—"}
+                  value={user.phone ?? "-"}
                 />
                 <PanelRow
                   label={
@@ -751,7 +751,7 @@ function UserRecords({
                       {t("users.table.gender")}
                     </span>
                   }
-                  value={user.gender ? tc(GENDER_LABEL_KEYS[user.gender]) : "—"}
+                  value={user.gender ? tc(GENDER_LABEL_KEYS[user.gender]) : "-"}
                   mono={false}
                 />
                 <PanelRow
@@ -773,7 +773,7 @@ function UserRecords({
                   type="button"
                   onClick={() => onToggle(user.id)}
                   aria-expanded={isExpanded}
-                  aria-label={`${t("users.sessions.toggle")} — ${user.name}`}
+                  aria-label={`${t("users.sessions.toggle")} - ${user.name}`}
                   aria-controls={isExpanded ? panelId : undefined}
                   className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-xs outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >

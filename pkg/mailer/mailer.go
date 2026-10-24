@@ -64,7 +64,7 @@ func (m *Mailer) Send(headerParams HeaderParams, body bytes.Buffer) error {
 		return nil
 	case <-time.After(sendTimeout):
 		// ponytail: the stuck goroutine leaks until its conn eventually errors
-		// or closes — bounded per message, so shutdown can't wedge. Fix: upgrade
+		// or closes - bounded per message, so shutdown can't wedge. Fix: upgrade
 		// gomail (newer versions expose a Dialer.Timeout) or use net/smtp with
 		// explicit conn deadlines.
 		return fmt.Errorf("failed to send mail: %w", ErrSendTimeout)

@@ -28,7 +28,7 @@ import { AuditPanel } from "./-audit-panel"
  * Every one of this route's params at its default.
  *
  * `auditSearchQueryStripDefaults` covers only the filters, so the base params
- * survived every navigation — clearing a non-admin's dead audit filters still
+ * survived every navigation - clearing a non-admin's dead audit filters still
  * left `?page=1&limit=10&sort=created_at&order=desc` behind. A param holding
  * its default belongs in neither the URL nor a shared link.
  */
@@ -51,7 +51,7 @@ export const Route = createFileRoute("/(app)/")({
   // Fire-and-forget warmup, not a render gate: the audit panel owns its own
   // loading/error states. Nothing returned, so the router does not await it.
   loader: ({ context, deps }) => {
-    // Gated on `audit.read` — the panel is this route's only consumer, but a
+    // Gated on `audit.read` - the panel is this route's only consumer, but a
     // loader runs before render and `defaultPreload: "intent"` fires it on
     // hover, so an ungated prefetch had every non-admin pulling a 403'd audit
     // page on each dashboard visit.
@@ -82,7 +82,7 @@ export function hasNonDefaultAuditSearch(search: AuditSearchQuery): boolean {
   })
 }
 
-// Sample figures are data, not copy — only the labels are translated.
+// Sample figures are data, not copy - only the labels are translated.
 const summary: { labelKey: MessageKeys<"app">; value: string; tone?: Tone }[] =
   [
     { labelKey: "dashboard.summary.entriesToday", value: "128" },
@@ -143,7 +143,7 @@ function Component() {
   const navigate = Route.useNavigate()
 
   // The audit filters live on this route, but a user without `audit.read` never
-  // sees their panel — so a shared, restored, or permission-lost URL would keep
+  // sees their panel - so a shared, restored, or permission-lost URL would keep
   // `?entity=user&page=3` forever and mean nothing. Clear them once the session
   // says so.
   //
@@ -151,7 +151,7 @@ function Component() {
   // session cache is only guaranteed populated by the root's `beforeLoad`, so a
   // pending identity would read as "no permission" and wipe a real admin's
   // filters. By effect time `status === "authenticated"` implies the cache is
-  // warm (see `authActions` — cache before status), so `can` is exact here.
+  // warm (see `authActions` - cache before status), so `can` is exact here.
   useEffect(() => {
     if (can("audit.read")) return
     if (!hasNonDefaultAuditSearch(search)) return

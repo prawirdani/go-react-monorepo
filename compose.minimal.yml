@@ -1,5 +1,5 @@
 # Bare API stack: Postgres, Redis, API, worker, migrate and the backup sidecar.
-# No bundled reverse proxy, TLS, or dashboards — you front it yourself (a host
+# No bundled reverse proxy, TLS, or dashboards - you front it yourself (a host
 # nginx, a cloud load balancer, etc.) and serve the built client however you
 # like.
 #
@@ -10,12 +10,12 @@
 #
 # The API publishes on 127.0.0.1 only, so it is reachable from the host's own
 # proxy but never directly from the internet (Docker publishes bypass ufw, so
-# the loopback bind — not the firewall — is what keeps it private). Point your
+# the loopback bind - not the firewall - is what keeps it private). Point your
 # proxy's upstream at 127.0.0.1:${APP_PORT}.
 #
 # Client IPs: set TRUST_PROXY=true once a reverse proxy fronts the API, so the
 # audit log records the real client from X-Forwarded-For instead of the proxy.
-# Leave it false (the default) for a directly-reachable API — trusting the
+# Leave it false (the default) for a directly-reachable API - trusting the
 # header with no proxy in front lets a caller forge its own IP.
 services:
   api:
@@ -34,7 +34,7 @@ services:
       # Honour X-Forwarded-For from the host proxy. Opt-in: off means the socket
       # peer is used, which is correct when nothing fronts the API.
       TRUST_PROXY: "${TRUST_PROXY:-false}"
-    # Loopback only: your host proxy connects here. Never bind 0.0.0.0 — Docker
+    # Loopback only: your host proxy connects here. Never bind 0.0.0.0 - Docker
     # publishes bypass ufw, which would put the API straight on the internet.
     ports:
       - "127.0.0.1:${APP_PORT:-8080}:${APP_PORT:-8080}"
@@ -82,11 +82,11 @@ services:
       # postgres:18 keeps PGDATA at /var/lib/postgresql/18/docker, so the volume
       # mounts at /var/lib/postgresql rather than /var/lib/postgresql/data. An
       # existing volume holds a 17 cluster at its root, which this image will not
-      # read — it runs initdb instead, yielding an empty database. See
+      # read - it runs initdb instead, yielding an empty database. See
       # DEPLOYMENT.md, "Upgrading PostgreSQL across a major version".
       - postgres-data:/var/lib/postgresql
     # Not published. For pgAdmin / psql from outside, uncomment the loopback
-    # mapping and tunnel it — `ssh -L 5432:127.0.0.1:5432 user@host`.
+    # mapping and tunnel it - `ssh -L 5432:127.0.0.1:5432 user@host`.
     # Never publish on 0.0.0.0: Docker publishes bypass ufw, so that would put
     # the database on the internet.
     # ports:
@@ -113,7 +113,7 @@ services:
     user: redis
     # REDIS_PASSWORD must exist *inside the container* for the shell expansion
     # below and for the healthcheck. Compose interpolation alone only reads it
-    # to build this file — it does not inject it, which silently left Redis
+    # to build this file - it does not inject it, which silently left Redis
     # unauthenticated.
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
@@ -146,7 +146,7 @@ services:
   #
   # The image's entrypoint hardcodes `-dir=/migrations` and runs
   # `goose ${GOOSE_VERBOSE:+-v} -dir=/migrations ${GOOSE_COMMAND:-up}`, so only
-  # GOOSE_DRIVER/GOOSE_DBSTRING are needed here — no command or entrypoint.
+  # GOOSE_DRIVER/GOOSE_DBSTRING are needed here - no command or entrypoint.
   migrate:
     image: ghcr.io/kukymbr/goose-docker:3.19.2
     env_file:
@@ -166,7 +166,7 @@ services:
     restart: "no"
 
   # Twice-daily logical backups, offsite-only. Built on the rclone image (Alpine)
-  # with postgresql18-client from apk — ~100MB vs ~300MB for the postgres image
+  # with postgresql18-client from apk - ~100MB vs ~300MB for the postgres image
   # plus apt rclone, and rclone is preinstalled. One busybox-crond job streams
   # `pg_dump -Fc | rclone copyto` straight to a private R2 bucket; there is no
   # local copy and no on-host volume. Retention is an R2 lifecycle rule on

@@ -71,7 +71,7 @@ export function ThemeModeToggle({
 /**
  * Decorative palette preview. Carries the palette via `data-theme` and the
  * resolved mode via the `.dark` / `.light` class, then paints with ordinary
- * token utilities — no colour is duplicated in this file.
+ * token utilities - no colour is duplicated in this file.
  */
 function PaletteSwatch({ id, mode }: { id: ThemeId; mode: "dark" | "light" }) {
   return (

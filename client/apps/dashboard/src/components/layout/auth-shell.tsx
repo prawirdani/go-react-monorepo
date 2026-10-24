@@ -6,7 +6,7 @@ import { Panel, PanelBody, StateBadge } from "@/components/layout/panel"
 
 /**
  * Auth is one focused panel standing on the same graphite ground as the
- * console — a quiet orientation rail on the left, the panel centred on the
+ * console - a quiet orientation rail on the left, the panel centred on the
  * work surface.
  */
 export function AuthShell({ children }: { children: ReactNode }) {

@@ -8,13 +8,13 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
   migrate job, Caddy, Prometheus and Grafana on one pinned network.
 - **Only Caddy publishes ports** (plus Grafana, bound to loopback). Everything
   else is internal-only.
-- Target shape: a VPS with a public IP, a domain, and TLS terminated by Caddy —
+- Target shape: a VPS with a public IP, a domain, and TLS terminated by Caddy -
   optionally behind Cloudflare.
 
 > **Which compose file.** This guide assumes the self-contained Caddy stack,
-> which is the default `compose.yml` — the commands below take no `-f`.
+> which is the default `compose.yml` - the commands below take no `-f`.
 > `compose.minimal.yml` is the bare API (Postgres, Redis, API, worker, migrate,
-> backup) with **no** bundled proxy, TLS, or dashboards — front it with your
+> backup) with **no** bundled proxy, TLS, or dashboards - front it with your
 > own proxy (e.g. a host nginx) pointed at `127.0.0.1:${APP_PORT}`, and set
 > `TRUST_PROXY=true` so audit IPs come from `X-Forwarded-For`. The proxy-trust
 > and firewall notes below apply to both; the TLS, Cloudflare and Grafana
@@ -24,7 +24,7 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 
 ## 0. Prerequisites
 
-- [ ] Host with **Docker Engine** and **Compose v2**. v2 is required — the stack
+- [ ] Host with **Docker Engine** and **Compose v2**. v2 is required - the stack
       uses `depends_on: condition: service_healthy` and
       `service_completed_successfully`.
 - [ ] A domain you control (for automatic HTTPS). Not required for a plain-HTTP
@@ -42,7 +42,7 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 ## 1. Get the code you intend to deploy
 
 - [ ] Clone and check out the ref you are deploying (tag or commit).
-- [ ] `git status` — the working tree must be clean, or you are deploying
+- [ ] `git status` - the working tree must be clean, or you are deploying
       something that exists only on your laptop. *(This repo currently has
       uncommitted work; see §11.)*
 - [ ] `docker compose config --quiet` → exit 0.
@@ -59,13 +59,13 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 |---|---|
 | `AUTH_JWT_SECRET` | `openssl rand -base64 48`. Must be ≥ 32 chars; the `.env.example` placeholder is public and therefore forgeable |
 | `DB_PASSWORD` | strong, unique |
-| `APP_ENV` | `prod` — enables `Secure` cookies and HSTS |
+| `APP_ENV` | `prod` - enables `Secure` cookies and HSTS |
 | `APP_INTERNAL_MODE` | `false` for public self-service registration; `true` makes registration admin-only |
 | `CORS_ORIGINS` | your real web origin(s), comma-separated |
 | `AUTH_RESET_PASSWORD_FORM_ENDPOINT` | real web UI URL for the reset form |
 | `AUTH_COMPLETE_REGISTRATION_FORM_ENDPOINT` | real web UI URL for the invite form |
 | `SMTP_*` | real mail credentials |
-| `R2_*` | app uploads bucket (may be public — it is for served assets) |
+| `R2_*` | app uploads bucket (may be public - it is for served assets) |
 | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | change from `admin`/`admin` |
 
 - [ ] **Rotate anything that has ever left this machine.** Assume any credential
@@ -73,7 +73,7 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
       rather than reusing.
 - [ ] `DB_PASSWORD` caveat: `POSTGRES_PASSWORD` is applied **only when the
       volume is first initialised**. Changing it later does not change the
-      database — do it before the first `up`, or plan
+      database - do it before the first `up`, or plan
       `docker compose down -v` (destroys data) or `ALTER USER postgres
       WITH PASSWORD '…'`.
 
@@ -82,7 +82,7 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 ## 3. Host and network preparation
 
 - [ ] **Firewall.** Only `80`, `443` and SSH inbound. Note that **ufw does not
-      filter Docker-published ports** — Docker writes its own iptables rules
+      filter Docker-published ports** - Docker writes its own iptables rules
       that are evaluated first. Use your provider's firewall (Hetzner Firewall,
       AWS Security Group) for network-level filtering.
 - [ ] Confirm the public surface after config renders:
@@ -93,7 +93,7 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 
       Expected: `caddy` on `80`/`443`, `grafana` on `127.0.0.1:3000`. Nothing else.
 - [ ] Do **not** publish Postgres. If you need pgAdmin/psql from outside,
-      uncomment the loopback mapping in `compose.yml` and tunnel it — never
+      uncomment the loopback mapping in `compose.yml` and tunnel it - never
       `0.0.0.0`, and never against the public app bucket's credentials.
 
 ---
@@ -114,20 +114,20 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
       does not resolve: Let's Encrypt allows only 5 failed validations per
       hostname per hour.
 - [ ] Optional: uncomment the `email` line in `deployment/caddy/Caddyfile` for
-      certificate-expiry notices. It cannot be driven by an env var — an unset
+      certificate-expiry notices. It cannot be driven by an env var - an unset
       substitution is a Caddyfile parse error.
 - [ ] Watch issuance on first boot: `docker compose logs -f caddy`.
 
 ### Behind Cloudflare (optional)
 
 - [ ] `CADDYFILE=Caddyfile.cloudflare` in `.env`.
-- [ ] `./deployment/caddy/update-cloudflare-ips.sh` — refreshes the
+- [ ] `./deployment/caddy/update-cloudflare-ips.sh` - refreshes the
       `trusted_proxies` list from Cloudflare's published ranges. Re-run whenever
       they rotate; stale ranges silently stop trusting CF traffic.
 - [ ] At the provider firewall, restrict origin `80`/`443` to Cloudflare's ranges.
 - [ ] Install a **Cloudflare Origin Certificate** and set SSL mode **Full
       (strict)**. Never `Flexible`.
-- [ ] Only works because of `header_up X-Forwarded-For {client_ip}` — without
+- [ ] Only works because of `header_up X-Forwarded-For {client_ip}` - without
       it Caddy appends the CF edge address and the audit log records that
       instead of the client. See [Behind Cloudflare](#behind-cloudflare-how-it-works).
 
@@ -138,8 +138,8 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 - [ ] `docker compose up -d --build`
 - [ ] Startup order is `postgres (healthy)` → `migrate (completed)` → `api` +
       `worker`. A failed migration blocks the app tier by design.
-- [ ] `docker compose ps` — every service `running`, `postgres`/`redis` healthy.
-- [ ] `docker compose logs migrate` — goose reports the migrations it applied
+- [ ] `docker compose ps` - every service `running`, `postgres`/`redis` healthy.
+- [ ] `docker compose logs migrate` - goose reports the migrations it applied
       (or none, if already current).
 
 ---
@@ -154,7 +154,7 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
       no unit test covers.
 - [ ] **Audit IP is real.** Log in from another machine and check
       `audit_logs.ip_addr` / the session row. Requests from the host itself via
-      `localhost` legitimately record the Docker gateway (`172.x.0.1`) — that is
+      `localhost` legitimately record the Docker gateway (`172.x.0.1`) - that is
       loopback behaviour, not a bug. Use another device or the public address.
 - [ ] Metrics: the exporter is gated by `METRICS_ENABLED` and served on
       `METRICS_PORT` (compose pins `9091`), inside the network only. Check
@@ -169,7 +169,7 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 Reference: [`BACKUP.md`](./BACKUP.md).
 
 - [ ] Create a **separate, private** R2 bucket for dumps. The app's `R2_BUCKET`
-      is served from a public URL — dumping there would publish the whole
+      is served from a public URL - dumping there would publish the whole
       database. The script hard-refuses if `BACKUP_R2_BUCKET == R2_BUCKET`.
 - [ ] Issue **credentials scoped to that bucket** and set
       `BACKUP_R2_BUCKET`, `BACKUP_R2_ACCESS_KEY_ID`,
@@ -182,7 +182,7 @@ Reference: [`BACKUP.md`](./BACKUP.md).
       docker compose run --rm --entrypoint sh backup -c \
         'set -a; . /etc/backup.env; set +a; rclone ls "r2:$BACKUP_R2_BUCKET/${BACKUP_PREFIX:-postgres}"'
       ```
-- [ ] **Set the R2 lifecycle rule** on the `postgres/` prefix (30 days) — the
+- [ ] **Set the R2 lifecycle rule** on the `postgres/` prefix (30 days) - the
       script never deletes, so without it dumps accumulate forever.
 - [ ] **Run the restore drill** ([`BACKUP.md` → Restore drill](./BACKUP.md#restore-drill)). An
       untested backup is a hope, not a backup.
@@ -201,14 +201,14 @@ Reference: [`BACKUP.md`](./BACKUP.md).
 Compose pins `postgres:18.1`. Applying the 18 image to an existing 17 data volume
 does **not** upgrade it: the 18 image looks for the cluster at
 `/var/lib/postgresql/18/docker` (the declared volume is now `/var/lib/postgresql`),
-finds nothing, and runs `initdb` — producing a **silently empty database**. The old
+finds nothing, and runs `initdb` - producing a **silently empty database**. The old
 files are orphaned, not deleted. Read this before the first `up` after the bump.
 
 The database name is unchanged (`DB_NAME=golang-restapi`), so nothing was renamed;
 the only risk is the major version. PostgreSQL cannot start 18 on a 17 data
 directory without `pg_upgrade`.
 
-**Preferred path — dump and restore.** Before switching the image, take a dump with
+**Preferred path - dump and restore.** Before switching the image, take a dump with
 `pg_dump` from a 17 container (or use the newest existing dump in `backups/`):
 
 ```bash
@@ -220,14 +220,14 @@ still reach the old server. Then start 18 so it initialises a fresh cluster, and
 restore into it using the runbook in
 [`BACKUP.md` → Restore runbook](./BACKUP.md#restore-runbook).
 
-**Alternative — `pg_upgrade --link`.** The 18 image moved the volume to
+**Alternative - `pg_upgrade --link`.** The 18 image moved the volume to
 `/var/lib/postgresql` so the old and new data directories can be mounted side by
 side, which is what `pg_upgrade` needs. It is the option for a database large enough
 that a dump/restore window is unacceptable; it needs a maintenance window and should
 be rehearsed on a copy first.
 
 Either way the old cluster's files are left in place and remain recoverable until
-that volume is removed. A fresh install has none of this problem — the caveat only
+that volume is removed. A fresh install has none of this problem - the caveat only
 applies to a host with an existing `postgres-data` volume.
 
 ---
@@ -239,7 +239,7 @@ applies to a host with an existing `postgres-data` volume.
       Know that before running it; it is not a restart.
 - [ ] Re-run `update-cloudflare-ips.sh` periodically if CF is in front.
 - [ ] Keep the host patched; `docker compose pull` for base-image updates, then
-      `up -d`. `pull` does **not** update caddy — it is a locally built image, so
+      `up -d`. `pull` does **not** update caddy - it is a locally built image, so
       rebuild it with `up -d --build` after a client change.
 - [ ] Migrations are additive; deploy order is `migrate` → `api`/`worker`, which
       the compose dependency graph already enforces.
@@ -250,16 +250,16 @@ applies to a host with an existing `postgres-data` volume.
 
 - [ ] Previous app image: rebuild from the prior commit and `docker compose up -d`.
 - [ ] Schema: migrations are additive, so an older binary usually runs against a
-      newer schema — but verify per release rather than assuming.
+      newer schema - but verify per release rather than assuming.
 - [ ] Data damage: restore a dump ([`BACKUP.md` → Restore runbook](./BACKUP.md#restore-runbook)).
       Note the RPO: you can roll back to the last dump (up to 12 h old), not to
       "one minute before the bad deploy".
 
 ---
 
-## 11. Known gaps — read before go-live
+## 11. Known gaps - read before go-live
 
-- [ ] **A real offsite upload has never run** — no private backup bucket or
+- [ ] **A real offsite upload has never run** - no private backup bucket or
       scoped credentials exist yet, so only local dumps are proven.
 - [ ] **No CI.** There is no `.github/`; nothing builds, tests or lints on push.
 - [ ] **No alerting.** A failed backup logs and exits non-zero, but nothing
@@ -267,8 +267,8 @@ applies to a host with an existing `postgres-data` volume.
 - [ ] **No container healthcheck for `api`/`worker`.** The runtime image is
       distroless (no shell, no HTTP client), so a healthcheck cannot be
       expressed. Caddy performs an active health check on `/api/healthz`.
-- [ ] Application images are built locally — `go-react-monorepo:local` (api/worker)
-      and the caddy image — with no registry, so every host builds its own. The
+- [ ] Application images are built locally - `go-react-monorepo:local` (api/worker)
+      and the caddy image - with no registry, so every host builds its own. The
       dashboard's bun toolchain is pulled inside the Docker build, so the host
       only needs Docker.
 
@@ -286,7 +286,7 @@ redirects HTTP to HTTPS. There is no certificate configuration to write.
 Requirements:
 
 - An `A`/`AAAA` record for the domain pointing at the host's public IP.
-- Host ports 80 and 443 reachable from the internet — `CADDY_HTTP_PORT` and
+- Host ports 80 and 443 reachable from the internet - `CADDY_HTTP_PORT` and
   `CADDY_HTTPS_PORT` must be exactly `80`/`443`, because the ACME challenge depends
   on them.
 - Outbound access to `acme-v02.api.letsencrypt.org`, and nothing else already bound
@@ -305,8 +305,8 @@ from `X-Forwarded-For` whenever `TRUST_PROXY=true` (`compose.yml` sets it;
 for the bare `compose.minimal.yml` set it once a proxy fronts the API). Fiber walks the
 header right-to-left past trusted peers (loopback / private / unix socket) and
 returns the rightmost non-trusted IP, so a client-appended entry cannot spoof the
-audit log. The trust boundary is the private socket — the API is never published,
-so only the proxy can reach it — not an address allowlist, which is why no CIDR
+audit log. The trust boundary is the private socket - the API is never published,
+so only the proxy can reach it - not an address allowlist, which is why no CIDR
 needs maintaining and the same build works behind Caddy or a host nginx. With
 `TRUST_PROXY` unset or false the socket peer is used instead, which is correct
 for a directly-reachable API.
@@ -323,7 +323,7 @@ for a directly-reachable API.
 | `prometheus` | no | scrapes `api:9091` |
 
 Every service shares the pinned `app-net` bridge. That also means Caddy, Prometheus
-and Grafana can reach the datastores — a deliberate simplification. To restore that
+and Grafana can reach the datastores - a deliberate simplification. To restore that
 segmentation, give Postgres and Redis their own `internal: true` network; Docker then
 suppresses any `ports:` mapping on them, so you cannot publish them from there.
 
@@ -338,7 +338,7 @@ docker compose exec postgres psql -U postgres -d go-react-monorepo
 ssh -L 5432:127.0.0.1:5432 user@host
 ```
 
-Never publish it on `0.0.0.0` — Docker publishes bypass ufw, so that puts the database
+Never publish it on `0.0.0.0` - Docker publishes bypass ufw, so that puts the database
 directly on the internet, and the container runs without TLS.
 
 ### Behind Cloudflare (how it works)
@@ -351,7 +351,7 @@ collapses the chain into a single verified client IP.
   list. Re-run it whenever Cloudflare announces new ranges.
 - `trusted_proxies static <CF ranges>` + `client_ip_headers CF-Connecting-IP` make
   Caddy accept Cloudflare's forwarding headers **only** from CF peers. Both are
-  server-level options and must sit inside the Caddyfile's `servers { }` block —
+  server-level options and must sit inside the Caddyfile's `servers { }` block -
   Caddy rejects them at the top level.
 - The `header_up X-Forwarded-For {client_ip}` on `reverse_proxy` is **required**:
   without it Caddy forwards the raw connection peer (the CF edge), so the audit log
@@ -360,7 +360,7 @@ collapses the chain into a single verified client IP.
   ignored.
 - `TRUST_PROXY` stays `true` and the API trusts the Caddy peer by class, not an
   address list: Caddy has already done the edge reasoning and collapsed the chain
-  to the verified client. There is no CIDR to widen to the Cloudflare ranges —
+  to the verified client. There is no CIDR to widen to the Cloudflare ranges -
   that reasoning lives in Caddy's `trusted_proxies`, not the API.
 - Restrict the origin's 80/443 to Cloudflare's published ranges so the origin cannot
   be reached directly, bypassing CF.
@@ -375,7 +375,7 @@ with a fallback to `index.html`. Hashed `/assets/*` are cached immutably for a y
 every other response is `no-cache`.
 
 It shares the API's origin, so the same TLS and Cloudflare behaviour applies to the
-dashboard. The client is built at image build time and is not hot-reloaded — a
+dashboard. The client is built at image build time and is not hot-reloaded - a
 frontend change needs a rebuild of the caddy image.
 
 Because Vite inlines `import.meta.env.VITE_*` into the bundle, two client settings
@@ -384,7 +384,7 @@ must be supplied **at build time**, and changing either needs
 
 | Build arg | Value |
 | --- | --- |
-| `VITE_API_URL` | empty — same origin, so the client calls `/api` relative to the page |
+| `VITE_API_URL` | empty - same origin, so the client calls `/api` relative to the page |
 | `VITE_IMAGE_URL` | the public asset base for uploaded files; compose defaults it to `R2_BUCKET_URL` |
 
 The image has no `.env` (it is dockerignored), so an unset variable reaches the

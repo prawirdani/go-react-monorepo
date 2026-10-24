@@ -21,7 +21,7 @@ type NestedKeyOf<T> = {
 		: never;
 }[keyof T & string];
 
-/** Every *leaf* dot-path in T — objects never qualify (valid t() keys). */
+/** Every *leaf* dot-path in T - objects never qualify (valid t() keys). */
 type MessagePaths<T> = {
 	[K in keyof T & string]: T[K] extends Record<string, unknown>
 		? `${K}.${MessagePaths<T[K]>}`

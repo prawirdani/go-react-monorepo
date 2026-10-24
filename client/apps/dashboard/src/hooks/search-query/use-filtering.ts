@@ -5,7 +5,7 @@ import type { SearchQueryNavigate } from "./types"
  * Filter mutators: every change and clear resets to page 1.
  *
  * A filter is written as `undefined` when nothing is selected, which drops the
- * param from the URL — that is what "Semua" means on both sides: no filter for
+ * param from the URL - that is what "Semua" means on both sides: no filter for
  * that group. The router's raw `prev` is only spread; its absent params are
  * `undefined` and unsafe to read.
  */

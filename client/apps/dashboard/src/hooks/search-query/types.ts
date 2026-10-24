@@ -11,7 +11,7 @@ export type SearchQuery = {
 
 /**
  * The slice of `Route.useNavigate()` the query concerns need. Deliberately
- * narrower than the router's generic navigate — call sites cast
+ * narrower than the router's generic navigate - call sites cast
  * `Route.useNavigate()` once (see the users route) rather than spreading `any`.
  */
 export type SearchQueryNavigate = (options: {

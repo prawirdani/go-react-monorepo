@@ -19,7 +19,7 @@ const counterPrefix = "counter:"
 // a crash left without expiry between a previous INCR and EXPIRE), so a
 // sustained attacker cannot refresh its own lockout by keeping the key hot.
 // Returning the count and TTL in the same round trip keeps the whole operation
-// a single atomic step — a plain INCR then EXPIRE could strand a key with no
+// a single atomic step - a plain INCR then EXPIRE could strand a key with no
 // expiry if the process died between them, pinning the limit forever.
 var incrementScript = redis.NewScript(`
 local n = redis.call('INCR', KEYS[1])

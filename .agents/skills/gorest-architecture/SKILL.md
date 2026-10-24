@@ -1,6 +1,6 @@
 ---
 name: gorest-architecture
-description: "Project architecture rules for github.com/prawirdani/go-react-monorepo — clean/onion layering, dependency direction, interface placement, manual DI wiring, import aliases, and file/naming conventions. Use when adding a feature, a new package, or a new domain entity; when reviewing whether code belongs in domain/infrastructure/transport; or when wiring dependencies. Supersedes generic layering advice for this repo."
+description: "Project architecture rules for github.com/prawirdani/go-react-monorepo - clean/onion layering, dependency direction, interface placement, manual DI wiring, import aliases, and file/naming conventions. Use when adding a feature, a new package, or a new domain entity; when reviewing whether code belongs in domain/infrastructure/transport; or when wiring dependencies. Supersedes generic layering advice for this repo."
 user-invocable: true
 license: MIT
 compatibility: Designed for AI coding agents working in the go-react-monorepo repository.
@@ -16,24 +16,24 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(m
 ## Rules
 
 1. **Layering is strict.** Dependencies flow one way:
-   - `internal/<entity>/` — models, service interfaces, service implementations, errors. ZERO infrastructure or transport imports (no pgx, no redis, no Fiber).
-   - `internal/ports/` — cross-cutting interfaces the domain and infrastructure agree on (`repository.Transactor`, `storage`, `throttle`, `outbox`, `revocation`). Stdlib and small value types only; no infrastructure imports.
-   - `internal/infrastructure/` — implementations (postgres repos + outbox repo + auth event producer, r2 storage, redis throttle/revocation). May import domain and ports, never the reverse.
-   - `internal/transport/http/` — handlers, middleware, context helpers. May import domain and pkg/, never infrastructure directly.
-   - `internal/worker/` — background delivery logic: the outbox poll worker and `AuthWorker` (renders and sends auth emails). May import domain and ports, never infrastructure.
-   - `pkg/` — framework-agnostic helpers (log, mailer, metrics, nullable, strings, validator).
-   - `cmd/api` + `cmd/worker` — composition roots only.
+   - `internal/<entity>/` - models, service interfaces, service implementations, errors. ZERO infrastructure or transport imports (no pgx, no redis, no Fiber).
+   - `internal/ports/` - cross-cutting interfaces the domain and infrastructure agree on (`repository.Transactor`, `storage`, `throttle`, `outbox`, `revocation`). Stdlib and small value types only; no infrastructure imports.
+   - `internal/infrastructure/` - implementations (postgres repos + outbox repo + auth event producer, r2 storage, redis throttle/revocation). May import domain and ports, never the reverse.
+   - `internal/transport/http/` - handlers, middleware, context helpers. May import domain and pkg/, never infrastructure directly.
+   - `internal/worker/` - background delivery logic: the outbox poll worker and `AuthWorker` (renders and sends auth emails). May import domain and ports, never infrastructure.
+   - `pkg/` - framework-agnostic helpers (log, mailer, metrics, nullable, strings, validator).
+   - `cmd/api` + `cmd/worker` - composition roots only.
 
 2. **Interfaces live next to their consumers in `internal/<entity>/`**, conventionally in `internal/<entity>/interfaces.go`, and are **segmented by use** rather than one wide interface. `auth` declares `Repository` plus narrow `SessionReader`/`SessionWriter`, `TokenReader`/`TokenWriter`, `EventProducer`, and `UserRepository user.Repository` (a re-export of the user domain interface). A service depends on the interfaces it actually uses.
 
 3. **DI is manual and explicit** in `cmd/api/container.go`. One constructor per dependency, services composed top-down, mocks not allowed in production wiring. `NewContainer` receives only `cfg`, `pg *postgres.DB`, `rdb *redis.Client` and builds everything else.
 
-4. **Import aliases are fixed** — never import these packages with a different alias:
+4. **Import aliases are fixed** - never import these packages with a different alias:
    - `redisInfra "github.com/prawirdani/go-react-monorepo/internal/infrastructure/redis"`
    - `strs "github.com/prawirdani/go-react-monorepo/pkg/strings"`
    - `sharedMocks "github.com/prawirdani/go-react-monorepo/internal/testing/mocks"`
 
-   `internal/transport/http` is `package http` and is imported **unaliased** — there is no `httpx` alias.
+   `internal/transport/http` is `package http` and is imported **unaliased** - there is no `httpx` alias.
 
 5. **Naming conventions are mandatory:**
    - Packages: short, lowercase, single-word (`auth`, `postgres`, `middleware`).
@@ -56,8 +56,8 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Bash(m
 ## References
 
 - `AGENTS.md` (Layout, Architecture, Conventions)
-- `cmd/api/container.go` — manual DI composition
-- `cmd/api/server.go` — route registration + middleware chain
-- `internal/auth/interfaces.go` — segmented consumer-side interfaces
-- `internal/auth/service.go` — service depending on interfaces
-- `.mockery.yml` — where mocks are generated and where they land
+- `cmd/api/container.go` - manual DI composition
+- `cmd/api/server.go` - route registration + middleware chain
+- `internal/auth/interfaces.go` - segmented consumer-side interfaces
+- `internal/auth/service.go` - service depending on interfaces
+- `.mockery.yml` - where mocks are generated and where they land

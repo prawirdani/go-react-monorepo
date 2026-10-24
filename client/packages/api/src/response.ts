@@ -5,7 +5,7 @@ export interface ResponseBody<T = null> {
 	message?: string;
 }
 
-/** The `meta.pagination` slice — the only piece most list endpoints return. */
+/** The `meta.pagination` slice - the only piece most list endpoints return. */
 export type PaginationMeta = {
 	page: number;
 	limit: number;
@@ -23,7 +23,7 @@ interface Sort<TSortKey extends string> {
 // Helper to detect an "unset" generic
 type IsNever<T> = [T] extends [never] ? true : false;
 
-// All three slices are opt-in — pass `never` (or just omit) to exclude one.
+// All three slices are opt-in - pass `never` (or just omit) to exclude one.
 // The opt-out branch is `unknown`, not `never`: `never` is absorbing under
 // intersection (`never & { pagination: … }` is `never`), so using it as the
 // sentinel would collapse `QueryMetaOnly` to `never` and leave a default-meta

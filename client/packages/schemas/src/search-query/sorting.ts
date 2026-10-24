@@ -8,7 +8,7 @@ export type SortOrder = (typeof SORT_ORDERS)[number];
  *
  * `z.enum()` derives its output from the tuple's *constraint*, which widens a
  * generic tuple to `string`. The `const TSort` parameter keeps the caller's
- * literal elements and the assertion below restores the literal union — the
+ * literal elements and the assertion below restores the literal union - the
  * runtime schema is unchanged, and callers keep `query.sort` as the domain
  * union instead of `string`.
  */

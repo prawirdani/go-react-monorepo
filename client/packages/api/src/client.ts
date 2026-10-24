@@ -38,7 +38,7 @@ type ResponseMeta<TMeta> = [TMeta] extends [never] ? unknown : { meta: TMeta };
 
 /**
  * Standard (non-paginated) request. The caller declares `meta` because it
- * varies per endpoint — which is why the verb itself cannot know it.
+ * varies per endpoint - which is why the verb itself cannot know it.
  */
 type APIRequestFn = <T, TMeta = never>(
 	path: string,
@@ -150,7 +150,7 @@ export class APIClient {
 	}
 
 	public async healthz() {
-		// Fetch does not prefix baseURL (only makeVerb does), so build it here —
+		// Fetch does not prefix baseURL (only makeVerb does), so build it here -
 		// otherwise this hits the app's origin and gets the SPA's HTML fallback.
 		const res = await this.Fetch(`${this.getBaseURL()}/api/healthz`);
 		const resBody = (await res.json()) as {

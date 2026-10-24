@@ -9,7 +9,7 @@ import { queryClient } from "@/lib/query-client"
 /**
  * Imperative permission check for non-render callers (router `beforeLoad`,
  * event handlers). Fails closed: an unpopulated cache denies. Client gate is
- * UX only — the backend enforces with 403.
+ * UX only - the backend enforces with 403.
  */
 export function can(permission: Permission): boolean {
   return (

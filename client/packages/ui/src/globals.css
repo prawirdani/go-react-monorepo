@@ -11,12 +11,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ------------------------------------------------------------------
-   Graphite Console — three palettes, each in light and dark mode.
+   Graphite Console - three palettes, each in light and dark mode.
 
    Selector shape:
      :root, .dark                Graphite dark (default, no-JS fallback)
      .light                      Graphite light (mode class alone)
-     [data-theme="sea-glass"].dark  Sea Glass dark (0,2,0 — beats mode class)
+     [data-theme="sea-glass"].dark  Sea Glass dark (0,2,0 - beats mode class)
      [data-theme="sea-glass"].light Sea Glass light
      [data-theme="ember"].dark   Ember dark
      [data-theme="ember"].light  Ember light
@@ -31,7 +31,7 @@
    Every mono is 0.6em advance, so the data role keeps one physical size.
    ------------------------------------------------------------------ */
 
-/* Graphite dark — the default world and the pre-hydration fallback.
+/* Graphite dark - the default world and the pre-hydration fallback.
    `.dark` is included so a nested palette preview (data-theme + mode class)
    resolves graphite dark too, while :root still catches the no-class case. */
 :root,
@@ -87,7 +87,7 @@
 	--font-data: "Geist Mono Variable", ui-monospace, monospace;
 }
 
-/* Graphite light — daylight engineering surface: cool, never cream. */
+/* Graphite light - daylight engineering surface: cool, never cream. */
 .light {
 	--background: oklch(0.97 0.003 260);
 	--foreground: oklch(0.22 0.01 260);
@@ -140,7 +140,7 @@
 	--font-data: "Geist Mono Variable", ui-monospace, monospace;
 }
 
-/* Sea Glass — muted sea-mist teal; calm is the whole premise, so the
+/* Sea Glass - muted sea-mist teal; calm is the whole premise, so the
    primary stays at chroma ≤0.075 and every ground is tinted a hair.
    Dark is the primary mode. `info` stays blue and `attention` stays
    violet so neither signal collapses into the teal primary. */
@@ -244,7 +244,7 @@
 	--font-data: "Spline Sans Mono Variable", ui-monospace, monospace;
 }
 
-/* Ember — warm near-black steel; dark is the primary mode. */
+/* Ember - warm near-black steel; dark is the primary mode. */
 [data-theme="ember"].dark {
 	--background: oklch(0.17 0.008 55);
 	--foreground: oklch(0.94 0.012 85);

@@ -16,7 +16,7 @@ function detectTimeZone(): string {
  * Date mutators.
  *
  * A picked day travels as a bare calendar day (`YYYY-MM-DD`) plus the IANA zone
- * it was picked in. The server, not the client, resolves the offsets — it reads
+ * it was picked in. The server, not the client, resolves the offsets - it reads
  * the bounds in `tz`, falling back to UTC when the zone is absent or unknown.
  * `date` is the single-day shortcut and wins over an explicit `from`/`to` range.
  *
@@ -24,7 +24,7 @@ function detectTimeZone(): string {
  * `prev`: the schema `.catch("")`s each date field, so they are always strings
  * even when the param is absent. Only `prev` is spread, to keep unrelated
  * params (role, gender, sort…) intact. Reading them lets us skip a redundant
- * navigation when the applied filter would not change — including a change of
+ * navigation when the applied filter would not change - including a change of
  * zone, which would otherwise leave a stale `tz` in place.
  */
 export function useDateFiltering(

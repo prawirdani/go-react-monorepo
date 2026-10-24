@@ -67,7 +67,7 @@ const SKELETON_ROWS = [0, 1, 2, 3, 4] as const
 const SKELETON_ATTRS = ["actor", "entity"]
 
 /**
- * Live audit log. Owns its own query and loading state — the home route's
+ * Live audit log. Owns its own query and loading state - the home route's
  * prefetch is fire-and-forget and gated on `audit.read`, so the dashboard never
  * blocks on the audit request and a non-admin never issues one.
  */
@@ -290,7 +290,7 @@ function AuditRow({
 
   // `entity` is a plain string on the wire (the enum only types the search
   // param), so look the localized label up defensively and fall back to the raw
-  // value — an audit log must never render a blank cell for a new entity.
+  // value - an audit log must never render a blank cell for a new entity.
   const entityKey = ENTITY_LABEL_KEYS[entry.entity as AuditEntity] as
     | MessageKeys<"app">
     | undefined
@@ -323,7 +323,7 @@ function AuditRow({
                 size="icon-sm"
                 aria-expanded={expanded}
                 aria-controls={expanded ? panelId : undefined}
-                aria-label={`${t("dashboard.audit.payload")} — ${entry.action}`}
+                aria-label={`${t("dashboard.audit.payload")} - ${entry.action}`}
                 onClick={onToggle}
               >
                 <ChevronRight
@@ -380,7 +380,7 @@ function AuditRow({
 
 /**
  * Below `lg`, one bay per entry: action + timestamp, then attribute seams, then
- * a payload trigger. Seams only — a bay, not a card.
+ * a payload trigger. Seams only - a bay, not a card.
  */
 function AuditRecords({
   entries,
@@ -494,7 +494,7 @@ function AuditRecords({
                   type="button"
                   onClick={() => onToggle(entry.id)}
                   aria-expanded={isExpanded}
-                  aria-label={`${t("dashboard.audit.payload")} — ${entry.action}`}
+                  aria-label={`${t("dashboard.audit.payload")} - ${entry.action}`}
                   aria-controls={isExpanded ? panelId : undefined}
                   className="flex w-full cursor-pointer items-center gap-2 border-t border-border px-3 py-2 text-xs outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
@@ -544,7 +544,7 @@ function PayloadBlock({
     <div className="min-w-0">
       <p className="panel-label border-b border-border px-2 py-1">{label}</p>
       {value === null ? (
-        <p className="px-2 py-1.5 font-mono text-xs text-muted-foreground">—</p>
+        <p className="px-2 py-1.5 font-mono text-xs text-muted-foreground">-</p>
       ) : (
         <pre className="max-h-56 overflow-auto px-2 py-1.5 font-mono text-xs leading-relaxed">
           {JSON.stringify(value, null, 2)}

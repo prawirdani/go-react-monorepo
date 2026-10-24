@@ -42,7 +42,7 @@ import { useFieldContext, useFormContext } from "./context"
 /**
  * Zod emits message keys; the API layer puts raw server text into field errors.
  * A value that resolves as a key is translated, anything else passes through.
- * `t.has()` is the discriminator — no prefix matching.
+ * `t.has()` is the discriminator - no prefix matching.
  */
 function resolveMessage(t: Translator, value: string): string {
   const key = value as Parameters<Translator["has"]>[0]

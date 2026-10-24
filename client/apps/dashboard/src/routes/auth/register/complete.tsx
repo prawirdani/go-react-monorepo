@@ -22,7 +22,7 @@ export const Route = createFileRoute("/auth/register/complete")({
 
     // Deliberately NOT gated on `internal_mode`. This route serves admin
     // invites, which an internal deployment (`internal_mode: true`) still
-    // issues — gating it here would dead-end every invited user. The token is
+    // issues - gating it here would dead-end every invited user. The token is
     // the authorization: the loader rejects one that is expired, used, or
     // revoked.
   },

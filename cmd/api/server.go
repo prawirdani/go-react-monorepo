@@ -147,7 +147,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // health reports service health, including whether dependencies are reachable.
 // A failing dependency returns 503 so load balancers stop routing here until it
 // recovers. Note: because this doubles as a probe, a sustained dependency
-// outage will also fail liveness checks — split the endpoints if the platform
+// outage will also fail liveness checks - split the endpoints if the platform
 // restarts unhealthy instances.
 func (s *Server) health(c fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.Context(), 2*time.Second)

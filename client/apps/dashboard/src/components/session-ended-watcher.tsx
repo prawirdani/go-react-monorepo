@@ -9,7 +9,7 @@ import { useAuthStore } from "@/lib/auth/store"
  * The only redirect that lives outside the route tree: a session ends
  * mid-navigation, so no `beforeLoad` gets a chance to run. Mounted inside the
  * authenticated layout, so it exists only while there is an authed area to
- * leave — no pathname sniffing needed to avoid bouncing off `/auth/login`.
+ * leave - no pathname sniffing needed to avoid bouncing off `/auth/login`.
  */
 export function SessionEndedWatcher() {
   const status = useAuthStore((s) => s.status)

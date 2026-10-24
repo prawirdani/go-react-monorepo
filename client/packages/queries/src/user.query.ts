@@ -10,7 +10,7 @@ import { AUTH_KEY, USER_KEY } from "./keys";
 /**
  * Declarative invalidation targets, read by the dashboard's `MutationCache`
  * (`lib/query-client.ts`). Every user mutation touches both: the session
- * identity (header, `AUTH_KEY`) and the admin list (`USER_KEY`) — whose rows
+ * identity (header, `AUTH_KEY`) and the admin list (`USER_KEY`) - whose rows
  * render avatar/name/phone/gender, so a profile edit shows there too.
  */
 const meta = { invalidatesQuery: [[AUTH_KEY], [USER_KEY]] };

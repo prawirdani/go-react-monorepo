@@ -23,7 +23,7 @@ const (
 )
 
 // RevocationStore implements [revocation.Store] on Redis. Markers only ever
-// hold a timestamp or a presence flag — never a raw JWT or any secret.
+// hold a timestamp or a presence flag - never a raw JWT or any secret.
 type RevocationStore struct {
 	client *redis.Client
 	jwtTTL time.Duration
@@ -64,7 +64,7 @@ func revokedSessionKey(sessionID uuid.UUID) string {
 // revocation watermark. Extending the revoked window revocationSkew PAST the
 // watermark compensates for cross-instance clock skew and over-revokes, the
 // safe direction. Cost: a brand-new login within skew of a revocation is
-// briefly rejected too — deliberate, and preferable to a token issued just
+// briefly rejected too - deliberate, and preferable to a token issued just
 // before the revocation surviving.
 func revokedByWatermark(issuedAt time.Time, watermarkUnixNano int64) bool {
 	watermark := time.Unix(0, watermarkUnixNano)

@@ -1,6 +1,6 @@
 ---
 name: gorest-errors
-description: "Error handling rules for github.com/prawirdani/go-react-monorepo — apperr.Error constructors and Kind, immutable WithDetails/SetMessage copies, errors.Is semantics (kind+code), repository error translation (unique violation / no rows), and HTTP error normalization. Use when creating errors, mapping database errors, or reviewing how errors surface to clients."
+description: "Error handling rules for github.com/prawirdani/go-react-monorepo - apperr.Error constructors and Kind, immutable WithDetails/SetMessage copies, errors.Is semantics (kind+code), repository error translation (unique violation / no rows), and HTTP error normalization. Use when creating errors, mapping database errors, or reviewing how errors surface to clients."
 user-invocable: true
 license: MIT
 compatibility: Designed for AI coding agents working in the go-react-monorepo repository.
@@ -38,11 +38,11 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
    ```
    Use `uniqueViolationErr(err, constraintName)` (pg error code 23505) and `noRowsErr(err)` from `internal/infrastructure/postgres/common.go`.
 
-4. **Wrap internal errors with operation context** using `fmt.Errorf("op name: %w", err)` — lowercase op, no trailing punctuation. Sentinel `errors.New("... is nil")` is allowed only for nil-receiver guards at the top of repo methods.
+4. **Wrap internal errors with operation context** using `fmt.Errorf("op name: %w", err)` - lowercase op, no trailing punctuation. Sentinel `errors.New("... is nil")` is allowed only for nil-receiver guards at the top of repo methods.
 
 5. **HTTP transport maps kinds to statuses** via `appErrStatusMap` in `internal/transport/http/error.go` (NotFound→404, Validation→422, Conflict→409, Forbidden→403, Unauthorized→401, Throttled→429). Never hardcode a status mapping elsewhere. `http.ParseError` also handles deadline (504), client cancel (499), malformed JSON (400), validator errors (422), and oversized bodies (413). Validator failures surface as `details: map[string][]string` (field → messages).
 
-6. **Handler-level errors are `http.Error` sentinels** (`ErrReqUnauthorized`, `ErrMultipartForm`, `ErrNotFoundHandler`, `ErrRateLimit`, ...) with `SetMessage`/`SetDetails` copies. Handlers never hand-roll `http.Error(...)` — return the error and let Fiber's `ErrorHandler` (`router.go`, via `ParseError`) serialize it.
+6. **Handler-level errors are `http.Error` sentinels** (`ErrReqUnauthorized`, `ErrMultipartForm`, `ErrNotFoundHandler`, `ErrRateLimit`, ...) with `SetMessage`/`SetDetails` copies. Handlers never hand-roll `http.Error(...)` - return the error and let Fiber's `ErrorHandler` (`router.go`, via `ParseError`) serialize it.
 
 ## Checklist (Review mode)
 
@@ -55,9 +55,9 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 
 ## References
 
-- `internal/apperr/error.go` — Error, constructors, Is semantics; `internal/apperr/kind.go` — Kind + Kind* constants
-- `internal/auth/password_recovery_token.go` — sentinel definitions
-- `internal/infrastructure/postgres/user_repository.go` — `Store` translation pattern
-- `internal/infrastructure/postgres/common.go` — `uniqueViolationErr`, `noRowsErr`
-- `internal/transport/http/error.go` — `Error`, sentinels, `ParseError`, kind→status map
-- `pkg/validator/error.go` — `ValidationError` (`Details map[string][]string`)
+- `internal/apperr/error.go` - Error, constructors, Is semantics; `internal/apperr/kind.go` - Kind + Kind* constants
+- `internal/auth/password_recovery_token.go` - sentinel definitions
+- `internal/infrastructure/postgres/user_repository.go` - `Store` translation pattern
+- `internal/infrastructure/postgres/common.go` - `uniqueViolationErr`, `noRowsErr`
+- `internal/transport/http/error.go` - `Error`, sentinels, `ParseError`, kind→status map
+- `pkg/validator/error.go` - `ValidationError` (`Details map[string][]string`)

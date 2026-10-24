@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 /**
  * Tracks a media query. Reads it synchronously in the state initializer so a
- * client-only SPA paints the correct branch on the very first render — no flash
+ * client-only SPA paints the correct branch on the very first render - no flash
  * of the wide layout before the listener swaps it.
  *
  * Dashboard-local on purpose: it has one call site, and adding a new `@repo/ui`

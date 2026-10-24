@@ -126,7 +126,7 @@ func (n *Nullable[T]) UnmarshalJSON(data []byte) error {
 // This allows passing Nullable directly to database operations without an
 // explicit getter.
 //
-// Do not use this method for value comparisons or assertions — use Get() to
+// Do not use this method for value comparisons or assertions - use Get() to
 // retrieve the underlying value instead.
 func (n Nullable[T]) Value() (driver.Value, error) {
 	if !n.valid {

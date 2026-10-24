@@ -26,7 +26,7 @@ export class AuthAPI {
 
 	/**
 	 * Registers a user. The public form exists only on a *public* deployment
-	 * (`internal_mode: false`), where the caller has no session to send — so it
+	 * (`internal_mode: false`), where the caller has no session to send - so it
 	 * passes `{ noAuth: true }`. The admin/invite case requires
 	 * auth.register-user and defaults to sending the session.
 	 */

@@ -119,7 +119,7 @@ func (r *R2) Exists(ctx context.Context, path string) (bool, error) {
 	})
 	if err != nil {
 		// Only a genuine 404 means "does not exist". Auth/network/5xx
-		// failures must surface — silently treating them as "not found" would
+		// failures must surface - silently treating them as "not found" would
 		// mask real outages. HeadObject returns the typed NotFound error.
 		if _, ok := errors.AsType[*types.NotFound](err); ok {
 			return false, nil
@@ -133,14 +133,14 @@ func (r *R2) Exists(ctx context.Context, path string) (bool, error) {
 //   - a direct public URL if the bucket is public
 //   - a presigned URL if the bucket is private
 func (r *R2) GetURL(ctx context.Context, path string, expiry time.Duration) (string, error) {
-	// Case 1: public bucket — just return direct URL
+	// Case 1: public bucket - just return direct URL
 	if r.isPublic && r.publicURL != nil {
 		u := *r.publicURL
 		u.Path = path
 		return u.String(), nil
 	}
 
-	// Case 2: private bucket — generate presigned URL
+	// Case 2: private bucket - generate presigned URL
 	presignClient := s3.NewPresignClient(r.client)
 	presignResult, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(r.bucket),

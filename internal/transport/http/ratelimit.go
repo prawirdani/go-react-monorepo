@@ -24,7 +24,7 @@ func NewRateLimiter(counter throttle.Counter) *RateLimiter {
 }
 
 // IP limits by client address. It is the only identity an unauthenticated route
-// has, so it guards request volume rather than a single account — many users
+// has, so it guards request volume rather than a single account - many users
 // behind one CGNAT address (common with Indonesian ISPs) share this budget, so
 // keep max generous here and rely on the per-account throttles in the auth
 // service (per-email login lockout and recovery throttle) for targeted abuse.

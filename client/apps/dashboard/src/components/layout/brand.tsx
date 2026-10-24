@@ -2,7 +2,7 @@ import { useTranslations } from "@repo/i18n"
 import { cn } from "@repo/ui/lib/utils"
 
 /**
- * Typographic brand lockup — no logo file. A mono mark plate plus a tracked
+ * Typographic brand lockup - no logo file. A mono mark plate plus a tracked
  * small-caps wordmark. `compact` drops the wordmark for the icon rail.
  */
 export function BrandLockup({

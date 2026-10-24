@@ -25,7 +25,7 @@ interface StateBlockProps {
  * `strokeWidth={1.5}`, an optional `.panel-label` heading, a muted message, and
  * an optional action.
  *
- * Fill-free by design — the container decides the surface (Fill-Free Block
+ * Fill-free by design - the container decides the surface (Fill-Free Block
  * Rule). Neutral by default: only the error tone spends saturation, because
  * only error is a state (State-Only Rule).
  */

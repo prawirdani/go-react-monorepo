@@ -13,7 +13,7 @@ import { getSession } from "@/lib/data-access/queries"
 import type { FileRouteTypes } from "@/routeTree.gen"
 
 export type NavItem = {
-  /** Catalog key, translated at render — the array is module-level. */
+  /** Catalog key, translated at render - the array is module-level. */
   titleKey: MessageKeys<"app">
   icon: TablerIcon
   /** When set, the item is hidden unless the session holds this permission. */

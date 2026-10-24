@@ -1,7 +1,7 @@
 package log
 
 // Benchmarks for the logger adapters. Construct the adapter with a bool
-// (production flag) — no application config is required.
+// (production flag) - no application config is required.
 //
 // BenchmarkZerolog_Info-8            20172             59824 ns/op             304 B/op          4 allocs/op
 // func BenchmarkZerolog_Info(b *testing.B) {

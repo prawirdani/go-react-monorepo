@@ -19,7 +19,7 @@ type DateRange struct {
 
 // Bounds returns the half-open interval the filter asks for and rewrites the
 // request fields to their canonical form. ok is false when nothing usable was
-// supplied — malformed values are dropped, mirroring how the entity filters drop
+// supplied - malformed values are dropped, mirroring how the entity filters drop
 // values the domain does not recognise. (Surfacing 422 for a malformed date needs
 // a Validate method the handler calls; deliberately not added here.)
 //

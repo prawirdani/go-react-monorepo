@@ -91,7 +91,7 @@ export const useErrorHandler = () => {
       ) {
         // The backend names the offending query parameters. Those names are
         // machine identifiers (`page`, `limit`), not prose, so they are safe to
-        // show untranslated — unlike `details[].message`, which is server text
+        // show untranslated - unlike `details[].message`, which is server text
         // and is deliberately not surfaced (see the note on CODE_MESSAGES).
         const names = e.details.map((d) => d.key).join(", ")
         description = names

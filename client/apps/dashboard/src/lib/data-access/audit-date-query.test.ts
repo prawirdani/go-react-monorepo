@@ -30,7 +30,7 @@ describe("audit date search query", () => {
     expect(parsed.tz).toBe("Asia/Jakarta")
   })
 
-  it("drops a timestamp bound — the regression that silently disabled the filter", () => {
+  it("drops a timestamp bound - the regression that silently disabled the filter", () => {
     const parsed = auditSearchQuerySchema.parse({
       from: "2026-08-31T17:00:00.000Z",
     })

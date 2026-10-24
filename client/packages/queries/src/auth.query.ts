@@ -40,7 +40,7 @@ export function authQueries(authAPI: AuthAPI) {
 			// Revocation does not depend on this expiring: the next real request
 			// 401s, the interceptor's refresh fails, and `onTokenRefreshFailed`
 			// ends the session. Accepted trade-off: an out-of-band permission
-			// change is not observed until something invalidates `AUTH_KEY` — the
+			// change is not observed until something invalidates `AUTH_KEY` - the
 			// backend still enforces with 403.
 			staleTime: Number.POSITIVE_INFINITY,
 			retry: false,
@@ -73,8 +73,8 @@ export function authMutations(authAPI: AuthAPI) {
 			meta: sessionMeta,
 		}),
 		/**
-		 * Admin invite. Registers with the caller's session — the public
-		 * self-registration form is the `noAuth` case — and refreshes the users
+		 * Admin invite. Registers with the caller's session - the public
+		 * self-registration form is the `noAuth` case - and refreshes the users
 		 * list, which is where the invitation was sent from.
 		 */
 		inviteUser: mutationOptions({

@@ -13,7 +13,7 @@ import (
 // bounds are what the query filters on.
 //
 // Bounds are compared as formatted RFC3339 so the assertion covers the offset as
-// well as the instant — two bounds naming the same moment in different zones are
+// well as the instant - two bounds naming the same moment in different zones are
 // not interchangeable here.
 func TestDateRange_Bounds(t *testing.T) {
 	tests := []struct {

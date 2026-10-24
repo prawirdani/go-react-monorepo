@@ -3,7 +3,7 @@
 #
 # Snapshot the container env where the cron job (via its wrapper) can source it:
 # cron does not inherit the parent environment. Keep only the DB/BACKUP_R2/TZ
-# vars the job needs. Values must be shell-safe (no spaces) — R2 secrets and DB
+# vars the job needs. Values must be shell-safe (no spaces) - R2 secrets and DB
 # creds are.
 set -eu
 printenv | grep -E '^(DB_|BACKUP_R2_|BACKUP_PREFIX=|R2_BUCKET=|TZ=)' > /etc/backup.env || true

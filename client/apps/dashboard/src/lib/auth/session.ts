@@ -8,7 +8,7 @@ import { queryClient } from "@/lib/query-client"
 /**
  * Session lifecycle actions. Imperative by nature: boot/login/logout bracket
  * the cookie's existence, and the 401 interceptor reports expiry from outside
- * React. Identity itself lives in `getSession` — these only populate or drop it.
+ * React. Identity itself lives in `getSession` - these only populate or drop it.
  */
 export const authActions = {
   /** Boot: fill the session cache, then reflect it in `status`. */
@@ -25,7 +25,7 @@ export const authActions = {
     }
   },
 
-  /** Cache before status — see the invariant above. */
+  /** Cache before status - see the invariant above. */
   login: async (input: LoginInput) => {
     await authAPI.login(input)
     await queryClient.fetchQuery(getSession)
@@ -42,7 +42,7 @@ export const authActions = {
   },
 
   /**
-   * Drop cached identity — only after the navigation off the layout resolved,
+   * Drop cached identity - only after the navigation off the layout resolved,
    * otherwise the header blanks a frame mid-transition.
    */
   clearSession: () => {

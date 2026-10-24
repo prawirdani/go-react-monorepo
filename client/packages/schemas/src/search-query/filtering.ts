@@ -5,7 +5,7 @@ export type FilterFields = Record<string, z.ZodType>;
 
 /**
  * The DEFAULT value of each declared filter, for the router's
- * `stripSearchParams` middleware — a value equal to its default is omitted from
+ * `stripSearchParams` middleware - a value equal to its default is omitted from
  * the URL rather than serialized, the same way `page` and `sort` are. Defaults
  * to the EMPTY array (an unset filter); pass `defaults` for a filter that opens
  * pre-selected.

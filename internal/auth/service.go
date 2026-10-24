@@ -50,7 +50,7 @@ var permTables = rbac.PermissionTable{
 
 // Audit Actions for the auth entity. These record state changes (sessions,
 // tokens, passwords); refused attempts and reuse signals are emitted as WARN
-// logs instead of audit rows — they are security events, not state changes.
+// logs instead of audit rows - they are security events, not state changes.
 // nolint:gosec
 // G101: audit action identifiers, not credentials
 const (
@@ -274,7 +274,7 @@ func (s *Service) Login(
 
 	if usr == nil {
 		// Unknown email: equalize timing with a dummy bcrypt compare so user
-		// enumeration via response time is not possible. Logged, not audited —
+		// enumeration via response time is not possible. Logged, not audited -
 		// this is a security event, and the email is attacker-supplied.
 		DummyVerify()
 		// Count unknown emails too, otherwise the lockout would itself leak

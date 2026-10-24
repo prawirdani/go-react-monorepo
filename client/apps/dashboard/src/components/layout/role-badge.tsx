@@ -5,7 +5,7 @@ import { StateBadge } from "@/components/layout/panel"
 import { ROLE_LABEL_KEYS } from "@/lib/i18n"
 
 /**
- * A role is an attribute, never state — so it carries no saturation and one
+ * A role is an attribute, never state - so it carries no saturation and one
  * shared marker serves both surfaces:
  *
  * - `chip`: the contained outline marker, used inline with the account name.

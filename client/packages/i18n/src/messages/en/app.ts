@@ -139,7 +139,7 @@ export default {
 			actions: "Actions",
 			audit: "Audit Log",
 		},
-		summaryNote: "Sample data — connect it to your own data source.",
+		summaryNote: "Sample data - connect it to your own data source.",
 		summary: {
 			entriesToday: "Entries today",
 			awaitingReview: "Awaiting review",

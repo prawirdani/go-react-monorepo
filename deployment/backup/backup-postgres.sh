@@ -11,7 +11,7 @@
 # server's version.
 #
 # Ownership is RECORDED (no --no-owner here): a custom archive keeps owner as
-# metadata, so the restore side chooses — `pg_restore --no-owner` to drop it on
+# metadata, so the restore side chooses - `pg_restore --no-owner` to drop it on
 # a scratch/pgAdmin target, or omit it on the real server (where the role
 # exists) to preserve it.
 #
@@ -21,8 +21,8 @@
 # gives rclone a known length and a rewindable source so its retries work.
 #
 # Backups use their OWN private R2 bucket + credentials (BACKUP_R2_*), separate
-# from the public images bucket (R2_BUCKET) — a leaked images key can never read
-# DB dumps, and vice versa. Retention is an R2 lifecycle rule on BACKUP_PREFIX —
+# from the public images bucket (R2_BUCKET) - a leaked images key can never read
+# DB dumps, and vice versa. Retention is an R2 lifecycle rule on BACKUP_PREFIX -
 # no pruning here (that would need bucket-API scope we don't grant).
 #
 # rclone remote config comes entirely from RCLONE_CONFIG_R2_* env, so no

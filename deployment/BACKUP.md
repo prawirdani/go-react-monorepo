@@ -20,21 +20,21 @@ backups, which is why the lifecycle rule and a freshness check matter.
 ## Pipeline
 
 The backup image is `FROM rclone/rclone` (Alpine) with `postgresql18-client` from
-apk, matching the server's major version — `pg_dump` must be at least the
+apk, matching the server's major version - `pg_dump` must be at least the
 server's major version. The rclone base already ships rclone, so one small image
 does both the dump and the upload.
 
 | Stage | What | Cadence | Retention | Where |
 | --- | --- | --- | --- | --- |
-| 1. Dump | `pg_dump -Fc` (custom format) to `/tmp` | 03:15 and 15:15 container-local | — | temp file, removed on exit |
-| 2. Upload | `rclone copyto` to the private backup bucket | Every run | **R2 lifecycle rule on `BACKUP_PREFIX` (default `postgres/`) — 30 days** | `BACKUP_R2_BUCKET`/`BACKUP_PREFIX`/`<db>-<UTC-stamp>.dump` |
-| 3. Guard | Refuses to run if `BACKUP_R2_BUCKET` equals the public `R2_BUCKET` | Every run | — | — |
+| 1. Dump | `pg_dump -Fc` (custom format) to `/tmp` | 03:15 and 15:15 container-local | - | temp file, removed on exit |
+| 2. Upload | `rclone copyto` to the private backup bucket | Every run | **R2 lifecycle rule on `BACKUP_PREFIX` (default `postgres/`) - 30 days** | `BACKUP_R2_BUCKET`/`BACKUP_PREFIX`/`<db>-<UTC-stamp>.dump` |
+| 3. Guard | Refuses to run if `BACKUP_R2_BUCKET` equals the public `R2_BUCKET` | Every run | - | - |
 
 The script never deletes anything: it only uploads. Expiry is an R2 object
 lifecycle rule on the `postgres/` prefix, set in the Cloudflare dashboard
 (R2 → bucket → Settings → Object lifecycle rules). Without it dumps accumulate
 forever. There is no `rclone delete`/`--min-age` step, and no
-`BACKUP_R2_RETAIN_DAYS` setting — the window lives in the bucket rule.
+`BACKUP_R2_RETAIN_DAYS` setting - the window lives in the bucket rule.
 
 ---
 
@@ -44,7 +44,7 @@ forever. There is no `rclone delete`/`--min-age` step, and no
   written since the last 03:15/15:15 run. Each run uploads to a separate private
   bucket, so a total host loss still recovers.
 - **RTO in minutes.** A recovery is "restore one custom-format dump into a fresh
-  database" — minutes at this dataset size, plus pointing the API at it.
+  database" - minutes at this dataset size, plus pointing the API at it.
 
 ---
 
@@ -71,14 +71,14 @@ Because R2 is the only copy, two operational rules follow:
 
 ## Not backed up
 
-- **Redis** — covered by AOF persistence on the `redis-data` volume. It holds
+- **Redis** - covered by AOF persistence on the `redis-data` volume. It holds
   throttle counters and access-token revocation markers; if the volume is lost,
   the worst case is up to `AUTH_JWT_TTL` (15 min) of revoked-but-still-valid access
   tokens, then normal operation resumes.
-- **Grafana** — provisioning and dashboards are checked into `deployment/grafana/`,
+- **Grafana** - provisioning and dashboards are checked into `deployment/grafana/`,
   so datasources and dashboards rebuild from git on boot; only ad-hoc local edits
   are lost.
-- **Prometheus** — the TSDB is operational metrics, not business data, and is
+- **Prometheus** - the TSDB is operational metrics, not business data, and is
   capped by `--storage.tsdb.retention.time=15d`.
 
 ---
@@ -86,7 +86,7 @@ Because R2 is the only copy, two operational rules follow:
 ## Known limits
 
 **One database, no globals.** `pg_dump` covers `$DB_NAME` only. A second database
-in the same cluster would be silently missed — move to `pg_dumpall` if that ever
+in the same cluster would be silently missed - move to `pg_dumpall` if that ever
 happens. Roles/globals are not included either, so restoring into a *fresh*
 cluster needs `pg_dumpall --globals-only` first; restoring into this cluster is
 unaffected.
@@ -115,7 +115,7 @@ docker compose run --rm --entrypoint sh backup -c backup-postgres.sh
 
 ## Restore runbook
 
-There is no local dump to pick from — list the bucket first, then stream the
+There is no local dump to pick from - list the bucket first, then stream the
 chosen object straight into `pg_restore`. `PREFIX` and `KEY` are the file you
 picked (`<db>-<UTC-stamp>.dump`).
 

@@ -3,7 +3,7 @@ import type { SearchQuery, SearchQueryNavigate } from "./types"
 
 /**
  * `toggleSort` pins `sort` to the given field, flips `order`, and resets to
- * page 1. `order` comes from the validated query — the raw `prev` may omit it,
+ * page 1. `order` comes from the validated query - the raw `prev` may omit it,
  * which would leave the toggle hinging on `undefined === "asc"`.
  */
 export function useSorting<S extends SearchQuery>(

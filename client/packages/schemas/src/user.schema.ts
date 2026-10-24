@@ -41,9 +41,9 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 // Search query for the admin users table. Every field `.catch`es to a default so
 // a hand-edited/garbage URL param falls back instead of throwing at the router.
 // Params mirror the backend: ?sort=&order=&page=&limit=&role=&gender=&deleted_at=
-// — role and gender are multi-select (comma-joined server-side, gender is
+// - role and gender are multi-select (comma-joined server-side, gender is
 // UPPERCASE); deleted_at is a radio of one state (`active`/`deleted`). An absent
-// param means no filter for that group — "Semua" — so the backend lists every
+// param means no filter for that group - "Semua" - so the backend lists every
 // row unless a group narrows it.
 export const USER_SORT_KEYS = ["id", "created_at", "updated_at"] as const;
 export type UserSortKey = (typeof USER_SORT_KEYS)[number];

@@ -54,10 +54,10 @@ docs {
   
   1. Call **Register** (or **Forgot Password**).
   2. Copy the raw token from the outbox email (or the API log / email sink)
-   immediately — the DB only stores the hash.
-  3. Paste it into the folder that owns it — `token` in
+   immediately - the DB only stores the hash.
+  3. Paste it into the folder that owns it - `token` in
    `Auth/Registration/folder.bru`, `recoveryToken` in
-   `Auth/Password/folder.bru` — then run **Registration Token** /
+   `Auth/Password/folder.bru` - then run **Registration Token** /
    **Complete Registration** or **Get Forgot Password Token** /
    **Reset Password**.
   
@@ -109,7 +109,7 @@ docs {
   the entity before persisting (`user.Validate()` → `USER_VALIDATION`;
   `apperr.ValidationErr` → `DOMAIN_VALIDATION`). The binder rejects the same inputs
   first, so that layer is a safety net for internal callers and is not reachable
-  over HTTP — which is why it has no example.
+  over HTTP - which is why it has no example.
   
   Route-independent errors: 
   - `404 HANDLER_NOT_FOUND` (`the requested resource could not be found`).

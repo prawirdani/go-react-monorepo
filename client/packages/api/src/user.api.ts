@@ -33,7 +33,7 @@ export class UserAPI {
 		// treats gender as UPPERCASE M/F/O).
 		if (params.role.length) query.set("role", params.role.join(","));
 		if (params.gender.length) query.set("gender", params.gender.join(","));
-		// Radio filter: omitted means "Semua" — the backend returns every row.
+		// Radio filter: omitted means "Semua" - the backend returns every row.
 		if (params.deleted_at) query.set("deleted_at", params.deleted_at);
 		return await this.client.Queryable<User, UserListMeta>(
 			`/api/users?${query}`,

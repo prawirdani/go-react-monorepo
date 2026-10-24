@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Self-contained backup runner, independent of the app/migrate images.
-# Built on the official rclone image (Alpine) — Alpine ships postgresql18-client
+# Built on the official rclone image (Alpine) - Alpine ships postgresql18-client
 # via apk, so no PGDG/glibc dance, and rclone comes preinstalled and current.
 # ~100MB vs ~300MB for the postgres image + apt rclone. Runs busybox crond in
 # the foreground; one daily job streams `pg_dump -Fc | rclone copyto` to R2

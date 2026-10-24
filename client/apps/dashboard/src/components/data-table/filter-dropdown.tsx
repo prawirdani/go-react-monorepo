@@ -20,7 +20,7 @@ const ALL_VALUE = "__all"
 
 /**
  * How a group takes its values: `multi` accepts any number of its options,
- * `radio` exactly one — or none, which is what "Semua" means for both.
+ * `radio` exactly one - or none, which is what "Semua" means for both.
  */
 export type FilterMode = "multi" | "radio"
 
@@ -42,7 +42,7 @@ export type FilterGroup = {
  * Grouped filter menu. Every group starts with "Semua" (no filter for that
  * group) and writes through `onChange`, which receives the whole next selection:
  * the empty array drops the param. Toggling the last un-checked option of a
- * multi group also lands on empty — checking everything means the same as
+ * multi group also lands on empty - checking everything means the same as
  * checking nothing. Page resets and URL writes live in `useFiltering`.
  */
 export function FilterDropdown({

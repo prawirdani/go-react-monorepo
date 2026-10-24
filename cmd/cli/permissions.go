@@ -111,7 +111,7 @@ func gatherPermissions() []string {
 
 	// Constructors only store their dependencies and call RegisterPermissions,
 	// so nil dependencies are safe here. Keep this in sync with the services
-	// wired in cmd/api/container.go — a new domain that registers permissions
+	// wired in cmd/api/container.go - a new domain that registers permissions
 	// must be replayed here too.
 	user.NewService(nil, nil, nil, authorizer, nil, nil, nil)
 	audit.NewAuditService(authorizer, nil)

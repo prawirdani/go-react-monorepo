@@ -82,7 +82,7 @@ export function DateFilter({
     if (from && to) {
       onSetRange({ from: dateToDay(from), to: dateToDay(to) })
     } else if (from) {
-      // A single picked day goes out as the `date` param — a bare calendar day
+      // A single picked day goes out as the `date` param - a bare calendar day
       // (see use-date-filtering).
       onSetDate(dateToDay(from))
     }

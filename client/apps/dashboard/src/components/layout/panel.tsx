@@ -3,7 +3,7 @@ import type * as React from "react"
 
 /**
  * The world's structural unit: a graphite panel separated from its neighbours
- * by a 1px hairline seam. Panels tile on a shared seam grid — no shadows,
+ * by a 1px hairline seam. Panels tile on a shared seam grid - no shadows,
  * no floating cards.
  *
  * Seams here come from this container's own fill showing through a 1px gap, so
@@ -142,7 +142,7 @@ export function PanelRow({
   label: React.ReactNode
   value: React.ReactNode
   tone?: Tone
-  /** Mono is for figures, IDs and measured data — never for prose. */
+  /** Mono is for figures, IDs and measured data - never for prose. */
   mono?: boolean
   className?: string
 }) {

@@ -107,7 +107,7 @@ func (db *DB) Transact(
 	// - Releases locks immediately rather than waiting for PG to detect disconnection
 	// - Provides explicit logging for debugging
 	//
-	// Rollback/Commit must run even if the request ctx was cancelled — pgx
+	// Rollback/Commit must run even if the request ctx was cancelled - pgx
 	// skips sending the command on a cancelled ctx, which would make
 	// conn.Release() destroy the connection (churn) while locks linger.
 	// WithoutCancel drops cancellation but keeps ctx values (request_id logging);

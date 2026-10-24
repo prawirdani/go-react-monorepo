@@ -34,7 +34,7 @@ type Sorting struct {
 
 // ApplySort adds an ORDER BY for the requested column, but only when the
 // allow-list recognises it. It leaves the request fields describing what was
-// applied — cleared, or with a canonical direction — because the metadata echoes
+// applied - cleared, or with a canonical direction - because the metadata echoes
 // them. That needs a pointer receiver: on a copy the assignments are lost.
 func (s *Sorting) ApplySort(q Query, allowed map[string]string) {
 	column, ok := allowed[s.By]

@@ -6,7 +6,7 @@
 # so run this before deploying (and whenever CF announces a change).
 #
 # It rewrites ONLY the `trusted_proxies static ...` line, in place, and refuses
-# to write anything that is not a plain space-separated list of CIDRs — a failed
+# to write anything that is not a plain space-separated list of CIDRs - a failed
 # or malformed fetch leaves the file untouched. Needs curl or wget.
 set -eu
 

@@ -41,7 +41,7 @@ export interface AuditEntry {
 // Search query for the audit log. Every field `.catch`es to a default so a
 // hand-edited/garbage URL param falls back instead of throwing at the router.
 // Params mirror the backend: ?sort=&order=&page=&limit=&entity=&actor=&date=&from=&to=&tz=
-// — entity is multi-select (comma-joined server-side); actor is free-text (a
+// - entity is multi-select (comma-joined server-side); actor is free-text (a
 // name, or an exact id); date/from/to follow the cross-domain convention in
 // `search-query/date.ts` (`date` wins over `from`/`to`).
 export const AUDIT_SORT_KEYS = ["created_at"] as const;
@@ -70,7 +70,7 @@ const auditFilters = {
 
 // NOTE: `sortingFields` emits lowercase `asc|desc`; the sample request showed
 // `order=DESC`. Kept lowercase for consistency with `/api/users` (verified
-// working) — flip `SORT_ORDERS` in `search-query/sorting.ts` if the server is
+// working) - flip `SORT_ORDERS` in `search-query/sorting.ts` if the server is
 // strict about casing.
 export const auditSearchQuerySchema = z.object({
 	...paginationFields,
@@ -90,7 +90,7 @@ export const auditSearchQueryStripDefaults = {
 
 /**
  * The home route validates its search, so every `to="/"` link and redirect has
- * to supply one. These are that route's own defaults — every field `.catch`es,
+ * to supply one. These are that route's own defaults - every field `.catch`es,
  * so `parse({})` cannot throw.
  */
 export const AUDIT_SEARCH_DEFAULTS = auditSearchQuerySchema.parse({});

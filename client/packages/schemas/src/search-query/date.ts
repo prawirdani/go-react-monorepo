@@ -8,7 +8,7 @@ import { z } from "zod";
  * is malformed and dropped: the server parses these params strictly as
  * `2006-01-02`, so `2026-08-31T17:00:00.000Z` is not a day. `from` is inclusive
  * and `to` covers its whole day; `date` is the single-day shortcut and wins over
- * `from`/`to`, so a caller must not send both — see `audit.api.ts`.
+ * `from`/`to`, so a caller must not send both - see `audit.api.ts`.
  *
  * Each field `.catch("")`s: a hand-edited or malformed URL param becomes the
  * empty string, which `stripSearchParams` drops from the URL and the API layer

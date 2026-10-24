@@ -159,7 +159,7 @@ func ParseError(err error) *Error {
 		// Fiber returns *BindError in manual mode, and before this case the
 		// whole class fell through to the 500 default below: only
 		// *jsonBindError and validator.ValidationError were recognised. The
-		// source check matters — body binding fails the same way, and its
+		// source check matters - body binding fails the same way, and its
 		// errors must not surface as invalid query parameters.
 		return QueryParamErr(queryParamErrorItems(bindErr))
 
@@ -188,7 +188,7 @@ func ParseError(err error) *Error {
 // handled.
 //
 // Items are sorted because MultiError is a map and its iteration order is
-// random — without sorting the response array would vary between identical
+// random - without sorting the response array would vary between identical
 // requests.
 func queryParamErrorItems(bindErr *fiber.BindError) []QueryParamErrorItem {
 	var multiErr schema.MultiError

@@ -41,7 +41,7 @@ export function ChangeEmailForm({ onClose }: ChangeEmailFormProps) {
             })
           },
           // The copy ends in "at", so the allowed time is appended in the same
-          // sentence — same shape the global handler uses for recovery throttling.
+          // sentence - same shape the global handler uses for recovery throttling.
           AUTH_EMAIL_CHANGE_THROTTLED: (e) => {
             toast.error(
               `${t("profile.changeEmail.throttled")} ${formatter.dateTime(

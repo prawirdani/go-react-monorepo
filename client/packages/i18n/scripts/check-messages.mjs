@@ -81,7 +81,7 @@ for (const key of idKeys) {
 for (const failure of failures) console.error(failure)
 
 console.log(
-	`keys — en: ${enKeys.size}, id: ${idKeys.size} | messages checked: ${enKeys.size + idKeys.size}`,
+	`keys - en: ${enKeys.size}, id: ${idKeys.size} | messages checked: ${enKeys.size + idKeys.size}`,
 )
 if (failures.length > 0) {
 	console.error(`FAILED: ${failures.length} problem(s)`)

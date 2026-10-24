@@ -12,7 +12,7 @@ func NewRouter(cfg *config.Config) *fiber.App {
 		EnableSplittingOnParsers: true, // Enable comma separated for multiple query param values
 		// Trust is gated on TRUST_PROXY, not an address list. When off (a
 		// directly-exposed API), IsProxyTrusted() is false and c.IP() returns the
-		// socket peer — a real IP that sessions.ip_addr (INET NOT NULL) accepts.
+		// socket peer - a real IP that sessions.ip_addr (INET NOT NULL) accepts.
 		// When on, the peer class below is trusted instead of a baked-in CIDR, so
 		// the same build works behind a sidecar container or a host nginx.
 		TrustProxy: cfg.Proxy.Trust,

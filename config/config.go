@@ -78,7 +78,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid APP_ENV, expecting %s or %s", EnvDevelopment, EnvProduction)
 	}
 
-	// JWT secret is the signing key for all tokens — a short or empty
+	// JWT secret is the signing key for all tokens - a short or empty
 	// secret is trivially brute-forceable. Fail startup rather than run insecure.
 	if len(c.Auth.JwtSecret) < 32 {
 		return fmt.Errorf("AUTH_JWT_SECRET is required and must be at least 32 characters")

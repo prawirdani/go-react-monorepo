@@ -16,7 +16,7 @@ type Proxy struct {
 	// Keep it false for a directly-exposed API: trusting X-Forwarded-For with
 	// no proxy in front lets any client forge the audit-log IP. The trust
 	// boundary is the private socket (a container-only network, or a loopback /
-	// unix-socket bind), not an address allowlist — so this flag stays correct
+	// unix-socket bind), not an address allowlist - so this flag stays correct
 	// whether the proxy is a sidecar container or a host-level nginx.
 	Trust bool
 }

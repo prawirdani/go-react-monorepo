@@ -140,7 +140,7 @@ const app: DeepStringify<typeof en> = {
 			actions: "Tindakan",
 			audit: "Log Audit",
 		},
-		summaryNote: "Contoh data — hubungkan ke sumber data Anda.",
+		summaryNote: "Contoh data - hubungkan ke sumber data Anda.",
 		summary: {
 			entriesToday: "Entri hari ini",
 			awaitingReview: "Menunggu tinjauan",

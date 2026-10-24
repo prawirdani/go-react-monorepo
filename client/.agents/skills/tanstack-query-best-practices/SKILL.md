@@ -35,79 +35,79 @@ Comprehensive guidelines for implementing TanStack Query (React Query) patterns 
 
 ### Query Keys (Prefix: `qk-`)
 
-- `qk-array-structure` — Always use arrays for query keys
-- `qk-include-dependencies` — Include all variables the query depends on
-- `qk-hierarchical-organization` — Organize keys hierarchically (entity → id → filters)
-- `qk-factory-pattern` — Use query key factories for complex applications
-- `qk-serializable` — Ensure all key parts are JSON-serializable
+- `qk-array-structure` - Always use arrays for query keys
+- `qk-include-dependencies` - Include all variables the query depends on
+- `qk-hierarchical-organization` - Organize keys hierarchically (entity → id → filters)
+- `qk-factory-pattern` - Use query key factories for complex applications
+- `qk-serializable` - Ensure all key parts are JSON-serializable
 
 ### Caching (Prefix: `cache-`)
 
-- `cache-stale-time` — Set appropriate staleTime based on data volatility
-- `cache-gc-time` — Configure gcTime for inactive query retention
-- `cache-defaults` — Set sensible defaults at QueryClient level
-- `cache-invalidation` — Use targeted invalidation over broad patterns
-- `cache-placeholder-vs-initial` — Understand placeholder vs initial data differences
+- `cache-stale-time` - Set appropriate staleTime based on data volatility
+- `cache-gc-time` - Configure gcTime for inactive query retention
+- `cache-defaults` - Set sensible defaults at QueryClient level
+- `cache-invalidation` - Use targeted invalidation over broad patterns
+- `cache-placeholder-vs-initial` - Understand placeholder vs initial data differences
 
 ### Mutations (Prefix: `mut-`)
 
-- `mut-invalidate-queries` — Always invalidate related queries after mutations
-- `mut-optimistic-updates` — Implement optimistic updates for responsive UI
-- `mut-rollback-context` — Provide rollback context from onMutate
-- `mut-error-handling` — Handle mutation errors gracefully
-- `mut-loading-states` — Use isPending for mutation loading states
-- `mut-mutation-state` — Use useMutationState for cross-component tracking
+- `mut-invalidate-queries` - Always invalidate related queries after mutations
+- `mut-optimistic-updates` - Implement optimistic updates for responsive UI
+- `mut-rollback-context` - Provide rollback context from onMutate
+- `mut-error-handling` - Handle mutation errors gracefully
+- `mut-loading-states` - Use isPending for mutation loading states
+- `mut-mutation-state` - Use useMutationState for cross-component tracking
 
 ### Error Handling (Prefix: `err-`)
 
-- `err-error-boundaries` — Use error boundaries with useQueryErrorResetBoundary
-- `err-retry-config` — Configure retry logic appropriately
-- `err-fallback-data` — Provide fallback data when appropriate
+- `err-error-boundaries` - Use error boundaries with useQueryErrorResetBoundary
+- `err-retry-config` - Configure retry logic appropriately
+- `err-fallback-data` - Provide fallback data when appropriate
 
 ### Prefetching (Prefix: `pf-`)
 
-- `pf-intent-prefetch` — Prefetch on user intent (hover, focus)
-- `pf-route-prefetch` — Prefetch data during route transitions
-- `pf-stale-time-config` — Set staleTime when prefetching
-- `pf-ensure-query-data` — Use ensureQueryData for conditional prefetching
+- `pf-intent-prefetch` - Prefetch on user intent (hover, focus)
+- `pf-route-prefetch` - Prefetch data during route transitions
+- `pf-stale-time-config` - Set staleTime when prefetching
+- `pf-ensure-query-data` - Use ensureQueryData for conditional prefetching
 
 ### Infinite Queries (Prefix: `inf-`)
 
-- `inf-page-params` — Always provide getNextPageParam
-- `inf-loading-guards` — Check isFetchingNextPage before fetching more
-- `inf-max-pages` — Consider maxPages for large datasets
+- `inf-page-params` - Always provide getNextPageParam
+- `inf-loading-guards` - Check isFetchingNextPage before fetching more
+- `inf-max-pages` - Consider maxPages for large datasets
 
 ### SSR Integration (Prefix: `ssr-`)
 
-- `ssr-dehydration` — Use dehydrate/hydrate pattern for SSR
-- `ssr-client-per-request` — Create QueryClient per request
-- `ssr-stale-time-server` — Set higher staleTime on server
-- `ssr-hydration-boundary` — Wrap with HydrationBoundary
+- `ssr-dehydration` - Use dehydrate/hydrate pattern for SSR
+- `ssr-client-per-request` - Create QueryClient per request
+- `ssr-stale-time-server` - Set higher staleTime on server
+- `ssr-hydration-boundary` - Wrap with HydrationBoundary
 
 ### Parallel Queries (Prefix: `parallel-`)
 
-- `parallel-use-queries` — Use useQueries for dynamic parallel queries
-- `query-cancellation` — Implement query cancellation properly
+- `parallel-use-queries` - Use useQueries for dynamic parallel queries
+- `query-cancellation` - Implement query cancellation properly
 
 ### Performance (Prefix: `perf-`)
 
-- `perf-select-transform` — Use select to transform/filter data
-- `perf-structural-sharing` — Leverage structural sharing
-- `perf-notify-change-props` — Limit re-renders with notifyOnChangeProps
-- `perf-placeholder-data` — Use placeholderData for instant UI
+- `perf-select-transform` - Use select to transform/filter data
+- `perf-structural-sharing` - Leverage structural sharing
+- `perf-notify-change-props` - Limit re-renders with notifyOnChangeProps
+- `perf-placeholder-data` - Use placeholderData for instant UI
 
 ### Offline Support (Prefix: `offline-`)
 
-- `network-mode` — Configure network mode for offline support
-- `persist-queries` — Configure query persistence for offline support
+- `network-mode` - Configure network mode for offline support
+- `persist-queries` - Configure query persistence for offline support
 
 ## How to Use
 
 Each rule file in the `rules/` directory contains:
-1. **Explanation** — Why this pattern matters
-2. **Bad Example** — Anti-pattern to avoid
-3. **Good Example** — Recommended implementation
-4. **Context** — When to apply or skip this rule
+1. **Explanation** - Why this pattern matters
+2. **Bad Example** - Anti-pattern to avoid
+3. **Good Example** - Recommended implementation
+4. **Context** - When to apply or skip this rule
 
 ## Full Reference
 

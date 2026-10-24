@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// Catalog hygiene report. Informational only — always exits 0.
+// Catalog hygiene report. Informational only - always exits 0.
 //
 // `check:messages` guards correctness (ICU validity + key parity) and is wired
 // into the build. This one surfaces maintenance smells that should not fail a
@@ -87,8 +87,8 @@ for (const key of keys) {
 	byNamespace[namespace] = (byNamespace[namespace] ?? 0) + 1
 }
 
-console.log(`keys — en: ${keys.length}, id: ${Object.keys(flat.id).length}`)
-console.log(`per namespace — ${JSON.stringify(byNamespace)}`)
+console.log(`keys - en: ${keys.length}, id: ${Object.keys(flat.id).length}`)
+console.log(`per namespace - ${JSON.stringify(byNamespace)}`)
 
 console.log(`\nunused keys (${unused.length}):`)
 for (const key of unused) {
@@ -104,7 +104,7 @@ for (const key of keys) {
 const duplicates = Object.entries(byValue).filter(([, ks]) => ks.length > 1)
 console.log(`\nduplicate values in en (${duplicates.length}):`)
 for (const [value, ks] of duplicates) {
-	console.log(`  "${value.slice(0, 40)}" ×${ks.length} — ${ks.join(", ")}`)
+	console.log(`  "${value.slice(0, 40)}" ×${ks.length} - ${ks.join(", ")}`)
 }
 
 const identical = keys.filter((key) => flat.en[key] === flat.id[key])
@@ -113,4 +113,4 @@ for (const key of identical) {
 	console.log(`  ${key} = "${String(flat.en[key]).slice(0, 40)}"`)
 }
 
-console.log("\nreported, not enforced — run `bun run check:messages` for the gate")
+console.log("\nreported, not enforced - run `bun run check:messages` for the gate")

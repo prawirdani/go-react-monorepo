@@ -32,7 +32,7 @@ function readInitialLocale(): Locale {
 
 /**
  * Locale lives outside use-intl so we can persist it and set `<html lang>`.
- * Changing the locale only re-renders — no `key` remount is required.
+ * Changing the locale only re-renders - no `key` remount is required.
  */
 export function I18nProvider({ children }: { children: ReactNode }) {
 	const [locale, setLocaleState] = useState<Locale>(readInitialLocale);

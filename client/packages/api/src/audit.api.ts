@@ -21,7 +21,7 @@ export class AuditAPI {
 	 * requires audit.read permission
 	 *
 	 * Query params: sort, order, page, limit, entity (comma-joined multi-select),
-	 * actor (name or exact id), and date/from/to read in the `tz` zone — the
+	 * actor (name or exact id), and date/from/to read in the `tz` zone - the
 	 * bounds are bare calendar days, and `date` wins over `from`/`to`.
 	 */
 	async listAuditEntry(
