@@ -15,9 +15,12 @@ import { setFormErrors, setFormRootError, useAppForm } from "@/components/form"
 import { RootError } from "@/components/form/fields"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { Countdown, useRetryAfter } from "@/hooks/use-retry-after"
 import { authActions } from "@/lib/auth/session"
 import { useAuthStore } from "@/lib/auth/store"
 import { usePublicRegistration } from "@/lib/health"
+
+const LOCKOUT_KEY = "login-retry-after"
 
 const loginSearch = z.object({
   redirect: z.string().optional(),
@@ -68,6 +71,7 @@ function LoginForm({ className }: { className?: string }) {
   const router = useRouter()
   const handleError = useErrorHandler()
   const t = useTranslations("app")
+  const { retryAfter, setRetryAfter, isThrottled } = useRetryAfter(LOCKOUT_KEY)
 
   const form = useAppForm({
     defaultValues: {
@@ -87,6 +91,10 @@ function LoginForm({ className }: { className?: string }) {
           VALIDATION: (e) => setFormErrors(formApi, e.details),
           AUTH_CREDENTIALS: () => {
             setFormRootError(formApi, t("auth.login.credentialsError"))
+          },
+          AUTH_ACCOUNT_LOCKED: (e) => {
+            setRetryAfter(new Date(e.details.retry_after))
+            setFormRootError(formApi, t("auth.login.lockedError"))
           },
         })
       }
@@ -144,8 +152,14 @@ function LoginForm({ className }: { className?: string }) {
           )}
         </RootError>
 
-        <form.SubmitButton className="w-full">
-          {t("auth.login.submit")}
+        <form.SubmitButton className="w-full" disabled={isThrottled}>
+          {isThrottled && retryAfter ? (
+            <>
+              {t("auth.login.retryIn")} <Countdown until={retryAfter} />
+            </>
+          ) : (
+            t("auth.login.submit")
+          )}
         </form.SubmitButton>
       </form.Root>
     </form.AppForm>

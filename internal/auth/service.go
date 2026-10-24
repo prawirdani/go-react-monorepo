@@ -68,7 +68,8 @@ const (
 )
 
 // ErrAccountLocked is returned while an account is locked out after too many
-// consecutive failed logins. Details carry the remaining window in seconds.
+// consecutive failed logins. Details carry a throttle.Result (allowed +
+// retry_after), the same envelope the other throttle errors use.
 var ErrAccountLocked = apperr.ThrottledErr(
 	"too many failed login attempts, try again later",
 	"AUTH_ACCOUNT_LOCKED",
@@ -261,8 +262,9 @@ func (s *Service) Login(
 		log.WarnCtx(ctx, "login attempt counter unavailable", "err", err)
 	} else if n >= int64(s.cfg.Auth.LoginMaxAttempts) && ttl > 0 {
 		log.WarnCtx(ctx, "login failed", "email", inp.Email, "reason", "account_locked")
-		return nil, ErrAccountLocked.WithDetails(map[string]int64{
-			"retry_after_seconds": int64(ttl.Seconds()),
+		return nil, ErrAccountLocked.WithDetails(throttle.Result{
+			Allowed:    false,
+			RetryAfter: time.Now().Add(ttl),
 		})
 	}
 

@@ -58,6 +58,9 @@ const app: DeepStringify<typeof en> = {
 			forgot: "Lupa password?",
 			submit: "Masuk",
 			credentialsError: "Email atau kata sandi Anda salah",
+			lockedError:
+				"Terlalu banyak percobaan gagal. Akun ini dikunci sementara.",
+			retryIn: "Coba lagi dalam",
 			noAccount: "Belum punya akun?",
 			registerLink: "Buat akun",
 		},
@@ -349,6 +352,8 @@ const app: DeepStringify<typeof en> = {
 			invalidRegistrationToken:
 				"Tautan registrasi tidak valid atau sudah kedaluwarsa.",
 			recoveryThrottled: "Terlalu banyak percobaan. Coba lagi pada",
+			accountLocked:
+				"Terlalu banyak percobaan login gagal. Akun ini dikunci sementara.",
 			notFound: "Data yang diminta tidak ditemukan.",
 			emailConflict: "Email ini sudah terdaftar.",
 			unauthorized: "Anda belum masuk. Silakan login kembali.",

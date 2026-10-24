@@ -3,11 +3,11 @@ import { recoverPasswordSchema } from "@repo/schemas/auth"
 import { FieldGroup } from "@repo/ui/components/field"
 import { Check } from "@repo/ui/icons"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
 import z from "zod"
 import { setFormErrors, useAppForm } from "@/components/form"
 import { AuthPanel, AuthShell } from "@/components/layout/auth-shell"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { Countdown, useRetryAfter } from "@/hooks/use-retry-after"
 import { authAPI } from "@/lib/data-access/api"
 
 const recoverPasswordSearchSchema = z.object({
@@ -34,7 +34,7 @@ function RouteComponent() {
     })
   }
 
-  const { retryAfter, setRetryAfter, isThrottled } = useRetryAfter()
+  const { retryAfter, setRetryAfter, isThrottled } = useRetryAfter(RETRY_KEY)
 
   const handleError = useErrorHandler()
   const t = useTranslations("app")
@@ -137,60 +137,4 @@ function SentContent() {
   )
 }
 
-function Countdown({ until }: { until: Date }) {
-  const t = useTranslations("app")
-  const getRemainingSeconds = () =>
-    Math.max(0, Math.ceil((until.getTime() - Date.now()) / 1000))
-  const [seconds, setSeconds] = useState(getRemainingSeconds)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: getRemainingSeconds is derived purely from `until`
-  useEffect(() => {
-    setSeconds(getRemainingSeconds())
-    const timer = setInterval(() => {
-      setSeconds(getRemainingSeconds())
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [until])
-
-  return (
-    <span>
-      {seconds} {t("auth.forgot.secondsUnit")}
-    </span>
-  )
-}
-
-function useRetryAfter() {
-  const [retryAfter, setRetryAfter] = useState<Date | null>(() => {
-    const raw = localStorage.getItem(RETRY_KEY)
-    if (!raw) return null
-    const date = new Date(raw)
-    const isValidDate = date instanceof Date && !Number.isNaN(date.getTime())
-    if (!isValidDate || date.getTime() <= Date.now()) {
-      localStorage.removeItem(RETRY_KEY)
-      return null
-    }
-    return date
-  })
-
-  const isThrottled = retryAfter !== null && retryAfter.getTime() > Date.now()
-
-  // Persist retryAfter, and auto-clear it (and the button lock) once it elapses
-  useEffect(() => {
-    if (!retryAfter) {
-      localStorage.removeItem(RETRY_KEY)
-      return
-    }
-    localStorage.setItem(RETRY_KEY, retryAfter.toISOString())
-    const ms = retryAfter.getTime() - Date.now()
-    if (ms <= 0) {
-      setRetryAfter(null)
-      return
-    }
-    const timer = setTimeout(() => {
-      setRetryAfter(null)
-    }, ms)
-    return () => clearTimeout(timer)
-  }, [retryAfter])
-
-  return { retryAfter, setRetryAfter, isThrottled }
-}

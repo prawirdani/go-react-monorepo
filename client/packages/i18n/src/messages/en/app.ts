@@ -58,6 +58,9 @@ export default {
 			forgot: "Forgot password?",
 			submit: "Sign in",
 			credentialsError: "Your email or password is incorrect",
+			lockedError:
+				"Too many failed attempts. This account is temporarily locked.",
+			retryIn: "Try again in",
 			noAccount: "Don't have an account yet?",
 			registerLink: "Create account",
 		},
@@ -345,6 +348,8 @@ export default {
 			invalidRegistrationToken:
 				"The registration completion link is invalid or has expired.",
 			recoveryThrottled: "Too many attempts. Try again at",
+			accountLocked:
+				"Too many failed login attempts. This account is temporarily locked.",
 			notFound: "The requested data was not found.",
 			emailConflict: "This email is already registered.",
 			unauthorized: "You are not signed in. Please sign in again.",

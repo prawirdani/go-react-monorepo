@@ -340,7 +340,10 @@ func TestService_Login(t *testing.T) {
 		var appErr *apperr.Error
 		require.ErrorAs(t, err, &appErr)
 		assert.Equal(t, apperr.KindThrottled, appErr.Kind())
-		assert.Equal(t, map[string]int64{"retry_after_seconds": 300}, appErr.Details)
+		res, ok := appErr.Details.(throttle.Result)
+		require.True(t, ok, "details should be a throttle.Result")
+		assert.False(t, res.Allowed)
+		assert.WithinDuration(t, time.Now().Add(5*time.Minute), res.RetryAfter, time.Second)
 	})
 
 	t.Run("Unknown email records a failure", func(t *testing.T) {

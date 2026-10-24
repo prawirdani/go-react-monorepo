@@ -59,6 +59,11 @@ export type ErrorMap = {
 		/** ISO 8601 date-time when another request is allowed. */
 		retry_after: string;
 	};
+	AUTH_ACCOUNT_LOCKED: {
+		allowed: boolean;
+		/** ISO 8601 date-time when login may be retried. */
+		retry_after: string;
+	};
 };
 
 export type APIError = {
