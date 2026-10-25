@@ -72,21 +72,28 @@ cli:
 permissions:
 	@go -C $(GO_DIR) run ./cmd/cli permissions
 
-# Makesure you have goose binary installed
+# Migrations run through the project CLI (go -C backend), so no host goose
+# binary is needed. The database verbs read the SQL embedded in the binary;
+# create writes to the OS filesystem, and `go -C backend` runs it from backend/.
 migration\:status:
-	@goose -dir $(GO_DIR)/migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" status
+	@go -C $(GO_DIR) run ./cmd/cli --migrate status
 
 migration\:up:
-	@goose -dir $(GO_DIR)/migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" up
+	@go -C $(GO_DIR) run ./cmd/cli --migrate up
 
+# One step back. The CLI refuses to roll back without --yes.
 migration\:down:
-	@goose -dir $(GO_DIR)/migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" down
+	@go -C $(GO_DIR) run ./cmd/cli --migrate down --yes
 
-migration\:clear:
-	@goose -dir $(GO_DIR)/migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" down-to 0
-
+# NAME=<name> is required, e.g. `make migration:create NAME=add_widget`.
 migration\:create:
-	@echo "Create Migration"
-	@read -p "Enter migration name: " migration_name; \
-	goose -s -dir $(GO_DIR)/migrations create $$migration_name sql
-	@echo "Migration created successfully, fill in the schema in the generated file."
+	@go -C $(GO_DIR) run ./cmd/cli --migrate create $(NAME) --dir migrations
+
+# Run one backup now, off-schedule, in the already-running cli service.
+backup\:run:
+	@docker compose exec -T cli ./cli --backup
+
+# Interactive TUI in the cli image. Needs a terminal: no -T, and --rm so the
+# container goes away when you quit.
+cli\:tui:
+	@docker compose run --rm cli ./cli

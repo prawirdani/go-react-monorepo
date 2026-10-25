@@ -1,9 +1,14 @@
-# Self-contained stack behind Caddy: Postgres, Redis, API, worker, migrate,
-# Caddy, Prometheus and Grafana all run inside this compose project. No host
-# services are required and there is no host bridge (extra_hosts /
+# Self-contained stack behind Caddy: Postgres, Redis, API, worker, the cli
+# container (migrations + backups) and Caddy all run inside this compose project.
+# No host services are required and there is no host bridge (extra_hosts /
 # host.docker.internal) to configure.
 #
 #   docker compose up -d
+#
+# Prometheus and Grafana are behind the `observability` profile, so a plain
+# `up -d` does not start them. Opt in when you want dashboards:
+#
+#   docker compose --profile observability up -d
 #
 # For a bare API with no bundled proxy (you terminate TLS / reverse-proxy
 # yourself, e.g. a host nginx), use compose.minimal.yml instead.
@@ -52,8 +57,8 @@ services:
       redis:
         condition: service_healthy
       # Schema must exist before the API serves a request.
-      migrate:
-        condition: service_completed_successfully
+      cli:
+        condition: service_healthy
 
   # Polls the transactional outbox table and delivers due messages (SMTP).
   # Same image as the API; only the entrypoint differs.
@@ -76,8 +81,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
+      cli:
+        condition: service_healthy
 
   postgres:
     image: postgres:18.1
@@ -151,51 +156,36 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # One-shot goose migration job. It runs after Postgres is healthy and before
-  # the API and worker start, so neither ever sees an empty schema.
+  # One long-running CLI container: it applies migrations at start, writes the
+  # /app/.migrated readiness marker, then runs busybox crond for the twice-daily
+  # backups. Migration failure stops it after 3 attempts, so the app tier - which
+  # waits on this service being healthy - never boots against a stale schema.
   #
-  # The image's entrypoint hardcodes `-dir=/migrations` and runs
-  # `goose ${GOOSE_VERBOSE:+-v} -dir=/migrations ${GOOSE_COMMAND:-up}`, so only
-  # GOOSE_DRIVER/GOOSE_DBSTRING are needed here - no command or entrypoint.
-  migrate:
-    image: ghcr.io/kukymbr/goose-docker:3.19.2
-    env_file:
-      - .env
-    networks: [app-net]
-    environment:
-      GOOSE_DRIVER: postgres
-      GOOSE_DBSTRING: >-
-        host=postgres port=${DB_PORT:-5432}
-        user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} sslmode=disable
-    volumes:
-      - ./backend/migrations:/migrations:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-    # One-shot: never restart, and a failure must block the app tier.
-    restart: "no"
-
-  # Twice-daily logical backups, offsite-only. Built on the rclone image (Alpine)
-  # with postgresql18-client from apk - ~100MB vs ~300MB for the postgres image
-  # plus apt rclone, and rclone is preinstalled. One busybox-crond job streams
-  # `pg_dump -Fc | rclone copyto` straight to a private R2 bucket; there is no
-  # local copy and no on-host volume. Retention is an R2 lifecycle rule on
-  # BACKUP_PREFIX, not pruned here.
+  # The cli image has no goose entrypoint and needs no -dir mount: the goose SQL
+  # is embedded in the binary, so `./cli --migrate up` applies it. It reads the
+  # DB_* variables from .env; only the host needs overriding.
+  #
+  # Backups are twice-daily and offsite-only: one busybox-crond job runs
+  # `cli --backup`, which streams `pg_dump -Fc` straight to the private R2 bucket
+  # through the S3 SDK. There is no temp file, no rclone, no local copy and no
+  # on-host volume. Retention is an R2 lifecycle rule on BACKUP_PREFIX, not pruned
+  # here.
   #
   # The crontab is baked at /etc/crontabs/root (busybox's default). cron does not
   # inherit the container environment, so the entrypoint snapshots the DB_* and
   # BACKUP_R2_* variables into /etc/backup.env, which the job sources.
   #
   # BACKUP_R2_BUCKET must be a SEPARATE, PRIVATE R2 bucket. It must never be
-  # R2_BUCKET: that bucket is served from a public URL, and the script
-  # hard-refuses to upload to it.
-  backup:
+  # R2_BUCKET: that bucket is served from a public URL, and the CLI hard-refuses
+  # to upload to it.
+  cli:
     build:
-      context: ./deployment/backup
-    image: go-react-monorepo-backup:local
-    networks: [app-net]
+      context: ./backend
+      target: cli
+    image: go-react-monorepo-cli:local
     env_file:
       - .env
+    networks: [app-net]
     environment:
       # .env sets DB_HOST=localhost for bare-metal; inside compose the database
       # is the `postgres` service.
@@ -203,12 +193,23 @@ services:
       # cron fires in the container's local time; pin it so "03:15" and "15:15" are known
       # wall clock rather than UTC.
       TZ: ${TZ:-Asia/Jakarta}
-    # No published ports and no volumes: the sidecar only reaches the database
-    # and R2, and keeps nothing on the host.
+    # No published ports and no volumes: it only reaches the database and R2, and
+    # keeps nothing on the host.
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
+    # Healthy once migrations are applied and crond is up. The api and worker
+    # wait on this, and the crond check matters because a dead scheduler has no
+    # other symptom: there is no backup freshness alert.
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /app/.migrated && pgrep -f 'crond -f' > /dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    # Give up after 3 attempts: a permanent migration error must block the app
+    # tier, not loop forever.
+    restart: "on-failure:3"
 
   # Builds the dashboard from client/ and serves it alongside the API. The
   # Dockerfile lives in deployment/caddy/ but its context is client/, so every
@@ -254,6 +255,8 @@ services:
   prometheus:
     image: prom/prometheus:v3.7.2
     container_name: prometheus
+    # Opt-in: a plain `docker compose up -d` runs only the app tier.
+    profiles: ["observability"]
     env_file:
       - .env
     networks: [app-net]
@@ -271,6 +274,8 @@ services:
   grafana:
     image: grafana/grafana:11.6.0
     container_name: grafana
+    # Opt-in with `--profile observability`, same as Prometheus.
+    profiles: ["observability"]
     env_file:
       - .env
     networks: [app-net]
