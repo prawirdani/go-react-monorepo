@@ -30,5 +30,8 @@ WORKDIR /app
 COPY --from=builder /app/bin/api .
 COPY --from=builder /app/bin/worker .
 
+# No writable home needed: config comes from env, uploads go to R2.
+USER nonroot
+
 # Run the API by default; the compose `worker` service overrides this command
 CMD ["./api"]

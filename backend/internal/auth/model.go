@@ -12,8 +12,8 @@ import (
 // RegisterInput starts the invitation flow: an email is sent with a link to
 // complete registration. The password is chosen later via CompleteRegistrationInput.
 type RegisterInput struct {
-	Name  string `json:"name"  validate:"required,min=3"`
-	Email string `json:"email" validate:"required,email"`
+	Name  string `json:"name"  validate:"required,min=3,max=100"`
+	Email string `json:"email" validate:"required,email,max=254"`
 }
 
 // CompleteRegistrationInput finishes an invited registration by consuming the
@@ -24,12 +24,12 @@ type CompleteRegistrationInput struct {
 }
 
 type LoginInput struct {
-	Email    string `json:"email"    validate:"required,email"`
+	Email    string `json:"email"    validate:"required,email,max=254"`
 	Password string `json:"password" validate:"required"`
 }
 
 type RecoverPasswordInput struct {
-	Email string `json:"email" validate:"required,email"`
+	Email string `json:"email" validate:"required,email,max=254"`
 }
 
 type ResetPasswordInput struct {
@@ -38,10 +38,16 @@ type ResetPasswordInput struct {
 }
 
 type RequestEmailChangeInput struct {
-	NewEmail string `json:"new_email" validate:"required,email"`
+	NewEmail string `json:"new_email" validate:"required,email,max=254"`
 }
 
 type ConfirmEmailChangeInput struct {
+	Token string `json:"token" validate:"required"`
+}
+
+// TokenStatusInput carries an opaque one-time token in a request body instead
+// of the URL, so it is never written to a server access log.
+type TokenStatusInput struct {
 	Token string `json:"token" validate:"required"`
 }
 

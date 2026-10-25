@@ -25,6 +25,8 @@ services:
       context: ./backend
     image: go-react-monorepo:local
     restart: always
+    # Drain budget is 25s; 40s gives shutdown room under Docker's 10s default.
+    stop_grace_period: 40s
     networks: [app-net]
     env_file:
       - .env
@@ -61,6 +63,8 @@ services:
     image: go-react-monorepo:local
     command: ["./worker"]
     restart: always
+    # Same 25s drain budget as the API; 40s beats Docker's 10s default.
+    stop_grace_period: 40s
     networks: [app-net]
     env_file:
       - .env

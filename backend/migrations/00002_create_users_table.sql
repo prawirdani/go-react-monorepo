@@ -6,7 +6,7 @@ SELECT
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
-  email VARCHAR(50) NOT NULL,
+  email VARCHAR(254) NOT NULL,
   email_verified_at TIMESTAMPTZ,
   phone VARCHAR(30),
   password VARCHAR(255) NOT NULL,
@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE UNIQUE INDEX users_email_key ON users (email)
 WHERE
   deleted_at IS NULL;
+
+-- Backs the admin list's tombstone-last ordering ((deleted_at IS NOT NULL), created_at).
+CREATE INDEX users_deleted_created_idx ON users ((deleted_at IS NOT NULL), created_at);
 
 -- +goose StatementEnd
 -- +goose Down

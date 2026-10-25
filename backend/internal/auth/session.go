@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/prawirdani/go-react-monorepo/internal/apperr"
@@ -35,6 +36,20 @@ type Session struct {
 	CreatedAt        time.Time                    `db:"created_at"         json:"created_at"`                 // creation time
 	ExpiresAt        time.Time                    `db:"expires_at"         json:"expires_at"`                 // session expiry
 	RevokedAt        nullable.Nullable[time.Time] `db:"revoked_at"         json:"revoked_at"`                 // revocation timestamp
+}
+
+const maxUserAgentBytes = 255 // sessions.user_agent is VARCHAR(255)
+
+// truncateUserAgent cuts the UA to the column width without splitting a rune.
+func truncateUserAgent(ua string) string {
+	if len(ua) <= maxUserAgentBytes {
+		return ua
+	}
+	ua = ua[:maxUserAgentBytes]
+	for len(ua) > 0 && !utf8.ValidString(ua) {
+		ua = ua[:len(ua)-1]
+	}
+	return ua
 }
 
 // NewSession creates a new session with a generated refresh token
@@ -74,7 +89,7 @@ func NewSession(ctx context.Context, userID uuid.UUID, ttl time.Duration) (*Sess
 		ExpiresAt:        now.Add(ttl),
 		AccessedAt:       now,
 		IPAddr:           auditCtx.IP,
-		UserAgent:        auditCtx.UserAgent,
+		UserAgent:        truncateUserAgent(auditCtx.UserAgent),
 	}
 
 	return &sess, refreshToken, nil
@@ -107,7 +122,7 @@ func (s *Session) Rotate(ctx context.Context) (string, error) {
 	s.RefreshTokenHash = HashStr(newToken)
 	s.AccessedAt = time.Now()
 	s.IPAddr = auditCtx.IP
-	s.UserAgent = auditCtx.UserAgent
+	s.UserAgent = truncateUserAgent(auditCtx.UserAgent)
 
 	return newToken, nil
 }

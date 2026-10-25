@@ -107,9 +107,9 @@ func NewServer(container *Container, onPostShutdown func(error) error) (*Server,
 	// dependency outage cannot trip a liveness probe into restarting an
 	// otherwise-healthy process.
 	app.Get("/api/livez", svr.live)
-	// Readiness: dependencies are reachable. Returns 503 when one is down so a
-	// load balancer (or Caddy's active health check) stops routing here until it
-	// recovers.
+	// Readiness: PostgreSQL is reachable. Returns 503 when it is down so a load
+	// balancer (or Caddy's active health check) stops routing here until it
+	// recovers. Redis is deliberately excluded - see health().
 	app.Get("/api/healthz", svr.health)
 
 	// Setup API routes
@@ -157,9 +157,14 @@ func (s *Server) live(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "ok", "internal_mode": s.container.Config.App.InternalMode})
 }
 
-// health reports readiness: whether the server's dependencies are reachable.
-// A failing dependency returns 503 so load balancers stop routing here until it
-// recovers. For liveness (process up, deps ignored) use /api/livez.
+// health reports readiness: whether the server can serve requests. Postgres is
+// the only hard dependency, so only Postgres is pinged; a failure returns 503 so
+// load balancers stop routing here until it recovers. Redis is deliberately
+// excluded: it backs only fail-open features (the HTTP rate limiter allows on
+// error, the login lockout counter skips on error, and token revocation fails
+// open unless AUTH_REVOCATION_FAIL_CLOSED is set), so a Redis outage must not
+// pull a still-working API out of rotation. For liveness (process up, deps
+// ignored) use /api/livez.
 func (s *Server) health(c fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(c.Context(), 2*time.Second)
 	defer cancel()
@@ -167,9 +172,6 @@ func (s *Server) health(c fiber.Ctx) error {
 	deps := make(map[string]string)
 	if err := s.container.pg.Ping(ctx); err != nil {
 		deps["postgres"] = err.Error()
-	}
-	if err := s.container.rdb.Ping(ctx).Err(); err != nil {
-		deps["redis"] = err.Error()
 	}
 
 	if len(deps) > 0 {

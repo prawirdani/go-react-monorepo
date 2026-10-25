@@ -71,9 +71,8 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	// Begin graceful shutdown
-	time.Sleep(5 * time.Second) // Let LB drain
-
+	// Begin graceful shutdown. Shutdown closes the listener first, which is what
+	// stops new requests, so no pre-drain sleep is needed.
 	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 	defer cancel()
 

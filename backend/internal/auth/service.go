@@ -75,11 +75,17 @@ var ErrAccountLocked = apperr.ThrottledErr(
 	"AUTH_ACCOUNT_LOCKED",
 )
 
+// normalizedEmail returns the canonical form used to build hashed keys, so one
+// address always maps to one key regardless of case or surrounding space.
+func normalizedEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
+}
+
 // loginAttemptKey builds the per-account failure counter key from a hash of the
 // normalized email. Hashing keeps raw addresses out of Redis keys, which are
 // visible to anyone with store access, and keeps the key a fixed length.
 func loginAttemptKey(email string) string {
-	sum := HashStr(strings.ToLower(strings.TrimSpace(email)))
+	sum := HashStr(normalizedEmail(email))
 	return fmt.Sprintf("login:fail:%x", sum)
 }
 
@@ -261,7 +267,7 @@ func (s *Service) Login(
 	if n, ttl, err := s.attempts.Count(ctx, attemptKey); err != nil {
 		log.WarnCtx(ctx, "login attempt counter unavailable", "err", err)
 	} else if n >= int64(s.cfg.Auth.LoginMaxAttempts) && ttl > 0 {
-		log.WarnCtx(ctx, "login failed", "email", inp.Email, "reason", "account_locked")
+		log.WarnCtx(ctx, "login failed", "reason", "account_locked")
 		return nil, ErrAccountLocked.WithDetails(throttle.Result{
 			Allowed:    false,
 			RetryAfter: time.Now().Add(ttl),
@@ -282,14 +288,14 @@ func (s *Service) Login(
 		// Count unknown emails too, otherwise the lockout would itself leak
 		// which addresses exist.
 		s.countLoginFailure(ctx, attemptKey)
-		log.WarnCtx(ctx, "login failed", "email", inp.Email, "reason", "unknown_email")
+		log.WarnCtx(ctx, "login failed", "reason", "unknown_email")
 		return nil, ErrWrongCredentials
 	}
 
 	if err := VerifyPassword(inp.Password, usr.Password); err != nil {
 		s.countLoginFailure(ctx, attemptKey)
 		log.WarnCtx(ctx, "login failed",
-			"email", inp.Email, "user_id", usr.ID.String(), "reason", "bad_password")
+			"user_id", usr.ID.String(), "reason", "bad_password")
 		return nil, err
 	}
 
@@ -439,7 +445,10 @@ func (s *Service) Logout(ctx context.Context, sessID uuid.UUID) error {
 
 // RecoverPassword initiates the password recovery process by sending a reset link or token to the user's email.
 func (s *Service) RecoverPassword(ctx context.Context, inp RecoverPasswordInput) (throttle.Result, error) {
-	key := fmt.Sprintf("recover-password:%s", inp.Email)
+	// Same hashing as the login counter: Redis keys are visible to anyone with
+	// store access, so the address must not appear in the key. One key per
+	// address, same TTL as before.
+	key := fmt.Sprintf("recover-password:%x", HashStr(normalizedEmail(inp.Email)))
 
 	th, err := s.throttler.TryAcquire(ctx, key, PasswordRecoveryThrottledTTL)
 	if err != nil {

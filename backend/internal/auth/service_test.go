@@ -46,6 +46,12 @@ func loginKey(email string) string {
 	return fmt.Sprintf("login:fail:%x", sum)
 }
 
+// recoverKey mirrors the service's recovery throttle key: hashed, never raw.
+func recoverKey(email string) string {
+	sum := sha256.Sum256([]byte(strings.ToLower(strings.TrimSpace(email))))
+	return fmt.Sprintf("recover-password:%x", sum)
+}
+
 func TestService_Register(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		ctx := context.Background()
@@ -543,7 +549,7 @@ func TestService_RecoverPassword(t *testing.T) {
 		}
 
 		f.throttler.EXPECT().
-			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
+			TryAcquire(ctx, recoverKey(input.Email), auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: true}, nil)
 
 		// Token persistence and the event enqueue both happen inside the
@@ -601,12 +607,12 @@ func TestService_RecoverPassword(t *testing.T) {
 			Return(assert.AnError)
 
 		f.throttler.EXPECT().
-			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
+			TryAcquire(ctx, recoverKey(input.Email), auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: true}, nil)
 		// A transient internal failure releases the slot instead of locking the
 		// user out for the full TTL.
 		f.throttler.EXPECT().
-			Release(ctx, "recover-password:"+input.Email).
+			Release(ctx, recoverKey(input.Email)).
 			Return(nil)
 
 		_, err := f.service.RecoverPassword(ctx, input)
@@ -642,10 +648,10 @@ func TestService_RecoverPassword(t *testing.T) {
 		// No event producer expectation: if RecoverPassword enqueued despite the tx failing,
 		// the mock (constructed with t) would fail on an unexpected call.
 		f.throttler.EXPECT().
-			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
+			TryAcquire(ctx, recoverKey(input.Email), auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: true}, nil)
 		f.throttler.EXPECT().
-			Release(ctx, "recover-password:"+input.Email).
+			Release(ctx, recoverKey(input.Email)).
 			Return(nil)
 
 		_, err := f.service.RecoverPassword(ctx, input)
@@ -659,7 +665,7 @@ func TestService_RecoverPassword(t *testing.T) {
 		input := auth.RecoverPasswordInput{Email: "missing@example.com"}
 
 		f.throttler.EXPECT().
-			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
+			TryAcquire(ctx, recoverKey(input.Email), auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: true}, nil)
 
 		f.transactor.EXPECT().
@@ -684,7 +690,7 @@ func TestService_RecoverPassword(t *testing.T) {
 		}
 
 		f.throttler.EXPECT().
-			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
+			TryAcquire(ctx, recoverKey(input.Email), auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: false, RetryAfter: time.Now().Add(30 * time.Second)}, nil)
 
 		result, err := f.service.RecoverPassword(ctx, input)
@@ -702,7 +708,7 @@ func TestService_RecoverPassword(t *testing.T) {
 		}
 
 		f.throttler.EXPECT().
-			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
+			TryAcquire(ctx, recoverKey(input.Email), auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{}, assert.AnError)
 
 		_, err := f.service.RecoverPassword(ctx, input)
@@ -718,7 +724,7 @@ func TestService_RecoverPassword(t *testing.T) {
 		}
 
 		f.throttler.EXPECT().
-			TryAcquire(ctx, "recover-password:"+input.Email, auth.PasswordRecoveryThrottledTTL).
+			TryAcquire(ctx, recoverKey(input.Email), auth.PasswordRecoveryThrottledTTL).
 			Return(throttle.Result{Allowed: true}, nil)
 
 		// GetByEmail error propagates out of the tx: unknown email -> ErrNotFound -> 404.

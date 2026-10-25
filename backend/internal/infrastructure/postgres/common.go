@@ -85,13 +85,21 @@ func generateUpdateQuery(table string, args pgx.NamedArgs, whereColumns ...strin
 		whereMap[col] = struct{}{}
 	}
 
+	// The SET order must be stable for the statement cache: pgx keys prepared
+	// statements by SQL text, so a map-order clause would miss on every call.
+	keys := make([]string, 0, len(args))
+	for k := range args {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	var b strings.Builder
 	b.WriteString("UPDATE ")
 	b.WriteString(table)
 	b.WriteString(" SET ")
 
 	setCount := 0
-	for k := range args {
+	for _, k := range keys {
 		if _, isWhere := whereMap[k]; isWhere {
 			continue
 		}

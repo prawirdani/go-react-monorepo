@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -19,6 +20,12 @@ import (
 
 func main() {
 	if err := run(); err != nil {
+		// A SIGTERM cancels ctx, so the worker returns context.Canceled. That is
+		// a clean stop, not a failure, and must exit 0.
+		if errors.Is(err, context.Canceled) {
+			log.Info("Application stopped")
+			return
+		}
 		log.Error("Application stopped", err)
 		os.Exit(1)
 	}
@@ -66,6 +73,19 @@ func run() error {
 			return authWorker.SendEmailChangeEmail(ctx, msg)
 		},
 	}
+
+	// Housekeeping runs detached: the janitor only deletes expired rows, so a
+	// cleanup failure must never stop outbox delivery. It logs its own errors
+	// and the next tick retries; no error channel is needed.
+	logger := log.GetFromContext(ctx)
+	//nolint:gosec // G118: the janitor runs for the process lifetime, not a request
+	go func() {
+		// Detached goroutine: a panic here has no recover frame above it, so
+		// without this it would crash the whole process.
+		defer log.Recover(logger)
+
+		worker.NewJanitor(postgres.NewMaintenance(pg)).Run(ctx)
+	}()
 
 	wrk := worker.NewOutboxWorker(postgres.NewOutboxRepository(pg), handlers)
 
