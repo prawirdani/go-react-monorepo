@@ -87,10 +87,13 @@ migrations/              # Goose SQL migrations
 - Unknown-email login path runs a dummy bcrypt compare (`DummyVerify`) - never branch on user existence via timing.
 - Login lockout (`ErrAccountLocked`, `AUTH_ACCOUNT_LOCKED`) counts failures per email in Redis and blocks login only - it deliberately does **not** revoke active sessions, or an attacker could force-logout a victim by guessing wrong passwords.
 - Refresh attempts against a revoked session → `log.WarnCtx` reuse signal, then `ErrSessionInvalid`.
-- Passwords: bcrypt cost 12, `min=8,max=72` validation (bcrypt truncates >72 bytes).
+- One-time tokens (registration, password recovery) are read from a request **body** (`POST /api/auth/register/token`, `POST /api/auth/password/recover/token`), never from the path: the access log records the path, so a token in a URL is a credential in the logs.
+- Passwords: bcrypt cost 12, `min=8,max=72` validation (bcrypt truncates >72 bytes). User agent is cut to `sessions.user_agent`'s 255 bytes; email/name lengths are validated to the column widths (`email max=254`, `name max=100`).
 - Cookies: `HttpOnly` always on; `Secure` production-only.
 
 **Worker/outbox** - events go through the transactional outbox: `Produce*` writes `outbox_messages` on the caller's connection (called inside `Transact`, so it commits with the business state). `cmd/worker` polls the table (`outbox.Store.FetchBatch`, oldest first, up to `outbox.MaxAttempts` = 5), dispatches by topic to a `worker.Handler`, and deletes the row with `MarkDone` after a successful send; a handler error records `attempts + 1` and `last_error` via `MarkFailed` and retries on a later tick. Delivery is at-least-once, so handlers must be idempotent (a duplicate email is fine, a lost one is not). `MarkDone`/`MarkFailed` use `context.WithoutCancel`. SMTP send bounded at 10s; keep any new blocking op bounded too. The worker must stay at one replica - `FetchBatch` has no `FOR UPDATE SKIP LOCKED`.
+
+**Housekeeping** - the same process runs `worker.Janitor` hourly (detached goroutine, `defer log.Recover`), calling `postgres.Maintenance.Cleanup`, which deletes expired sessions and one-time tokens older than 7 days and dead-lettered outbox rows older than 30 days, bounded by `cleanupTimeout`. Add new table retention there, not as an ad-hoc job; `audit_logs` is deliberately exempt until it gets its own retention decision.
 
 **Async goroutines** - a detached goroutine (one that outlives the request ctx) has no recover middleware above it, so a panic there kills the process. Start it with `defer log.Recover(logger)` as the first line.
 

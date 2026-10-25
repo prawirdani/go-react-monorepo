@@ -193,7 +193,7 @@ change/reset, a returned error for explicit session/user revokes.
 rejects an existing email (409), revokes any prior outstanding token (latest
 invite wins), and stores a single-use token (256-bit, `regt_`, SHA-256,
 `AUTH_REGISTRATION_TOKEN_TTL`) with an audit row and the outbox event in one
-transaction. `GET /api/auth/register/:token` exposes expiry/`used_at`/`revoked_at`.
+transaction. `POST /api/auth/register/token` with `{ token }` exposes expiry/`used_at`/`revoked_at`.
 `POST /api/auth/register/complete` validates the token (any bad state → 401
 `AUTH_INVALID_REGISTRATION_TOKEN`), then hashes the password, creates the user,
 and marks the token used - one transaction. The password is hashed only after the
@@ -349,6 +349,10 @@ idempotent (a duplicate email is fine, a lost one is not).
   `context.WithoutCancel` so bookkeeping survives shutdown.
 - **Crash isolation**: the poll loop runs under the process signal context, so
   stopping the worker pauses delivery until restart.
+- **Housekeeping**: the same process runs `worker.Janitor` once an hour to delete
+  expired sessions and one-time tokens (older than 7 days) and dead-lettered
+  outbox rows (older than 30 days). The run is bounded by `cleanupTimeout` (30 s),
+  and `audit_logs` is deliberately left alone.
 
 Run it separately: `make dev:worker`.
 
@@ -367,15 +371,19 @@ Run it separately: `make dev:worker`.
   every interface on `APP_PORT`; what is reachable is decided solely by the compose
   `ports:` mapping - only Caddy publishes. The sidecar is excluded from graceful
   shutdown.
-- **Health**: `GET /api/healthz` is readiness - it pings Postgres and Redis with
-  a 2 s timeout and returns 503 with a `dependencies` map on any failure, so a
-  load balancer stops routing until they recover. `GET /api/livez` is liveness -
+- **Health**: `GET /api/healthz` is readiness - it pings Postgres with
+  a 2 s timeout and returns 503 with a `dependencies` map on failure, so a
+  load balancer stops routing until it recovers. Redis is deliberately excluded:
+  everything it backs fails open, so its outage must not pull a working API out
+  of rotation. `GET /api/livez` is liveness -
   process up, dependencies ignored - so a dependency outage never trips a
   restart-on-failure probe. Both return `internal_mode`.
 - **Security headers**: `helmet` with deny-by-default CSP, `X-Frame-Options: DENY`,
   strict-origin-when-cross-origin referrer policy, restrictive permissions policy;
   HSTS in production, on secure requests only.
-- **Graceful shutdown** (API): 5 s drain, then a 25 s server shutdown deadline.
+- **Graceful shutdown** (API): drain starts immediately (Shutdown closes the
+  listener), with a 25 s server shutdown deadline. Both compose stacks set
+  `stop_grace_period: 40s` so Docker's 10 s default cannot SIGKILL it mid-drain.
 - **Dashboards**: Prometheus scrape config and Grafana provisioning/dashboards in
   `deployment/`, wired by `compose.yml`.
 

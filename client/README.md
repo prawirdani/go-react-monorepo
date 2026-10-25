@@ -191,7 +191,7 @@ The two repos are kept in sync; when the backend changes, the API layer in `pack
 | POST   | `/api/auth/register`          | `{ name, email, phone?, password, gender? }` |
 | POST   | `/api/auth/refresh`           | no body; cookie or Bearer refresh token |
 | POST   | `/api/auth/password/recover`  | `{ email }`; throttle + `Retry-After` header |
-| GET    | `/api/auth/password/recover/{token}` | `{ expires_at, used_at }`          |
+| POST   | `/api/auth/password/recover/token` | `{ token }`; `{ expires_at, used_at }` |
 | PUT    | `/api/auth/password/reset`    | `{ token, new_password }`               |
 | DELETE | `/api/auth/logout`            | clears cookies                          |
 | GET    | `/api/auth/me`                | current user                            |
