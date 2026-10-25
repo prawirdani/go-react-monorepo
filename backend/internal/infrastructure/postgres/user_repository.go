@@ -11,7 +11,6 @@ import (
 	"github.com/prawirdani/go-react-monorepo/internal/apperr"
 	"github.com/prawirdani/go-react-monorepo/internal/ports/repository"
 	"github.com/prawirdani/go-react-monorepo/internal/user"
-	strs "github.com/prawirdani/go-react-monorepo/pkg/strings"
 )
 
 type userRepository struct {
@@ -207,11 +206,7 @@ func (r *userRepository) getUserBy(
 	field string,
 	value any,
 ) (*user.User, error) {
-	query := strs.Concatenate(
-		userSelectQuery,
-		field,
-		"=$1 AND u.deleted_at IS NULL",
-	)
+	query := userSelectQuery + field + "=$1 AND u.deleted_at IS NULL"
 	conn := r.db.GetConn(ctx)
 	if r.db.IsTxConn(conn) {
 		query += "\nFOR UPDATE"

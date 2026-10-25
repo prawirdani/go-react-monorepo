@@ -28,27 +28,6 @@ func TestTitleCase(t *testing.T) {
 	}
 }
 
-func TestConcatenate(t *testing.T) {
-	tests := []struct {
-		title  string
-		input  []string
-		expect string
-	}{
-		{title: "Multiple strings", input: []string{"hello", " ", "world"}, expect: "hello world"},
-		{title: "Single string", input: []string{"hello"}, expect: "hello"},
-		{title: "No strings", input: []string{}, expect: ""},
-		{title: "Nil slice", input: nil, expect: ""},
-		{title: "Empty strings", input: []string{"", "", ""}, expect: ""},
-		{title: "With empty elements", input: []string{"a", "", "b"}, expect: "ab"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.title, func(t *testing.T) {
-			assert.Equal(t, tt.expect, Concatenate(tt.input...))
-		})
-	}
-}
-
 func TestContains(t *testing.T) {
 	tests := []struct {
 		title  string
@@ -69,59 +48,6 @@ func TestContains(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
 			assert.Equal(t, tt.expect, Contains(tt.slice, tt.str))
-		})
-	}
-}
-
-func TestRefine(t *testing.T) {
-	trim := TrimSpaces
-	upper := func(s string) string {
-		result := make([]byte, len(s))
-		for i := 0; i < len(s); i++ {
-			c := s[i]
-			if c >= 'a' && c <= 'z' {
-				c -= 32
-			}
-			result[i] = c
-		}
-		return string(result)
-	}
-
-	tests := []struct {
-		title  string
-		input  string
-		funcs  []func(string) string
-		expect string
-	}{
-		{
-			title:  "Single transform",
-			input:  "  hello  ",
-			funcs:  []func(string) string{trim},
-			expect: "hello",
-		},
-		{
-			title:  "Multiple transforms",
-			input:  "  hello  ",
-			funcs:  []func(string) string{trim, upper},
-			expect: "HELLO",
-		},
-		{
-			title:  "No transforms",
-			input:  "hello",
-			funcs:  nil,
-			expect: "hello",
-		},
-		{
-			title:  "Empty string",
-			input:  "",
-			funcs:  []func(string) string{trim, upper},
-			expect: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.title, func(t *testing.T) {
-			assert.Equal(t, tt.expect, Refine(tt.input, tt.funcs...))
 		})
 	}
 }

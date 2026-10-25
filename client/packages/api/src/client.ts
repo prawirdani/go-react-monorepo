@@ -1,4 +1,3 @@
-import type { TokenPair } from "@repo/schemas/auth";
 import type {
 	QueryableResponse,
 	QueryMetaOnly,
@@ -9,17 +8,9 @@ const RETRY_HEADER = "X-Api-Retried" as const;
 
 type HTTPMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
-export interface TokenProvider {
-	getAccessToken(): Promise<string | null>;
-	getRefreshToken(): Promise<string | null>;
-}
-
 interface FetchOptions extends RequestInit {
 	/**
-	 * Prevents the client from attaching an Authorization header.
-	 *
-	 * By default, authenticated requests automatically include the
-	 * current access token when available.
+	 * Marks the request as unauthenticated: a 401 does not trigger a refresh.
 	 */
 	noAuth?: boolean;
 
@@ -56,27 +47,21 @@ type QueryableAPIRequestFn = <T, TMeta = QueryMetaOnly>(
 
 export interface APIClientConfig {
 	baseURL: string;
-	tokenProvider?: TokenProvider;
 	refreshEndpoint: string;
-	onTokenRefreshed?: (tokens: TokenPair) => Promise<void>; // Callback for token updates
 	onTokenRefreshFailed?: () => void; // Callback for handling logout
 }
 
 export class APIClient {
 	private refreshPromise: Promise<Response> | null = null; // refresh access token inflight promise
 	private baseURL: string;
-	private tokenProvider?: TokenProvider;
 	private refreshEndpoint: string;
 	private onTokenRefreshFailed?: () => void;
-	private onTokenRefreshed?: (tokens: TokenPair) => Promise<void>;
 
 	constructor(conf: APIClientConfig) {
 		// `?? ""` keeps a caller that omits baseURL on the documented same-origin
 		// default rather than throwing here at construction time.
 		this.baseURL = (conf.baseURL ?? "").replace(/\/$/, ""); // Remove trailing slash
-		this.tokenProvider = conf.tokenProvider;
 		this.refreshEndpoint = conf.refreshEndpoint;
-		this.onTokenRefreshed = conf.onTokenRefreshed;
 		this.onTokenRefreshFailed = conf.onTokenRefreshFailed;
 	}
 
@@ -129,10 +114,6 @@ export class APIClient {
 	}
 
 	// Utility methods
-	public setTokenRetriever(tokenRetriever: TokenProvider): void {
-		this.tokenProvider = tokenRetriever;
-	}
-
 	public setBaseURL(baseURL: string): void {
 		this.baseURL = baseURL.replace(/\/$/, "");
 	}
@@ -143,10 +124,6 @@ export class APIClient {
 
 	public setOnUnauthorized(fn: () => void) {
 		this.onTokenRefreshFailed = fn;
-	}
-
-	public setOnTokenRefreshed(fn: (tokens: TokenPair) => Promise<void>) {
-		this.onTokenRefreshed = fn;
 	}
 
 	public async healthz() {
@@ -172,27 +149,10 @@ export class APIClient {
 		// Immediate assignment creates the "lock"
 		this.refreshPromise = (async () => {
 			try {
-				const headers = new Headers();
-				if (this.tokenProvider) {
-					const refreshToken = await this.tokenProvider.getRefreshToken();
-					if (refreshToken) {
-						headers.set("Authorization", `Bearer ${refreshToken}`);
-					}
-				}
-
 				const response = await fetch(`${this.baseURL}${this.refreshEndpoint}`, {
 					method: "POST",
 					credentials: "include",
-					headers: headers,
 				});
-
-				if (response.ok) {
-					const contentType = response.headers.get("content-type");
-					if (contentType?.includes("application/json")) {
-						const resBody = (await response.json()) as ResponseBody<TokenPair>;
-						if (resBody.data) this.onTokenRefreshed?.(resBody.data);
-					}
-				}
 
 				return response;
 			} finally {
@@ -210,14 +170,6 @@ export class APIClient {
 		const isFormData = init?.body instanceof FormData;
 		if (init?.body && !isFormData && !headers.has("Content-Type")) {
 			headers.set("Content-Type", "application/json");
-		}
-
-		// Inject token to Authorization Headers (non web base)
-		if (!init?.noAuth && this.tokenProvider) {
-			const accessToken = await this.tokenProvider.getAccessToken();
-			if (accessToken) {
-				headers.set("Authorization", `Bearer ${accessToken}`);
-			}
 		}
 
 		return {
