@@ -7,7 +7,7 @@ Turborepo dashboard it serves, deployed together with Docker Compose.
 | --- | --- |
 | Backend | Go 1.26, Fiber v3, pgx/PostgreSQL, Redis, transactional outbox, Cloudflare R2 |
 | Client | React 19, Vite, TanStack Router/Query, Tailwind, bun + Turborepo |
-| Deploy | Compose, Caddy, Prometheus + Grafana, R2 backups |
+| Deploy | Compose, Caddy, R2 backups, Prometheus + Grafana behind a profile |
 
 ## Documentation
 
@@ -29,7 +29,7 @@ backend/               the Go module (clean architecture API + worker + CLI)
       container.go     manual DI wiring
       server.go        middleware chain, routes, health, metrics exporter
     worker/            background entrypoint (polls the outbox)
-    cli/               developer CLI (`permissions`, `create-admin`)
+    cli/               ops CLI (`migrate`, `backup`, `permissions`, `create-admin`)
 
   config/              env-based config structs, parsed and validated at startup
 
@@ -53,14 +53,14 @@ backend/               the Go module (clean architecture API + worker + CLI)
                        nullable, strings, validator)
 
   migrations/          goose SQL migrations (additive only)
-  Dockerfile           multi-stage build (distroless runtime)
+  Dockerfile           multi-stage build (distroless runtime + alpine cli target)
   .air.toml .air.worker.toml   Air configs (run from backend/)
   AGENTS.md            conventions for the Go half
 
-deployment/            caddy/ prometheus/ grafana/ backup/ + runbooks
+deployment/            caddy/ prometheus/ grafana/ + runbooks
 go.work                workspace pointing at backend/, so gopls works at the root
-compose.yml            full stack: the API tier + caddy, prometheus, grafana
-compose.minimal.yml    bare API: api, worker, migrate, postgres, redis, backup
+compose.yml            full stack: api, worker, cli, datastores + caddy (prom/grafana profiled)
+compose.minimal.yml    bare API: api, worker, cli, postgres, redis
 Makefile               dev/build/test/lint/migration/cli/client targets
                        (runs Go with -C backend)
 
@@ -73,16 +73,20 @@ client/                the dashboard: bun + Turborepo monorepo
 ## Getting started
 
 **Prerequisites:** Go `1.26.5`+, PostgreSQL and Redis (`compose.yml` provides
-both), the [goose](https://github.com/pressly/goose) CLI for `make migration:*`,
-optional Air and `golangci-lint` v2, and bun 1.4 for the dashboard.
+both), optional Air and `golangci-lint` v2, and bun 1.4 for the dashboard.
+Migrations run through the bundled CLI (`make migration:*`), so no host `goose`
+install is needed.
 
 **1. Start the stack.** `compose.yml` is self-contained (Postgres, Redis, API,
-worker, Caddy, Prometheus, Grafana on one bridge network). `compose.minimal.yml`
-is the bare API for fronting with your own proxy.
+worker, one long-running `cli` container for migrations and backups, and Caddy on
+one bridge network). Prometheus and Grafana sit behind the `observability`
+profile, so a plain `up` runs only the app tier. `compose.minimal.yml` is the
+bare API for fronting with your own proxy.
 
 ```bash
-docker compose up -d                          # full stack
-docker compose -f compose.minimal.yml up -d   # bare API
+docker compose up -d                           # app tier
+docker compose --profile observability up -d   # add Prometheus + Grafana
+docker compose -f compose.minimal.yml up -d    # bare API
 ```
 
 Every service loads `.env` via `env_file:`, so credentials live in one place;
@@ -106,9 +110,10 @@ cp .env.example .env
 automatically in development.
 
 **3. Apply migrations.** With compose there is nothing to run by hand: the
-one-shot `migrate` service applies goose migrations once Postgres is healthy, and
-both API and worker wait on `service_completed_successfully`, so a failed
-migration blocks the app tier instead of serving a half-built schema. For
+long-running `cli` service applies goose migrations at startup, writes
+`/app/.migrated`, then starts crond for backups. Both API and worker wait on it
+being `service_healthy`, so a failed migration stops the `cli` container after 3
+attempts and blocks the app tier instead of serving a half-built schema. For
 bare-metal, run `make migration:up`.
 
 **4. Run the API and the worker** - separate processes:

@@ -4,18 +4,20 @@ Single-host deployment with Docker Compose and Caddy. This file is both the
 step-by-step preparation gate and the deployment reference material. Backups have
 their own reference: [`BACKUP.md`](./BACKUP.md).
 
-- Architecture: `compose.yml` runs Postgres, Redis, API, worker, the one-shot
-  migrate job, Caddy, Prometheus and Grafana on one pinned network.
-- **Only Caddy publishes ports** (plus Grafana, bound to loopback). Everything
-  else is internal-only.
+- Architecture: `compose.yml` runs Postgres, Redis, API, worker, the long-running
+  `cli` container (migrations at start, then cron for backups) and Caddy on one
+  pinned network. Prometheus and Grafana are behind the `observability` profile,
+  so a plain `up -d` leaves them out.
+- **Only Caddy publishes ports** (plus Grafana, bound to loopback, when the
+  observability profile is enabled). Everything else is internal-only.
 - Target shape: a VPS with a public IP, a domain, and TLS terminated by Caddy -
   optionally behind Cloudflare.
 
 > **Which compose file.** This guide assumes the self-contained Caddy stack,
 > which is the default `compose.yml` - the commands below take no `-f`.
-> `compose.minimal.yml` is the bare API (Postgres, Redis, API, worker, migrate,
-> backup) with **no** bundled proxy, TLS, or dashboards - front it with your
-> own proxy (e.g. a host nginx) pointed at `127.0.0.1:${APP_PORT}`, and set
+> `compose.minimal.yml` is the bare API (Postgres, Redis, API, worker, the
+> `cli` container) with **no** bundled proxy, TLS, or dashboards - front it with
+> your own proxy (e.g. a host nginx) pointed at `127.0.0.1:${APP_PORT}`, and set
 > `TRUST_PROXY=true` so audit IPs come from `X-Forwarded-For`. The proxy-trust
 > and firewall notes below apply to both; the TLS, Cloudflare and Grafana
 > sections are Caddy-only.
@@ -25,13 +27,13 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 ## 0. Prerequisites
 
 - [ ] Host with **Docker Engine** and **Compose v2**. v2 is required - the stack
-      uses `depends_on: condition: service_healthy` and
-      `service_completed_successfully`.
+      uses `depends_on: condition: service_healthy`.
 - [ ] A domain you control (for automatic HTTPS). Not required for a plain-HTTP
       trial run.
 - [ ] Host ports `80` and `443` free. A non-TLS trial can use `8080`/`8443`.
 - [ ] Outbound internet from the host: image pulls, ACME validation, SMTP, R2.
-- [ ] Enough disk for `postgres-data`, `prometheus-data` and `backups/`.
+- [ ] Enough disk for `postgres-data`, `prometheus-data` and `caddy-data` (dumps
+      live in R2, not on the host).
 - [ ] **Correct build architecture.** `make build` sets `GOOS=linux` but not
       `GOARCH`, so the binary matches the builder image. Building on Apple
       Silicon for an amd64 VPS needs `--platform linux/amd64` (or a `GOARCH`
@@ -136,11 +138,15 @@ their own reference: [`BACKUP.md`](./BACKUP.md).
 ## 5. First boot
 
 - [ ] `docker compose up -d --build`
-- [ ] Startup order is `postgres (healthy)` → `migrate (completed)` → `api` +
-      `worker`. A failed migration blocks the app tier by design.
-- [ ] `docker compose ps` - every service `running`, `postgres`/`redis` healthy.
-- [ ] `docker compose logs migrate` - goose reports the migrations it applied
-      (or none, if already current).
+- [ ] Startup order is `postgres (healthy)` → `cli (healthy: migrations applied,
+      crond up)` → `api` + `worker`. A failed migration stops the `cli` container
+      after 3 attempts and blocks the app tier by design.
+- [ ] Dashboards are opt-in: `docker compose --profile observability up -d`
+      adds Prometheus and Grafana (Grafana stays bound to `127.0.0.1`).
+- [ ] `docker compose ps` - every service `running`, `postgres`/`redis`/`cli`
+      healthy.
+- [ ] `docker compose logs cli` - the CLI reports the migrations it applied
+      (or none, if already current), then crond starts.
 
 ---
 
@@ -178,15 +184,14 @@ Reference: [`BACKUP.md`](./BACKUP.md).
 - [ ] Run one manual backup and confirm the dump lands in the bucket:
 
       ```bash
-      docker compose run --rm --entrypoint sh backup -c backup-postgres.sh
-      docker compose run --rm --entrypoint sh backup -c \
-        'set -a; . /etc/backup.env; set +a; rclone ls "r2:$BACKUP_R2_BUCKET/${BACKUP_PREFIX:-postgres}"'
+      make backup:run
+      docker compose exec -T cli ./cli --backup list
       ```
 - [ ] **Set the R2 lifecycle rule** on the `postgres/` prefix (30 days) - the
-      script never deletes, so without it dumps accumulate forever.
+      CLI never deletes, so without it dumps accumulate forever.
 - [ ] **Run the restore drill** ([`BACKUP.md` → Restore drill](./BACKUP.md#restore-drill)). An
       untested backup is a hope, not a backup.
-- [ ] Confirm the schedule fires: check `docker logs backup` after the next
+- [ ] Confirm the schedule fires: check `docker logs cli` after the next
       03:15/15:15 container-local run.
 - [ ] Enable **provider volume snapshots** as the coarse second layer: atomic,
       crash-consistent, no downtime, and it covers what a logical dump cannot
@@ -209,16 +214,22 @@ the only risk is the major version. PostgreSQL cannot start 18 on a 17 data
 directory without `pg_upgrade`.
 
 **Preferred path - dump and restore.** Before switching the image, take a dump with
-`pg_dump` from a 17 container (or use the newest existing dump in `backups/`):
+`pg_dump` from the cli image (it carries the 18 client, which can dump an older
+server) and send the archive to the host:
 
 ```bash
-docker compose run --rm --entrypoint sh backup -c 'pg_dump -Fc -h $DB_HOST -U $DB_USER -d $DB_NAME -f /backups/pre18.dump'
+docker compose exec -T cli sh -c \
+  'pg_dump -Fc -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME"' > pre18.dump
 ```
 
-This must run **before** the postgres image is switched, so the backup image can
-still reach the old server. Then start 18 so it initialises a fresh cluster, and
-restore into it using the runbook in
-[`BACKUP.md` → Restore runbook](./BACKUP.md#restore-runbook).
+This must run **before** the postgres image is switched, so the CLI can still
+reach the old server. Then start 18 so it initialises a fresh cluster, and
+restore the archive into it:
+
+```bash
+docker compose exec -T postgres sh -c \
+  'pg_restore --clean --if-exists --no-owner -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < pre18.dump
+```
 
 **Alternative - `pg_upgrade --link`.** The 18 image moved the volume to
 `/var/lib/postgresql` so the old and new data directories can be mounted side by
@@ -241,8 +252,8 @@ applies to a host with an existing `postgres-data` volume.
 - [ ] Keep the host patched; `docker compose pull` for base-image updates, then
       `up -d`. `pull` does **not** update caddy - it is a locally built image, so
       rebuild it with `up -d --build` after a client change.
-- [ ] Migrations are additive; deploy order is `migrate` → `api`/`worker`, which
-      the compose dependency graph already enforces.
+- [ ] Migrations are additive; deploy order is `cli` (migrations) → `api`/`worker`,
+      which the compose dependency graph already enforces.
 
 ---
 
@@ -260,10 +271,11 @@ applies to a host with an existing `postgres-data` volume.
 ## 11. Known gaps - read before go-live
 
 - [ ] **A real offsite upload has never run** - no private backup bucket or
-      scoped credentials exist yet, so only local dumps are proven.
+      scoped credentials exist yet, so the upload path is unproven.
 - [ ] **No CI.** There is no `.github/`; nothing builds, tests or lints on push.
 - [ ] **No alerting.** A failed backup logs and exits non-zero, but nothing
-      notifies you. Check `docker logs backup` or the `backups/` directory age.
+      notifies you. Check `docker logs cli` or the newest object under the
+      backup prefix.
 - [ ] **No container healthcheck for `api`/`worker`.** The runtime image is
       distroless (no shell, no HTTP client), so a healthcheck cannot be
       expressed. Caddy performs an active health check on `/api/healthz`
@@ -321,7 +333,7 @@ for a directly-reachable API.
 | `grafana` | no | bound to `127.0.0.1:${GRAFANA_PORT}`; reach it with `ssh -L 3000:127.0.0.1:3000 user@host` |
 | `api`, `worker` | no | reached only by Caddy |
 | `postgres`, `redis` | no | not published |
-| `migrate` | no | one-shot goose job; exits before the app tier starts |
+| `cli` | no | long-running: applies migrations, then runs crond for backups; its health gates the app tier |
 | `prometheus` | no | scrapes `api:9091` |
 
 Every service shares the pinned `app-net` bridge. That also means Caddy, Prometheus
@@ -402,8 +414,8 @@ docker compose config --quiet          # validate the rendered config
 docker compose up -d --build           # deploy
 docker compose ps                      # service state
 docker compose logs -f caddy           # TLS issuance, access log
-docker compose logs migrate            # migration result
-docker compose run --rm --entrypoint sh backup -c backup-postgres.sh  # manual backup
+docker compose logs cli              # migration result, then crond
+make backup:run                        # manual backup
 ./deployment/caddy/update-cloudflare-ips.sh                          # refresh CF ranges
 ssh -L 3000:127.0.0.1:3000 user@host   # reach Grafana
 ```

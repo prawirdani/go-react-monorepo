@@ -15,9 +15,9 @@ Two halves, each with its own guide. Read the one you are working in:
 ```
 backend/                 # Go module: cmd/, internal/, pkg/, config/, migrations/
 client/                  # JS monorepo: apps/dashboard + packages/{api,schemas,queries,ui,utils,i18n,config}
-deployment/              # caddy/, prometheus/, grafana/, backup/ + runbooks (DEPLOYMENT.md, BACKUP.md)
-compose.yml              # full stack: the API tier + caddy, prometheus, grafana
-compose.minimal.yml      # bare API: api, worker, migrate, postgres, redis, backup
+deployment/              # caddy/, prometheus/, grafana/ + runbooks (DEPLOYMENT.md, BACKUP.md)
+compose.yml              # full stack: the API tier + cli + caddy, prometheus, grafana
+compose.minimal.yml      # bare API: api, worker, cli, postgres, redis
 ```
 
 The Go module is `github.com/prawirdani/go-react-monorepo`; its source lives in
@@ -41,8 +41,9 @@ make test / lint        # Go tests, golangci-lint
 make client:install     # bun install
 make client:dev         # dashboard dev server (proxies /api)
 make client:lint / client:build / client:test
-make migration:create / migration:up
-make cli / permissions  # developer CLI, permission catalog
+make migration:create NAME=add_widget   # scaffold, then migration:up / :status / :down
+make backup:run         # one off-schedule backup through the cli image
+make cli / permissions  # developer CLI (interactive when run on a terminal)
 ```
 
 Run the API and the dashboard in **separate terminals** (`make dev`,

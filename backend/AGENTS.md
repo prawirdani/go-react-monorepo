@@ -27,9 +27,11 @@ make dev:worker     # Worker, hot-reload
 make build          # Build binaries (api + worker, CGO_ENABLED=0, linux)
 make test           # go test -race -count=1 on GO_PACKAGES -cover
 make lint           # golangci-lint run
-make migration:create  # Scaffold a goose migration
-make migration:up      # Apply migrations
-make cli               # Developer CLI (`permissions`, `create-admin`), e.g. `make cli ARGS="create-admin"`
+make migration:create NAME=add_widget  # Scaffold a goose SQL file
+make migration:up      # Apply migrations (embedded SQL, no host goose)
+make migration:status  # Applied vs embedded version
+make backup:run        # One off-schedule backup through the cli image
+make cli               # Developer CLI, e.g. `make cli ARGS="--migrate status"`
 make permissions       # Regenerate the client's permission catalog
 mockery             # Regenerate mocks (reads .mockery.yml)
 ```
@@ -41,7 +43,7 @@ Go commands in the Makefile carry `-C backend`, so run them from the repo root.
 ```
 cmd/api/                 # API entrypoint: main.go, server.go (routes), container.go (DI)
 cmd/worker/              # Background entrypoint: outbox poll worker
-cmd/cli/                 # Developer CLI (subcommands: permissions, ...)
+cmd/cli/                 # Ops CLI: flags for scripts, interactive TUI for operators
 config/                  # Env-based config (App, Postgres, Redis, Auth, CORS, SMTP, R2)
 internal/
   auth/                  # Auth business logic - JWT, sessions, password recovery, crypto
@@ -63,6 +65,19 @@ internal/
 pkg/                     # log, mailer, metrics, nullable, strings, validator
 migrations/              # Goose SQL migrations
 ```
+
+## CLI and deploy jobs
+
+`cmd/cli` is the ops binary. Two surfaces, one code path:
+
+- **Flags** (scripts, compose jobs, cron): `--migrate <up|status|down [n]|create <name>>` (`down` requires `--yes`), `--backup [list]`, `--create-admin`, `--permissions`, `--help`, `--version`. The legacy positional `permissions` and `create-admin` still work.
+- **TUI**: no arguments on a terminal. Four menus - Database (applied vs embedded status, drift banner, up, down behind a red confirm, create), Backups (run with live phases, list the 10 newest, validate config), Users (create admin, list admins), System (version, config/Postgres/Redis/migration-drift/backup checks, permission-catalog sync). No arguments **without** a TTY prints usage and exits 2, so a compose job can never block on a menu.
+
+Migrations are goose as a library with the SQL embedded (`migrations/embed.go`), so applying needs no checkout and no host `goose`; `create` is the only verb that writes to disk. The backup engine (in `cmd/cli`) streams `pg_dump -Fc` into a multipart R2 upload with no temp file, and refuses a bucket equal to `R2_BUCKET`.
+
+The `cli` service must stay at one replica, like the worker: goose takes no migration lock, so two instances starting together could interleave. Use `docker compose exec cli ./cli ...` for one-off commands instead of starting another.
+
+`backend/Dockerfile` has two runtime targets: `runtime` (distroless, api + worker, the default) and `cli` (alpine, `postgresql18-client`, busybox-crond entrypoint). Compose builds one long-running `cli` service from the `cli` target: the entrypoint applies migrations and writes `/app/.migrated` at start, then runs crond for backups, and its health gates `api`/`worker`. `pg_dump` must match the server major, so the client package is pinned to 18.
 
 ## Architecture
 

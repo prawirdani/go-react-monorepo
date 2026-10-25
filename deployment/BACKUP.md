@@ -4,37 +4,37 @@ Twice-daily logical dumps streamed straight to a **private** R2 bucket, with
 retention enforced by an R2 lifecycle rule. This is the reference material for
 `DEPLOYMENT.md` §7.
 
-The `backup` sidecar (`deployment/backup/`) runs
-`deployment/backup/backup-postgres.sh` under busybox `crond` at **03:15 and 15:15
-container-local** (`TZ`, default `Asia/Jakarta`). The crontab is baked into the
-image; the entrypoint snapshots the DB/R2 environment into `/etc/backup.env`,
-because cron does not inherit the container environment. Cron output is
-redirected to PID 1, so it shows up in `docker logs backup`.
+The `cli` service runs the CLI (`./cli --backup`) under busybox `crond` at
+**03:15 and 15:15 container-local** (`TZ`, default `Asia/Jakarta`). It is the
+same long-running container that applied the migrations at startup, so cron and
+migrations share one image and one env. The crontab is baked into the image; the
+entrypoint snapshots the DB/R2 environment into `/etc/backup.env`, because cron
+does not inherit the container environment. Cron output is redirected to PID 1,
+so it shows up in `docker logs cli`.
 
-There is **no local copy**: the dump is written to `/tmp`, uploaded with
-`rclone copyto`, and the temp file is removed on exit. R2 holds the only
-backups, which is why the lifecycle rule and a freshness check matter.
+There is **no local copy**: `pg_dump -Fc` streams straight into the R2 upload
+through the S3 SDK. No temp file, no rclone. R2 holds the only backups, which is
+why the lifecycle rule and a freshness check matter.
 
 ---
 
 ## Pipeline
 
-The backup image is `FROM rclone/rclone` (Alpine) with `postgresql18-client` from
-apk, matching the server's major version - `pg_dump` must be at least the
-server's major version. The rclone base already ships rclone, so one small image
-does both the dump and the upload.
+The backup image is the CLI target of `backend/Dockerfile`: `alpine:3.23` with
+`postgresql18-client` from apk, matching the server's major version - `pg_dump`
+must be at least the server's major version. The Go binary streams the archive
+into R2 through the S3 SDK; there is no separate uploader.
 
 | Stage | What | Cadence | Retention | Where |
 | --- | --- | --- | --- | --- |
-| 1. Dump | `pg_dump -Fc` (custom format) to `/tmp` | 03:15 and 15:15 container-local | - | temp file, removed on exit |
-| 2. Upload | `rclone copyto` to the private backup bucket | Every run | **R2 lifecycle rule on `BACKUP_PREFIX` (default `postgres/`) - 30 days** | `BACKUP_R2_BUCKET`/`BACKUP_PREFIX`/`<db>-<UTC-stamp>.dump` |
-| 3. Guard | Refuses to run if `BACKUP_R2_BUCKET` equals the public `R2_BUCKET` | Every run | - | - |
+| 1. Dump + upload | `pg_dump -Fc` streamed to the private backup bucket | 03:15 and 15:15 container-local | **R2 lifecycle rule on `BACKUP_PREFIX` (default `postgres/`) - 30 days** | `BACKUP_R2_BUCKET`/`BACKUP_PREFIX`/`<db>-<UTC-stamp>.dump` |
+| 2. Guard | Refuses to run if `BACKUP_R2_BUCKET` equals the public `R2_BUCKET` | Every run | - | - |
 
-The script never deletes anything: it only uploads. Expiry is an R2 object
+The CLI never deletes anything: it only uploads. Expiry is an R2 object
 lifecycle rule on the `postgres/` prefix, set in the Cloudflare dashboard
 (R2 → bucket → Settings → Object lifecycle rules). Without it dumps accumulate
-forever. There is no `rclone delete`/`--min-age` step, and no
-`BACKUP_R2_RETAIN_DAYS` setting - the window lives in the bucket rule.
+forever. There is no prune step, and no `BACKUP_R2_RETAIN_DAYS` setting - the
+window lives in the bucket rule.
 
 ---
 
@@ -51,21 +51,22 @@ forever. There is no `rclone delete`/`--min-age` step, and no
 ## Offsite copy
 
 Every run uploads, so there is nothing to keep in sync and no second copy to
-maintain. `BACKUP_R2_BUCKET` is required: the script aborts at startup if it is
-unset, because the dump would otherwise have nowhere to go.
+maintain. `BACKUP_R2_BUCKET` is required: a backup run aborts before any upload
+if it is unset, because the dump would otherwise have nowhere to go.
 
 The bucket must be **separate and private**. The app's `R2_BUCKET` is served from
 a public `pub-*.r2.dev`-style URL, so uploading dumps there would publish the
-whole database. The script hard-refuses (non-zero exit) before any upload when
+whole database. The CLI hard-refuses (non-zero exit) before any upload when
 `BACKUP_R2_BUCKET == R2_BUCKET`.
 
 Because R2 is the only copy, two operational rules follow:
 
 - **Set the lifecycle rule.** No rule means unbounded storage; the rule is what
   enforces the 30-day window.
-- **Alert on staleness.** If the cron stops (bad creds, host down, sidecar
-  crash), the lifecycle rule will expire the last dumps too and leave you with
-  nothing. Alert when the newest object under `postgres/` is more than ~48 h old.
+- **Alert on staleness.** If the cron stops (bad creds, host down, cli
+  container crash), the lifecycle rule will expire the last dumps too and leave
+  you with nothing. Alert when the newest object under `postgres/` is more than
+  ~48 h old.
 
 ---
 
@@ -108,8 +109,11 @@ for that coarse second layer.
 ## Manual one-off backup
 
 ```bash
-docker compose run --rm --entrypoint sh backup -c backup-postgres.sh
+make backup:run
 ```
+
+That is `docker compose exec -T cli ./cli --backup`: the service is already
+running, so `exec` runs the CLI inside it instead of starting a second container.
 
 ---
 
@@ -120,20 +124,40 @@ chosen object straight into `pg_restore`. `PREFIX` and `KEY` are the file you
 picked (`<db>-<UTC-stamp>.dump`).
 
 ```bash
-# 0. List what is available.
-docker compose run --rm --entrypoint sh backup -c \
-  'set -a; . /etc/backup.env; set +a; rclone ls "r2:$BACKUP_R2_BUCKET/${BACKUP_PREFIX:-postgres}"'
+# 0. List what is available (the newest 10 objects).
+docker compose exec -T cli ./cli --backup list
+```
 
+The CLI image deliberately ships no rclone. Use an S3-compatible client on the
+host for the download; with rclone, export the backup bucket's settings. Read the
+four variables directly instead of sourcing `.env`: sourcing runs the whole file
+as shell, so one unquoted value anywhere in it aborts the export.
+
+```bash
+A=$(grep -E '^BACKUP_R2_ACCOUNT_ID=' .env | cut -d= -f2-)
+K=$(grep -E '^BACKUP_R2_ACCESS_KEY_ID=' .env | cut -d= -f2-)
+S=$(grep -E '^BACKUP_R2_SECRET_ACCESS_KEY=' .env | cut -d= -f2-)
+B=$(grep -E '^BACKUP_R2_BUCKET=' .env | cut -d= -f2-)
+P=$(grep -E '^BACKUP_PREFIX=' .env | cut -d= -f2-)
+DB_USER=$(grep -E '^DB_USER=' .env | cut -d= -f2-)
+DB_NAME=$(grep -E '^DB_NAME=' .env | cut -d= -f2-)
+export RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare \
+  RCLONE_CONFIG_R2_ACCESS_KEY_ID="$K" \
+  RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$S" \
+  RCLONE_CONFIG_R2_ENDPOINT="https://${A}.r2.cloudflarestorage.com" \
+  RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true
+```
+
+```bash
 # 1. Stop writers so nothing mutates the DB mid-restore.
 docker compose stop api worker
 
 # 2. Restore over the existing database (drops objects that are in the dump).
-#    rclone runs in the backup sidecar and streams to pg_restore, so the dump
-#    never has to land on the host. $KEY is expanded by your host shell; the
-#    bucket vars are expanded inside the container from /etc/backup.env.
+#    rclone runs on the host and streams to pg_restore, so the dump never lands
+#    on disk. $KEY comes from the listing above. Run this in the same shell
+#    as the export block.
 KEY=<db>-<UTC-stamp>.dump
-docker compose run --rm --entrypoint sh backup -c \
-  "set -a; . /etc/backup.env; set +a; rclone cat \"r2:\$BACKUP_R2_BUCKET/\${BACKUP_PREFIX:-postgres}/$KEY\"" \
+rclone cat "r2:$B/${P:-postgres}/$KEY" \
   | docker compose exec -T postgres \
       pg_restore --clean --if-exists --no-owner -U "$DB_USER" -d "$DB_NAME"
 
@@ -154,9 +178,9 @@ Proves a dump is restorable without touching the live database.
 KEY=<db>-<UTC-stamp>.dump
 
 # Restore into a scratch database, list tables, check a row count, drop it.
+# (Export the host rclone settings from .env as in the runbook first.)
 docker compose exec -T postgres createdb -U "$DB_USER" restoretest
-docker compose run --rm --entrypoint sh backup -c \
-  "set -a; . /etc/backup.env; set +a; rclone cat \"r2:\$BACKUP_R2_BUCKET/\${BACKUP_PREFIX:-postgres}/$KEY\"" \
+rclone cat "r2:$B/${P:-postgres}/$KEY" \
   | docker compose exec -T postgres pg_restore --no-owner -U "$DB_USER" -d restoretest
 docker compose exec -T postgres psql -U "$DB_USER" -d restoretest -c '\dt'
 docker compose exec -T postgres psql -U "$DB_USER" -d restoretest -c 'select count(*) from users'

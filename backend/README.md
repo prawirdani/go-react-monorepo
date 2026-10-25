@@ -7,13 +7,14 @@
 
 ## Running it
 
-Prerequisites: Go `1.26.5`+, PostgreSQL and Redis (compose provides both), the
-[goose](https://github.com/pressly/goose) CLI, optional Air and `golangci-lint` v2.
-Go targets in the root `Makefile` carry `-C backend`.
+Prerequisites: Go `1.26.5`+, PostgreSQL and Redis (compose provides both),
+optional Air and `golangci-lint` v2. Go targets in the root `Makefile` carry
+`-C backend`; migrations run through the bundled CLI, so no goose binary is
+needed on the host.
 
 ```bash
 cp .env.example .env     # from the repo root; AUTH_JWT_SECRET (>= 32 chars) + DB_*
-make migration:up        # bare metal only; compose runs the migrate job for you
+make migration:up        # bare metal only; compose's cli container applies them at start
 make dev                 # API, hot reload (Air)
 make dev:worker          # outbox poll worker, hot reload
 make build && make run   # CGO_ENABLED=0 GOOS=linux -> backend/bin/{api,worker}
@@ -405,14 +406,14 @@ PostgreSQL through `pgx` (`pgxpool`) with **raw SQL**. Goose migrations in
   so a cancelled request cannot leave locks hanging or churn the pool.
 
 ```bash
-make migration:create   # scaffold a goose SQL file
+make migration:create NAME=add_widget   # scaffold a goose SQL file
 make migration:up       # apply pending
 make migration:status   # current version
 make migration:down     # roll back one
-make migration:clear    # roll back all
 ```
 
-These targets need the `goose` CLI and read `DB_*` from `.env`.
+These targets run the project CLI (`go run ./cmd/cli`) and read `DB_*` from
+`.env`; the goose library is compiled in, so no host `goose` install is needed.
 
 ## Testing
 Unit tests only; they never touch a real database, Redis, or SMTP server.
@@ -439,9 +440,39 @@ The `Makefile` is the entry point - read it for the exact commands. Targets grou
 into `dev` / `dev:worker`, `build` / `run`, `test`, `lint`, `tidy`, `cli` +
 `permissions`, `migration:*`, and `client:*` (install, dev, lint, build, test).
 
-Tools: **Air** for hot reload, **golangci-lint v2** for lint, **goose** for
-migrations, **mockery** for mocks, **bun + Turborepo** for the client, Docker
-Compose for the stack.
+Tools: **Air** for hot reload, **golangci-lint v2** for lint, the bundled **CLI**
+for migrations and backups, **mockery** for mocks, **bun + Turborepo** for the
+client, Docker Compose for the stack.
+
+### CLI
+
+`backend/cmd/cli` is the ops binary. Called with flags it is script-safe; called
+with no arguments on a terminal it opens a four-menu TUI (Database, Backups,
+Users, System).
+
+```bash
+make cli ARGS="--migrate status"    # up | status | down [n] --yes | create <name>
+make cli ARGS="--backup"            # one dump, streams to the private R2 bucket
+make cli ARGS="--backup list"       # the 10 newest backups
+make cli ARGS="--create-admin"      # interactive admin bootstrap
+make cli ARGS="--permissions"       # regenerate the client catalog
+make cli ARGS=""                    # TUI (needs a terminal)
+```
+
+Migrations live in the binary: `migrations/embed.go` embeds the SQL, so applying
+needs no host `goose` and no mount. `--migrate down` refuses to run without
+`--yes`. Backups stream `pg_dump -Fc` straight into an R2 multipart upload (no
+temp file) and refuse any bucket that equals `R2_BUCKET`.
+
+Keep the `cli` service at one replica: goose takes no migration lock, so two
+instances starting together could interleave. Run one-off commands through the
+running container (`docker compose exec -T cli ./cli --migrate status`).
+
+The Dockerfile builds `api` + `worker` into a distroless `runtime` target and the
+same CLI into an Alpine `cli` target (with `postgresql18-client`, which must match
+the server major). Compose runs one long-running `cli` service from that image:
+it applies migrations at start, then runs crond for backups. There is one extra
+image and no goose container.
 
 `make lint` and `make test` take their package paths from `GO_PACKAGES`
 (`./cmd/... ./internal/... ./pkg/... ./config/...`) rather than `./...`. The
