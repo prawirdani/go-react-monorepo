@@ -4,38 +4,42 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
-# Go source roots. Listed explicitly rather than `./...` because the module root
-# also holds `client/`, the JS monorepo: `./...` walks it, and bun's symlinked
-# node_modules would be walked too. golangci-lint v2 has no skip-dirs knob, so
-# the scope belongs on the command line. Add a new top-level Go dir here.
+# The Go module lives in ./backend; the root holds the client, the compose files
+# and this Makefile (which bridges both toolchains). Go commands carry -C so
+# targets stay runnable from the root.
+GO_DIR = backend
+
+# Go source roots, relative to $(GO_DIR). Listed explicitly rather than `./...`
+# because the module sits beside `client/`: golangci-lint v2 has no skip-dirs
+# knob, so the scope belongs on the command line. Add a new top-level Go dir here.
 GO_PACKAGES = ./cmd/... ./internal/... ./pkg/... ./config/...
 
 
 # Run the api server
 dev:
-	@air -c .air.toml
+	@cd $(GO_DIR) && air
 
 # Run the message consumers
 dev\:worker:
-	@air -c .air.worker.toml
+	@cd $(GO_DIR) && air -c .air.worker.toml
 
 tidy:
-	@go mod tidy
+	@go -C $(GO_DIR) mod tidy
 
-lint:	
-	@golangci-lint run $(GO_PACKAGES)
+lint:
+	@cd $(GO_DIR) && golangci-lint run $(GO_PACKAGES)
 
 test:
-	@go test -race -v -count=1 $(GO_PACKAGES) -cover
+	@go -C $(GO_DIR) test -race -v -count=1 $(GO_PACKAGES) -cover
 
 build:
 	@echo "Building binaries..."
-	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -a -installsuffix cgo -o ./bin/api ./cmd/api/
-	CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -a -installsuffix cgo -o ./bin/worker ./cmd/worker/
+	CGO_ENABLED=0 GOOS=linux go -C $(GO_DIR) build -ldflags="-s -w" -a -installsuffix cgo -o ./bin/api ./cmd/api/
+	CGO_ENABLED=0 GOOS=linux go -C $(GO_DIR) build -ldflags="-s -w" -a -installsuffix cgo -o ./bin/worker ./cmd/worker/
 	@echo "Build completed successfully..."
 
 run:
-	./bin/api
+	./$(GO_DIR)/bin/api
 
 # ---------------------------------------------------------------------------
 # Client (the JS monorepo in ./client)
@@ -62,27 +66,27 @@ client\:test:
 
 # Developer CLI. Run `make cli` (or `go run ./cmd/cli help`) for subcommands.
 cli:
-	@go run ./cmd/cli $(ARGS)
+	@go -C $(GO_DIR) run ./cmd/cli $(ARGS)
 
 # Regenerate the client permission catalog from the backend's registrars.
 permissions:
-	@go run ./cmd/cli permissions
+	@go -C $(GO_DIR) run ./cmd/cli permissions
 
 # Makesure you have goose binary installed
 migration\:status:
-	@goose -dir migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" status
+	@goose -dir $(GO_DIR)/migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" status
 
 migration\:up:
-	@goose -dir migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" up
+	@goose -dir $(GO_DIR)/migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" up
 
 migration\:down:
-	@goose -dir migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" down
+	@goose -dir $(GO_DIR)/migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" down
 
 migration\:clear:
-	@goose -dir migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" down-to 0
+	@goose -dir $(GO_DIR)/migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" down-to 0
 
 migration\:create:
 	@echo "Create Migration"
 	@read -p "Enter migration name: " migration_name; \
-	goose -s -dir migrations create $$migration_name sql
+	goose -s -dir $(GO_DIR)/migrations create $$migration_name sql
 	@echo "Migration created successfully, fill in the schema in the generated file."

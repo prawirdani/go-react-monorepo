@@ -4,6 +4,7 @@ tmp
 /cli
 /logs
 /bin
+/backend/bin
 # Local Postgres backup dumps (host-mounted volume for the backup sidecar).
 backups/
 .env

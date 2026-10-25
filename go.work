@@ -1,0 +1,6 @@
+// Root Go workspace: gopls and `go` commands resolve the module in backend/
+// even when the editor is opened at the repo root. Docker builds are unaffected
+// (backend/'s build context does not include this file).
+go 1.26.5
+
+use ./backend

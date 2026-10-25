@@ -22,7 +22,7 @@
 services:
   api:
     build:
-      context: .
+      context: ./backend
     image: go-react-monorepo:local
     restart: always
     networks: [app-net]
@@ -57,7 +57,7 @@ services:
   # Same image as the API; only the entrypoint differs.
   worker:
     build:
-      context: .
+      context: ./backend
     image: go-react-monorepo:local
     command: ["./worker"]
     restart: always
@@ -164,7 +164,7 @@ services:
         host=postgres port=${DB_PORT:-5432}
         user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME} sslmode=disable
     volumes:
-      - ./migrations:/migrations:ro
+      - ./backend/migrations:/migrations:ro
     depends_on:
       postgres:
         condition: service_healthy

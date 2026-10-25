@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           # The toolchain the module declares, not a pinned duplicate.
-          go-version-file: go.mod
+          go-version-file: backend/go.mod
           cache: true
 
       # Unit tests only (testify + mockery); no Postgres, Redis, or SMTP needed.
@@ -37,7 +37,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version-file: backend/go.mod
           cache: true
 
       # Pin the same major the Makefile and .golangci.yml target (v2).
@@ -45,6 +45,7 @@ jobs:
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2
+          working-directory: backend
           # The Makefile scopes packages (GO_PACKAGES) so node_modules under
           # client/ is never walked; reuse that recipe instead of ./....
           args: ./cmd/... ./internal/... ./pkg/... ./config/...
