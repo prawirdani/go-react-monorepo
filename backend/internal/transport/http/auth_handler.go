@@ -50,12 +50,14 @@ func (h *AuthHandler) Routes(router fiber.Router, auth *authenticatorMiddleware,
 			authRouter.Post("/register", h.register)
 		}
 		authRouter.Post("/register/complete", rl.IP("register-complete", max, window), h.completeRegistration)
-		authRouter.Get("/register/:token", h.getRegistrationToken)
+		// The token travels in the body, never the path: the access log records
+		// the request path, and these tokens are single-use credentials.
+		authRouter.Post("/register/token", rl.IP("register-token", max, window), h.getRegistrationToken)
 
 		authRouter.Post("/refresh", h.refreshAccessToken)
 
 		authRouter.Post("/password/recover", rl.IP("password-recover", max, window), h.recoverPassword)
-		authRouter.Get("/password/recover/:token", h.getPasswordRecoveryToken)
+		authRouter.Post("/password/recover/token", rl.IP("recover-token", max, window), h.getPasswordRecoveryToken)
 		authRouter.Put("/password/reset", h.resetPassword)
 
 		authRouter.Put("/email/change/confirm", h.confirmEmailChange)
@@ -118,9 +120,12 @@ func (h *AuthHandler) completeRegistration(c fiber.Ctx) error {
 func (h *AuthHandler) getRegistrationToken(c fiber.Ctx) error {
 	ctx := c.Context()
 
-	rawToken := c.Params("token")
+	var reqBody auth.TokenStatusInput
+	if err := BindValidateJSON(c, &reqBody); err != nil {
+		return err
+	}
 
-	token, err := h.authService.GetRegistrationToken(ctx, rawToken)
+	token, err := h.authService.GetRegistrationToken(ctx, reqBody.Token)
 	if err != nil {
 		log.ErrorCtx(ctx, "Failed to get registration token", err)
 		return err
@@ -239,7 +244,9 @@ func (h *AuthHandler) recoverPassword(c fiber.Ctx) error {
 	}
 
 	res, err := h.authService.RecoverPassword(ctx, reqBody)
-	c.Set("Retry-After", strconv.FormatInt(res.RetryAfter.UTC().Unix(), 10))
+	// Retry-After is delay seconds (RFC 7231); the absolute deadline stays in
+	// details.retry_after from the error body.
+	c.Set("Retry-After", strconv.FormatInt(max(int64(time.Until(res.RetryAfter).Seconds()), 0), 10))
 
 	if err != nil {
 		log.ErrorCtx(ctx, "Failed to recover password", err)
@@ -253,9 +260,13 @@ func (h *AuthHandler) recoverPassword(c fiber.Ctx) error {
 
 func (h *AuthHandler) getPasswordRecoveryToken(c fiber.Ctx) error {
 	ctx := c.Context()
-	token := c.Params("token")
 
-	tokenObj, err := h.authService.GetPasswordRecoveryToken(ctx, token)
+	var reqBody auth.TokenStatusInput
+	if err := BindValidateJSON(c, &reqBody); err != nil {
+		return err
+	}
+
+	tokenObj, err := h.authService.GetPasswordRecoveryToken(ctx, reqBody.Token)
 	if err != nil {
 		log.ErrorCtx(ctx, "Failed to get password recovery token", err)
 		return err
@@ -303,7 +314,9 @@ func (h *AuthHandler) requestEmailChange(c fiber.Ctx) error {
 	}
 
 	res, err := h.authService.RequestEmailChange(ctx, *aCtx.Actor.UserID, reqBody)
-	c.Set("Retry-After", strconv.FormatInt(res.RetryAfter.UTC().Unix(), 10))
+	// Retry-After is delay seconds (RFC 7231); the absolute deadline stays in
+	// details.retry_after from the error body.
+	c.Set("Retry-After", strconv.FormatInt(max(int64(time.Until(res.RetryAfter).Seconds()), 0), 10))
 
 	if err != nil {
 		log.ErrorCtx(ctx, "Failed to request email change", err)

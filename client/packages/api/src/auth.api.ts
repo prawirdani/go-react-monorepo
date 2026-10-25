@@ -11,10 +11,10 @@ import type {
 	ResetPasswordInput,
 	SessionEntry,
 	TokenPair,
+	TokenStatusInput,
 } from "@repo/schemas/auth";
 import type { Permission } from "@repo/schemas/permission";
 import type { User } from "@repo/schemas/user";
-import { parseEpoch } from "@repo/utils/date";
 import type { APIClient } from "./client";
 
 export class AuthAPI {
@@ -52,8 +52,14 @@ export class AuthAPI {
 
 	/** Reads a registration token's metadata. Unauthenticated. */
 	async getRegistrationToken(rawToken: string): Promise<RegistrationToken> {
-		const res = await this.client.Get<RegistrationToken>(
-			`/api/auth/register/${rawToken}`,
+		const res = await this.client.Post<RegistrationToken>(
+			"/api/auth/register/token",
+			{
+				body: JSON.stringify({ token: rawToken } satisfies TokenStatusInput),
+				// A used/expired token answers 401; that is not a dead session, so
+				// it must not trigger the refresh interceptor.
+				noAuth: true,
+			},
 		);
 		return res.data!;
 	}
@@ -117,18 +123,28 @@ export class AuthAPI {
 			throw errorBody;
 		}
 
-		const retryAfter = Number(res.headers.get("retry-after"));
-		const date = parseEpoch(retryAfter);
+		const retryAfterHeader = res.headers.get("retry-after");
+		const seconds =
+			retryAfterHeader === null ? Number.NaN : Number(retryAfterHeader);
+		const date = Number.isFinite(seconds)
+			? new Date(Date.now() + seconds * 1000)
+			: new Date(0);
 
 		return {
-			retry_after: date ?? new Date(0),
+			retry_after: date,
 		};
 	}
 
 	/** Gets a password recovery token's metadata. Unauthenticated. */
 	async getPasswordRecoveryToken(token: string): Promise<OpaqueTokenMeta> {
-		const res = await this.client.Get<OpaqueTokenMeta>(
-			`/api/auth/password/recover/${token}`,
+		const res = await this.client.Post<OpaqueTokenMeta>(
+			"/api/auth/password/recover/token",
+			{
+				body: JSON.stringify({ token } satisfies TokenStatusInput),
+				// A used/expired token answers 401; that is not a dead session, so
+				// it must not trigger the refresh interceptor.
+				noAuth: true,
+			},
 		);
 		return res.data!;
 	}

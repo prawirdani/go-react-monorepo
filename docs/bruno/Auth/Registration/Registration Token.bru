@@ -4,10 +4,16 @@ meta {
   seq: 3
 }
 
-get {
-  url: {{BASE_URL}}/{{authPath}}/register/{{token}}
-  body: none
+post {
+  url: {{BASE_URL}}/{{authPath}}/register/token
+  body: json
   auth: none
+}
+
+body:json {
+  {
+    "token": "{{token}}"
+  }
 }
 
 settings {
@@ -20,9 +26,14 @@ example {
   name: Invalid/Not Found Token
   
   request: {
-    url: {{BASE_URL}}/{{authPath}}/register/{{token}}
-    method: GET
-    mode: none
+    url: {{BASE_URL}}/{{authPath}}/register/token
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "token": "{{token}}"
+      }
+    }
   }
   
   response: {
@@ -71,9 +82,14 @@ example {
   name: Success
   
   request: {
-    url: {{BASE_URL}}/{{authPath}}/register/{{token}}
-    method: GET
-    mode: none
+    url: {{BASE_URL}}/{{authPath}}/register/token
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "token": "{{token}}"
+      }
+    }
   }
   
   response: {

@@ -41,6 +41,12 @@ export const registerSchema = z.object({
 		.nonempty("validation.email.required"),
 });
 
+/** Body for the token-status endpoints; the token stays out of the path so
+ * the access log never records it. */
+export const tokenStatusSchema = z.object({
+	token: z.string().nonempty("validation.required"),
+});
+
 export const completeRegistrationSchema = z
 	.object({
 		token: z.string().nonempty("validation.registration_token.required"),
@@ -107,6 +113,7 @@ export const confirmEmailChangeSchema = z.object({
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type TokenStatusInput = z.infer<typeof tokenStatusSchema>;
 export type CompleteRegistrationInput = z.infer<
 	typeof completeRegistrationSchema
 >;
