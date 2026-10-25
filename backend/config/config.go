@@ -23,6 +23,7 @@ type Config struct {
 	Auth      Auth
 	SMTP      SMTP
 	R2        R2
+	Backup    Backup
 	Proxy     Proxy
 	RateLimit RateLimit
 }
@@ -60,6 +61,9 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 	if err := cfg.R2.Parse(); err != nil {
+		return nil, err
+	}
+	if err := cfg.Backup.Parse(); err != nil {
 		return nil, err
 	}
 	if err := cfg.Proxy.Parse(); err != nil {

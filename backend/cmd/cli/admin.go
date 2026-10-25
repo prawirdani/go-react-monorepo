@@ -44,12 +44,6 @@ func runCreateAdmin(args []string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	pg, err := postgres.New(cfg.Postgres)
-	if err != nil {
-		return fmt.Errorf("connect postgres: %w", err)
-	}
-	defer pg.Close()
-
 	in := bufio.NewReader(os.Stdin)
 
 	name, err := promptLine(in, "Name: ")
@@ -71,6 +65,22 @@ func runCreateAdmin(args []string) error {
 	}
 	if password != confirm {
 		return errors.New("passwords do not match")
+	}
+
+	if err := createAdminUser(context.Background(), cfg, name, email, password); err != nil {
+		return err
+	}
+
+	fmt.Printf("created admin %s\n", email)
+	return nil
+}
+
+// createAdminUser validates the credentials and inserts an admin user directly
+// through the repository. The CLI prompt and the TUI both call it, so the two
+// paths cannot drift. It blocks on the insert, bounded at 10s.
+func createAdminUser(ctx context.Context, cfg *config.Config, name, email, password string) error {
+	if cfg == nil {
+		return errors.New("config is not loaded")
 	}
 	// bcrypt truncates past 72 bytes; mirror the auth model's min=8,max=72.
 	if n := len(password); n < 8 || n > 72 {
@@ -98,14 +108,15 @@ func runCreateAdmin(args []string) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := postgres.NewUserRepository(pg).Store(ctx, u); err != nil {
-		return err
+	pg, err := postgres.New(cfg.Postgres)
+	if err != nil {
+		return fmt.Errorf("connect postgres: %w", err)
 	}
+	defer pg.Close()
 
-	fmt.Printf("created admin %s (%s)\n", u.Email, u.ID)
-	return nil
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	return postgres.NewUserRepository(pg).Store(ctx, u)
 }
 
 // promptLine prints a prompt and reads one trimmed, non-empty line.
