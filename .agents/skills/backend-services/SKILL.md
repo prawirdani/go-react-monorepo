@@ -1,6 +1,6 @@
 ---
 name: backend-services
-description: "Service-layer conventions for github.com/prawirdani/go-react-monorepo - interface-driven dependencies, Transact for multi-step writes, nullable mutation + Validate, audit entries inside the transaction, side-effect placement (outbox events in-tx, non-transactional cleanup post-commit), async goroutines with snapshotted logger context, per-domain permission tables, and throttling. Use when writing or reviewing business logic in internal/ entity packages."
+description: "Service-layer conventions for github.com/prawirdani/go-react-monorepo - interface-driven dependencies, Transact for multi-step writes, nullable mutation + Validate, audit entries inside the transaction, side-effect placement (outbox events in-tx, post-commit work), async goroutines with snapshotted logger context, per-domain permission tables, and throttling. Use when writing or reviewing business logic in internal/ entity packages."
 user-invocable: true
 license: MIT
 compatibility: Designed for AI coding agents working in the go-react-monorepo repository.
@@ -21,7 +21,7 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 
 3. **Place side effects by whether they can join the transaction.**
    - **Events go INSIDE the `Transact` closure, through the transactional outbox.** `s.eventProducer.ProduceRegistrationCompletionEvent` / `ProducePasswordRecoveryEvent` (`internal/auth/service.go`) write the `outbox_messages` row on the caller's connection, so the event commits or rolls back with the business state - an invitation can never exist without its email. Do **not** produce after the closure returns; that reintroduces the crash window the outbox exists to close.
-   - **Effects that cannot join a transaction run AFTER commit.** Storage cleanup runs once the DB swap succeeds (`s.asyncDeleteImage` in `user/service.go`); its failure is logged, not fatal.
+   - **Effects that cannot join a transaction are placed deliberately.** Post-commit work runs after the closure (`user.DeleteUser` revokes access tokens there); a pre-transaction upload that fails must abort before the DB changes. Profile images are never deleted from storage: replacing or clearing one only swaps the DB reference, so a restored backup snapshot still resolves its image.
 
 4. **Mutate domain models through their methods/fields, then validate:**
    ```go
@@ -32,16 +32,17 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
    ```
    Nullable columns use `pkg/nullable` (`Set(value, false)` / `NotNull()` / `Get()`); leave the nullable unset instead of storing zero values when the field wasn't provided.
 
-5. **Async cleanup goroutines must snapshot the logger and use a fresh context:**
+5. **A goroutine that outlives the request must snapshot the logger, use a fresh context, and recover:**
    ```go
-   logger := log.GetFromContext(ctx).With("image_path", path, "reason", reason)
+   logger := log.GetFromContext(ctx).With("user_id", id)
    go func() {
-       cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+       defer log.Recover(logger)
+       jobCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
        defer cancel()
        ...
    }()
    ```
-   Never reuse the request `ctx` in a goroutine that outlives the request (see `asyncDeleteImage` in `user/service.go`).
+   Never reuse the request `ctx` in a goroutine that outlives the request. `defer log.Recover(logger)` is mandatory: a panic there has no request-recover frame above it and would kill the process (see the worker's janitor).
 
 6. **Throttle before expensive work:** `s.throttler.TryAcquire(ctx, fmt.Sprintf("recover-password:%s", inp.Email), PasswordRecoveryThrottledTTL)`; on `!result.Allowed` return the throttled error `ErrPasswordRecoveryThrottled.WithDetails(result)`; on throttler error, propagate the error rather than guessing. (Check `internal/ports/throttle` for the interface contract.)
 
@@ -55,7 +56,7 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 
 - [ ] Service struct fields are interfaces, not concrete infrastructure types
 - [ ] Multi-step writes inside one `Transact`; outbox events produced inside it (never after commit)
-- [ ] Non-transactional side effects (storage cleanup) run after commit, their failure logged not fatal
+- [ ] Non-transactional effects are placed deliberately (before the tx or after commit), never mid-transaction
 - [ ] Nullable fields via `pkg/nullable`; model `Validate()` before persisting
 - [ ] Goroutines use fresh `context.Background()` + snapshot logger
 - [ ] Rate-limited operations call `TryAcquire` first with a namespaced key
@@ -66,7 +67,7 @@ allowed-tools: Read Edit Write Glob Grep Bash(go:*) Bash(golangci-lint:*) Agent
 ## References
 
 - `internal/auth/service.go` - `Transact`, audit-in-tx, throttling, outbox event production inside `Transact`, `permTables`
-- `internal/user/service.go` - validation, storage swap + async cleanup, `permTables`
+- `internal/user/service.go` - validation, storage swap (objects retained, DB reference only), `permTables`
 - `internal/user/model.go` / `gender.go` - nullable + Validate patterns
 - `internal/ports/throttle/throttle.go` - Throttler contract
 - `pkg/log/context.go` - logger snapshots (`log.GetFromContext`)

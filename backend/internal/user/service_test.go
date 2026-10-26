@@ -199,13 +199,9 @@ func TestService_ChangeProfilePicture(t *testing.T) {
 				return fn(ctx)
 			})
 
-		f.storage.EXPECT().
-			Delete(mock.Anything, "profiles/old-image.jpg").
-			Return(nil).
-			Maybe()
-
 		err := f.service.ChangeProfilePicture(ctx, existingUser.ID, f.file)
 		assert.NoError(t, err)
+		f.storage.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything)
 	})
 
 	t.Run("Error user not found", func(t *testing.T) {
@@ -228,14 +224,10 @@ func TestService_ChangeProfilePicture(t *testing.T) {
 				return fn(ctx)
 			})
 
-		f.storage.EXPECT().
-			Delete(mock.Anything, mock.AnythingOfType("string")).
-			Return(nil).
-			Maybe()
-
 		err := f.service.ChangeProfilePicture(ctx, userID, f.file)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, apperr.ErrNotFound)
+		f.storage.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything)
 	})
 
 	t.Run("Error storage put fails", func(t *testing.T) {
@@ -291,13 +283,9 @@ func TestService_DeleteProfilePicture(t *testing.T) {
 				return fn(ctx)
 			})
 
-		f.storage.EXPECT().
-			Delete(mock.Anything, "profiles/profile.jpg").
-			Return(nil).
-			Maybe()
-
 		err := f.service.DeleteProfilePicture(ctx, existingUser.ID)
 		assert.NoError(t, err)
+		f.storage.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything)
 	})
 
 	t.Run("Success without profile picture", func(t *testing.T) {

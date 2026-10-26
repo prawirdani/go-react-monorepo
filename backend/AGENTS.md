@@ -94,7 +94,7 @@ The `cli` service must stay at one replica, like the worker: goose takes no migr
 
 **Errors** - `apperr.Error` with `Kind` (`KindValidation`, `KindNotFound`, `KindConflict`, `KindUnauthorized`, `KindForbidden`, `KindThrottled`). Immutable (`WithDetails`/`SetMessage` return copies), supports `errors.Is`. `http.ParseError`, run by the Fiber `ErrorHandler`, maps kinds to HTTP status - and wraps the result in an `{"error": {...}}` envelope. Detail: `backend-errors`.
 
-**Transactions** - wrap multi-step writes in `s.transactor.Transact`. Repositories detect the tx via `db.GetConn(ctx)` and reuse the connection (adding `FOR UPDATE`). Rollback/commit run on `context.WithoutCancel(ctx)` with a 5s timeout so a cancelled request ctx doesn't destroy the pooled connection. Detail: `backend-services`.
+**Transactions** - wrap multi-step writes in `s.transactor.Transact`. Repositories detect the tx via `db.GetConn(ctx)` and reuse the connection (adding `FOR UPDATE`). Rollback/commit run on `context.WithoutCancel(ctx)` with a 5s timeout so a cancelled request ctx doesn't destroy the pooled connection. Profile images are never deleted from R2: replacing or clearing one only swaps the DB reference, so a restored backup snapshot still resolves its image; stray objects are accepted. Detail: `backend-services`.
 
 **Auth invariants**
 - Registration is invitation-based: `Register` stores a single-use hashed token (no user row) and revokes any prior tokens for that email; `CompleteRegistration` consumes the token and creates the user atomically. A used, expired, or revoked token → `ErrInvalidRegistrationToken` (401). Hash the password only after the token validates. Under `APP_INTERNAL_MODE`, `Register` requires `PermRegisterUser`.
@@ -126,7 +126,7 @@ Project-specific skills live in the **repo root** `.agents/skills/` (they auto-t
 - **backend-errors** - apperr error constructors/kinds, immutable copies, repo error translation
 - **backend-handlers** - fiber.Ctx handler signature, BindValidateJSON, sparse `Body` envelope, cookies, multipart
 - **backend-repositories** - pgx + `Select` builders, pgxscan, tx-aware GetConn/FOR UPDATE, error mapping
-- **backend-services** - Transact, audit-in-tx, post-commit side effects, per-domain permissions, nullable+Validate, async cleanup
+- **backend-services** - Transact, audit-in-tx, post-commit side effects, per-domain permissions, nullable+Validate
 - **backend-testing** - mockery placement, setupTestFixture, transactor expectations, subtests, config independence
 
 These supersede generic samber guidance where they overlap.

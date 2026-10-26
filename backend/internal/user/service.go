@@ -250,16 +250,13 @@ func (s *Service) ChangeProfilePicture(
 		return err
 	}
 
-	// -- Swap the image reference in the DB; capture previous path for cleanup.
-	var prevImagePath string
-	if err := s.transactor.Transact(ctx, func(ctx context.Context) error {
+	// Swap only the DB reference. The previous object stays in the bucket (and a
+	// failed swap leaves the new one there too), so a restored snapshot still
+	// resolves the image it recorded. Stray objects are accepted.
+	return s.transactor.Transact(ctx, func(ctx context.Context) error {
 		u, err := s.userRepo.GetByID(ctx, userID)
 		if err != nil {
 			return err
-		}
-
-		if u.ProfilePicture.NotNull() {
-			prevImagePath = s.buildImagePath(u.ProfilePicture.Get())
 		}
 		prev := *u
 
@@ -275,16 +272,7 @@ func (s *Service) ChangeProfilePicture(
 			Prev:     prev,
 			Next:     *u,
 		})
-	}); err != nil {
-		prevImagePath = ""
-		s.asyncDeleteImage(ctx, newImagePath, "rollback after failed db update")
-		return err
-	}
-
-	if prevImagePath != "" {
-		s.asyncDeleteImage(ctx, prevImagePath, "stale image cleanup")
-	}
-	return nil
+	})
 }
 
 func (s *Service) DeleteProfilePicture(ctx context.Context, userID uuid.UUID) error {
@@ -292,8 +280,9 @@ func (s *Service) DeleteProfilePicture(ctx context.Context, userID uuid.UUID) er
 		return err
 	}
 
-	var prevImagePath string
-	if err := s.transactor.Transact(ctx, func(ctx context.Context) error {
+	// Only the DB reference is cleared: the object stays in the bucket so a
+	// restored backup snapshot still resolves its profile picture.
+	return s.transactor.Transact(ctx, func(ctx context.Context) error {
 		u, err := s.userRepo.GetByID(ctx, userID)
 		if err != nil {
 			return err
@@ -304,7 +293,6 @@ func (s *Service) DeleteProfilePicture(ctx context.Context, userID uuid.UUID) er
 		}
 		prev := *u
 
-		prevImagePath = s.buildImagePath(u.ProfilePicture.Get())
 		u.ProfilePicture.Set("", false)
 
 		if err := s.userRepo.Update(ctx, u); err != nil {
@@ -318,41 +306,11 @@ func (s *Service) DeleteProfilePicture(ctx context.Context, userID uuid.UUID) er
 			Prev:     prev,
 			Next:     *u,
 		})
-	}); err != nil {
-		return err
-	}
-
-	if prevImagePath != "" {
-		s.asyncDeleteImage(ctx, prevImagePath, "delete image")
-	}
-
-	return nil
+	})
 }
 
 const ImageStoragePath = "profiles"
 
 func (s *Service) buildImagePath(imageName string) string {
 	return fmt.Sprintf("%s/%s", ImageStoragePath, imageName)
-}
-
-// asyncDeleteImage spawns a short-lived goroutine to delete an object from storage.
-// The logger is snapshotted from ctx so all request-scoped fields (trace-id, etc.)
-// are preserved even after ctx is cancelled by the caller.
-func (s *Service) asyncDeleteImage(ctx context.Context, path string, reason string) {
-	logger := log.GetFromContext(ctx).With("image_path", path, "reason", reason)
-	//nolint:gosec // G118: the cleanup goroutine intentionally outlives the request context
-	go func() {
-		// Detached goroutine: a panic here has no request-recover frame above it,
-		// so without this it would crash the whole process.
-		defer log.Recover(logger)
-
-		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		if err := s.imageStorage.Delete(cleanupCtx, path); err != nil {
-			logger.Warn("failed to delete profile image", "error", err)
-			return
-		}
-		logger.Debug("profile image deleted successfully")
-	}()
 }
