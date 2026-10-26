@@ -140,8 +140,7 @@ default `CMD`, the `worker` service overrides it.
 
 ```bash
 make client:install                                      # bun install, once
-cp client/apps/dashboard/example.env client/apps/dashboard/.env
-make client:dev                                          # Vite on :$VITE_PORT
+make client:dev                                          # Vite on :$VITE_PORT, reads the root .env
 ```
 
 It talks to a relative `/api`; in development Vite proxies that to

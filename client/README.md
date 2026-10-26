@@ -50,11 +50,12 @@ DESIGN.md             # the visual system: tokens, named rules, per-component sp
 
 ```bash
 bun install
-cp apps/dashboard/example.env apps/dashboard/.env   # then fill in values
 bun run dev                                             # dashboard on $VITE_PORT (default 3001)
 ```
 
-### Environment Variables (`apps/dashboard/.env`)
+The dashboard reads `VITE_*` from the repo-root `.env` (`vite.config.ts` points `envDir` there). Copy `.env.example` once at the repo root; there is no per-app env file.
+
+### Environment Variables (repo-root `.env`)
 
 | Variable             | Purpose                                                          |
 | -------------------- | ---------------------------------------------------------------- |
@@ -205,5 +206,5 @@ The two repos are kept in sync; when the backend changes, the API layer in `pack
 ## Gotchas
 
 - **Adding an `exports` subpath to a workspace package requires a dev-server restart.** Vite caches the `exports` map, so a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath - while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. Restart `bun run dev`; don't chase the module itself.
-- **Set `VITE_VERSION` in the build environment.** `apps/dashboard/.env` is gitignored and `example.env` is only a template, so a production build needs the value supplied by the environment - otherwise the sidebar footer falls back to `dev`.
+- **Set `VITE_VERSION` in the build environment.** The Caddy image builds the dashboard from the `client/` context with no `.env` (the repo root is not in it) and passes only `VITE_API_URL`/`VITE_IMAGE_URL` as build args, so supply `VITE_VERSION` the same way - otherwise the sidebar footer falls back to `dev`.
 - **Pre-existing `tsc` failure** (not caused by feature work) - 1: `vite.config.ts` rejects an unknown `babel` option.

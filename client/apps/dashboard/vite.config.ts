@@ -7,18 +7,23 @@ import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react"
 import { defineConfig, loadEnv } from "vite"
 import { analyzer } from "vite-bundle-analyzer"
 
+// One `.env` at the repo root serves both halves. `envDir` is set below so
+// `import.meta.env` reads it too; without that Vite would resolve env files
+// from the package dir (the default root) and silently find nothing.
 const root = fileURLToPath(new URL("../../..", import.meta.url))
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // `loadEnv` resolves the root from the process cwd, which differs between a
-  // direct `bun run dev` and a turbo-run task, so pass it explicitly. The empty
-  // prefix reads every var in `.env`, not just the `VITE_`-exposed ones.
+  // `loadEnv` resolves its directory from the process cwd, which differs between
+  // a direct `bun run dev` and a turbo-run task, so pass the root explicitly. The
+  // empty prefix reads every var in `.env` for config; only `VITE_*` is exposed
+  // to the bundle.
   const env = loadEnv(mode, root, "")
   const port = Number(env.VITE_PORT) || 3001
   const proxyTarget = env.VITE_PROXY_TARGET
 
   return {
+    envDir: root,
     server: {
       port,
       allowedHosts: true,

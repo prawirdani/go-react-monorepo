@@ -4,7 +4,7 @@ import { useAuthStore } from "@/lib/auth/store"
 // `?? ""` is load-bearing. Vite inlines `import.meta.env.VITE_*` at build time,
 // and the image build has no .env (it is dockerignored), so an unset variable
 // arrives as `undefined` rather than `""`. Empty is the documented same-origin
-// value (see example.env); `.replace` on undefined throws at module scope and
+// value (see .env.example); `.replace` on undefined throws at module scope and
 // takes the whole chunk down with it.
 const IMAGE_BASE_URL = (import.meta.env.VITE_IMAGE_URL ?? "").replace(/\/$/, "")
 
