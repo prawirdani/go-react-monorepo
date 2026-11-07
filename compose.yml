@@ -223,9 +223,11 @@ services:
         # Vite inlines these into the bundle at build time. VITE_API_URL stays
         # empty for the same-origin setup the Caddyfile provides; VITE_IMAGE_URL
         # is the public asset base for uploads and falls back to the R2 bucket
-        # URL, which is the same server.
+        # URL, which is the same server. VITE_VERSION appears in the sidebar
+        # footer and must be baked into the static bundle too.
         VITE_API_URL: ${VITE_API_URL:-}
         VITE_IMAGE_URL: ${VITE_IMAGE_URL:-${R2_BUCKET_URL:-}}
+        VITE_VERSION: ${VITE_VERSION:-0.1.0}
     image: go-react-monorepo-caddy:local
     env_file:
       - .env

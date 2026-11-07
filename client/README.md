@@ -206,5 +206,5 @@ The two repos are kept in sync; when the backend changes, the API layer in `pack
 ## Gotchas
 
 - **Adding an `exports` subpath to a workspace package requires a dev-server restart.** Vite caches the `exports` map, so a stale cache surfaces as an HTTP 500 on whichever module imports the new subpath - while `tsc` and `vite build` stay green, because a fresh process resolves it correctly. Restart `bun run dev`; don't chase the module itself.
-- **Set `VITE_VERSION` in the build environment.** The Caddy image builds the dashboard from the `client/` context with no `.env` (the repo root is not in it) and passes only `VITE_API_URL`/`VITE_IMAGE_URL` as build args, so supply `VITE_VERSION` the same way - otherwise the sidebar footer falls back to `dev`.
+- **Set `VITE_VERSION` in the build environment.** Compose passes it to the Caddy build, and the sidebar footer falls back to `dev` only when no value is supplied.
 - **Pre-existing `tsc` failure** (not caused by feature work) - 1: `vite.config.ts` rejects an unknown `babel` option.

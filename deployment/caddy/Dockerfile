@@ -10,10 +10,13 @@ RUN bun install --frozen-lockfile
 # an absent variable arrives as `undefined`, not as an empty string.
 # VITE_API_URL stays empty for the same-origin deployment the Caddyfile sets up.
 # VITE_IMAGE_URL is the public asset base for uploaded profile pictures.
+# VITE_VERSION is shown in the dashboard sidebar footer.
 ARG VITE_API_URL=""
 ARG VITE_IMAGE_URL=""
+ARG VITE_VERSION="dev"
 ENV VITE_API_URL=${VITE_API_URL} \
-    VITE_IMAGE_URL=${VITE_IMAGE_URL}
+    VITE_IMAGE_URL=${VITE_IMAGE_URL} \
+    VITE_VERSION=${VITE_VERSION}
 
 # Build only the Vite app (and the workspace packages it depends on)
 RUN bun x turbo run build --filter=dashboard...
